@@ -1,4 +1,5 @@
 # version 140
+
 uniform mediump vec4 color;
 
 void main(void)

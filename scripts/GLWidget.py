@@ -10,11 +10,9 @@ from PySide2.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShader
 from shiboken2 import VoidPtr
 from scripts.MeshAndShaders import Mesh
 from scripts.BranchGeometry import BranchGeometry
+# from scripts.InterfaceLayout import MainWindow, TestWindow
 # from PySide2.shiboken2 import VoidPtr
 
-# from PyQt6 import QtCore      # core Qt functionality
-# from PyQt6 import QtGui       # extends QtCore with GUI functionality
-# from PyQt6 import QtOpenGL    # provides QGLWidget, a special OpenGL QWidget
 
 import OpenGL.GL as gl        # python wrapping of OpenGL
 from OpenGL import GLU        # OpenGL Utility Library, extends OpenGL functionality
@@ -38,6 +36,10 @@ import ctypes                 # to communicate with c code under the hood
 ##############################################################################################################
 
 class GLWidget(QOpenGLWidget): 
+
+    xRotationChanged = Signal(int)
+    yRotationChanged = Signal(int)
+    zRotationChanged = Signal(int)
 
     def __init__(self, tree_fname=None):
         super().__init__()
@@ -65,6 +67,21 @@ class GLWidget(QOpenGLWidget):
         self.vao = QOpenGLVertexArrayObject()
         self.vbo = QOpenGLBuffer(QOpenGLBuffer.VertexBuffer)
         self.program = QOpenGLShaderProgram()
+
+        # self.tree_color = QVector4D(0.5, 0.25, 0.0, 0.0) # brown color
+        self.tree_color = QtGui.QColor(0, 139, 69, 19)
+        
+        self.world = QMatrix4x4() # the world view
+        self.proj = QMatrix4x4() # where to look
+        self.camera = QMatrix4x4() # the camera position
+
+        self.xRot = 0
+        self.yRot = 0
+        self.zRot = 0
+
+        # for binding the color
+       
+        
 
     def xRotation(self):
         return self.mesh.xRot
@@ -197,11 +214,87 @@ class GLWidget(QOpenGLWidget):
         # for cleaning the frame in paintGL
 
         funcs.glEnable(gl.GL_DEPTH_TEST) # enables depth testing so things are rendered correctly
+
+        # INITIALZE OUR SHADERS
+        vshader, fshader = self.mesh.initializeShaders()
+
+        # creating shader program
+        self.program = QOpenGLShaderProgram(self.context)
+        self.program.addShader(vshader)  # adding vertex shader
+        self.program.addShader(fshader)  # adding fragment shader
+
+        # bind attribute to a location in the shader
+        self.program.bindAttributeLocation("vertexPos", 0) # getting the vertex position for shader.vert
+
+        # link the shader program
+        isLinked = self.program.link()
+        print("Shader program is linked: ", isLinked)
+
+        # bind the program --> activates it!
+        self.program.bind()
+
+        # bind the location of the color for the shader.frag to use
+        colorLoc = self.program.uniformLocation("color")
+        print(f"Color Location {colorLoc}")
+        self.program.setUniformValue(colorLoc, self.tree_color)
+        
+
+
     
-        self.mesh.initializeShaders()
         # self.mvMatrixLoc = self.mesh.program.uniformLocation("mvMatrix")
 
-        self.mesh.initializeMeshArrays()
+        # self.mesh.initializeMeshArrays()
+
+
+        # INITIALIZING VALUES FOR ARRAYS 
+        isVao = self.vao.create()
+        vaoBinder = QOpenGLVertexArrayObject.Binder(self.vao)
+
+        # vbo
+        isVbo = self.vbo.create()
+        isBound = self.vbo.bind()
+
+        # float_size = ctypes.sizeof(ctypes.c_float)
+
+        # # allocate buffer space
+        # self.vbo.allocate(self.vertices.tobytes(), 
+        #                   float_size * self.vertices.size) # TO CHANGE WITH BRANCHES ADDED
+
+        # check if vao and vbo are created
+        print('vao created: ', isVao)
+        print('vbo created: ', isVbo)
+        print('vbo bound: ', isBound)
+
+        # self.setupMeshAttribArrays()
+
+        # SETUP MESH ATTRIBUTE ARRAYS
+        float_size = ctypes.sizeof(ctypes.c_float)
+        
+        # allocate buffer space
+        self.vbo.allocate(self.mesh.vertices.tobytes(), 
+                          float_size * self.mesh.vertices.size) # TO CHANGE WITH BRANCHES ADDED AND ABILITY TO DRAW
+
+        self.vbo.bind()
+        funcs = self.context.functions()  # self.context.currentContext().functions()  
+        funcs.glEnableVertexAttribArray(0)
+
+        float_size = ctypes.sizeof(ctypes.c_float)
+        null = VoidPtr(0)
+        funcs.glVertexAttribPointer(0,                     # where the array starts
+                                    3,                     # how long the vertex point is i.e., (x, y, z)
+                                    gl.GL_FLOAT,           # is a float
+                                    gl.GL_FALSE,
+                                    3 * float_size,        # size in bytes to the next vertex (x, y, z)
+                                    null)                  # where the data is stored (starting position) in memory
+        
+        self.vbo.release()
+
+        self.camera.setToIdentity() # sets the camera matrix to the identity
+        self.camera.translate(0, 0, -2)
+
+        self.program.release()
+        vaoBinder = None
+
 
         # self.camera.setToIdentity()
         # self.camera.translate(0, 0, -4)
@@ -260,7 +353,46 @@ class GLWidget(QOpenGLWidget):
         # self.program.setUniformValue()
 
         # scaling goes here as well
-        self.mesh.drawMesh()
+        
+        # self.mesh.drawMesh()
+
+        # funcs = self.context.functions()
+        # DRAW MESH
+        # load the identity to do the scaling of the function
+        # self.world.setToIdentity()
+        # self.world.rotate(self.xRot/16, 1, 0, 0)
+        # self.world.rotate(self.yRot/16, 0, 1, 0)
+        # self.world.rotate(self.zRot/16, 0, 0, 1)
+        
+        # # self.world.scale(self.sx/10, self.diameter/10, self.diameter/10)  # self.sy, self.sz
+        # self.world.scale(self.sx, self.sy, self.sz)
+
+        # need to update the branch to draw
+        # self.update_vertices()
+        # self.setupMeshAttribArrays()
+
+        vaoBinder = QOpenGLVertexArrayObject.Binder(self.vao)
+        self.program.bind()
+
+        # setting the values of the projecton matrix and the movement matrix
+        # self.program.setUniformValue(self.projMatrixLoc, self.proj)
+        # self.program.setUniformValue(self.mvMatrixLoc, self.camera * self.world)
+
+        # INTRODUCES CAMERA MOVEMENTS
+        # self.program.setUniformValue("projMatrix", self.proj)
+        # self.program.setUniformValue("mvMatrix", self.camera * self.world)
+
+
+        # normalMatrix = self.world.normalMatrix()
+        # self.program.setUniformValue(self.normalMatrixLoc, normalMatrix)
+
+        funcs.glDrawArrays(gl.GL_TRIANGLES,                     # telling it to draw triangles between vertices
+                           0,                                   # where the vertices starts
+                           self.mesh.vertex_count)              # how many vertices to draw from the mesh
+
+        self.program.release()
+        self.vao.release()
+        vaoBinder = None
         
    
 

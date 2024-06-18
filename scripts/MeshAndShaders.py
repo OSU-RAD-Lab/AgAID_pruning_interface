@@ -139,9 +139,8 @@ class Mesh(QWidget):
             self.vertex_count += self.bVertex_count
 
         self.vertices = np.array(self.vertices)
-
         self.tree_color = QVector4D(0.5, 0.25, 0.0, 0.0) # brown color
-       
+
         # opengl data
         self.context = QOpenGLContext()
         self.vao = QOpenGLVertexArrayObject()
@@ -202,42 +201,45 @@ class Mesh(QWidget):
         self.vshader = Shader(shaderType="vertex", shaderName=shaderName, shaderPath='../shaders/shader.vert').getShader()
         self.fshader = Shader(shaderType="fragment", shaderName=shaderName, shaderPath='../shaders/shader.frag').getShader()
 
-        # creating shader program
-        self.program = QOpenGLShaderProgram(self.context)
-        self.program.addShader(self.vshader)  # adding vertex shader
-        self.program.addShader(self.fshader)  # adding fragment shader
+        # # creating shader program
+        # self.program = QOpenGLShaderProgram(self.context)
+        # self.program.addShader(self.vshader)  # adding vertex shader
+        # self.program.addShader(self.fshader)  # adding fragment shader
 
-        # bind attribute to a location in the shader
-        self.program.bindAttributeLocation("vertexPos", 0) # getting the vertex position
+        # # bind attribute to a location in the shader
+        # self.program.bindAttributeLocation("vertexPos", 0) # getting the vertex position for shader.vert
 
-        # link the shader program
-        isLinked = self.program.link()
-        print("Shader program is linked: ", isLinked)
+        # # link the shader program
+        # isLinked = self.program.link()
+        # print("Shader program is linked: ", isLinked)
 
-        # bind the program --> activates it!
-        self.program.bind()
+        # # bind the program --> activates it!
+        # self.program.bind()
 
-        # specify uniform value
-        # self.colorLoc = self.program.uniformLocation("color") 
-        # self.projMatrixLoc = self.program.uniformLocation("projMatrix")
-        # self.mvMatrixLoc = self.program.uniformLocation("mvMatrix")
+        # # specify uniform value
+        # # self.colorLoc = self.program.uniformLocation("color") 
+        # # self.projMatrixLoc = self.program.uniformLocation("projMatrix")
+        # # self.mvMatrixLoc = self.program.uniformLocation("mvMatrix")
 
 
-        # Connects the attributes to their coresponding values in the shaders files
-        colorLoc = self.program.uniformLocation("color")     # shader.frag
-        self.projMatrixLoc = self.program.uniformLocation("projMatrix") # shader.vert
-        self.mvMatrixLoc = self.program.uniformLocation("mvMatrix") # shader.vert
+        # # Connects the attributes to their coresponding values in the shaders files
+        # colorLoc = self.program.uniformLocation("color")     # shader.frag
 
-        print(f"Color Location: {colorLoc}\nProject Matrix Location: {self.projMatrixLoc}\nMv Matrix Location: {self.mvMatrixLoc}")
-        # self.normalMatrixLoc = self.program.uniformLocation("normalMatrix")
+        # # self.projMatrixLoc = self.program.uniformLocation("projMatrix") # shader.vert
+        # # self.mvMatrixLoc = self.program.uniformLocation("mvMatrix") # shader.vert
+
+        # # print(f"Color Location: {colorLoc}\nProject Matrix Location: {self.projMatrixLoc}\nMv Matrix Location: {self.mvMatrixLoc}")
         
-        # notice the correspondance of the
-        # name color in fragment shader
-        # we also obtain the uniform location in order to 
-        # set value to it
-        self.program.setUniformValue(colorLoc, self.tree_color) # for shader.frag
+        # # self.normalMatrixLoc = self.program.uniformLocation("normalMatrix")
+        
+        # # notice the correspondance of the
+        # # name color in fragment shader
+        # # we also obtain the uniform location in order to 
+        # # set value to it
+        # self.program.setUniformValue(colorLoc, self.tree_color) # for shader.frag
         # notice the correspondance of the color type vec4 
         # and the type of triangleColor
+        return self.vshader, self.fshader
         
         
 
@@ -317,8 +319,14 @@ class Mesh(QWidget):
         self.program.bind()
 
         # setting the values of the projecton matrix and the movement matrix
-        self.program.setUniformValue(self.projMatrixLoc, self.proj)
-        self.program.setUniformValue(self.mvMatrixLoc, self.camera * self.world)
+        # self.program.setUniformValue(self.projMatrixLoc, self.proj)
+        # self.program.setUniformValue(self.mvMatrixLoc, self.camera * self.world)
+
+        # INTRODUCES CAMERA MOVEMENTS
+        # self.program.setUniformValue("projMatrix", self.proj)
+        # self.program.setUniformValue("mvMatrix", self.camera * self.world)
+
+
         # normalMatrix = self.world.normalMatrix()
         # self.program.setUniformValue(self.normalMatrixLoc, normalMatrix)
 
