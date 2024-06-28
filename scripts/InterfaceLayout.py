@@ -8,14 +8,16 @@ sys.path.append('../')
 
 
 from PySide2 import QtCore, QtGui
-from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget
+from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget, QProgressBar, QSpacerItem, QSizePolicy, QSplitter
 from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint
 from PySide2.QtOpenGL import QGLWidget
-from PySide2.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4
+from PySide2.QtGui import QPixmap, QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4
 from shiboken2 import VoidPtr
 from scripts.MeshAndShaders import Mesh
 from scripts.BranchGeometry import BranchGeometry
 from scripts.GLWidget import GLWidget
+from scripts.Course import Course
+
 # from PySide2.shiboken2 import VoidPtr
 
 # from PyQt6 import QtCore      # core Qt functionality
@@ -37,7 +39,7 @@ import ctypes                 # to communicate with c code under the hood
 # NAME: MainWindow
 # DESCRIPTION: Defines the standard layout of our interface with:
 #              the tree section on the left, whole tree in the top right,
-#              your task and progress bar locfation on the right, and 
+#              your task and progress bar location on the right, and 
 #              some sliders & buttons (not connected to anything)
 #
 #################################################
@@ -52,8 +54,17 @@ class MainWindow(QMainWindow):
 
         self.central_widget = QWidget() # GLWidget()
         self.setCentralWidget(self.central_widget)
+        self.central_layout = QHBoxLayout(self.central_widget)
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.central_layout.addWidget(self.splitter)
+        self.leftWidget = QWidget()
+        self.leftLayout = QVBoxLayout(self.leftWidget)
+        self.splitter.addWidget(self.leftWidget)
+        self.rightWidget = QWidget()
+        self.rightLayout = QVBoxLayout(self.rightWidget)
+        self.splitter.addWidget(self.rightWidget)
+        self.splitter.setSizes([self.width() - 200, 200])
 
-        self.layout = QGridLayout(self.central_widget)
 
         if tree_fname is not None:
             self.tree_section_widget = GLWidget(tree_fname) #GLWidget(self.central_widget)
@@ -61,7 +72,7 @@ class MainWindow(QMainWindow):
             tree_fname = '../tree_files/exemplarTree.obj'
             self.tree_section_widget = GLWidget(tree_fname)
         
-        self.layout.addWidget(self.tree_section_widget, 0, 0, 2, 1)  # Row 0, Column 0, Span 2 rows and 1 column
+        self.leftLayout.addWidget(self.tree_section_widget)  # Row 0, Column 0, Span 2 rows and 1 column
 
         # ADDING SLIDERS FOR THE GLWIDGET
         # self.horiz_slider = Slider(direction="horizontal")
@@ -72,7 +83,7 @@ class MainWindow(QMainWindow):
         self.horiz_slider = self.create_slider("horizontal", # the direction of the 
                                                SIGNAL("valueChanged(int)"), 
                                                self.tree_section_widget.setXRotation)
-        self.layout.addWidget(self.horiz_slider, 2, 0, 1, 1)
+        self.leftLayout.addWidget(self.horiz_slider)
 
 
         # self.vert_slider = self.create_slider(direction="vertical")
@@ -84,42 +95,82 @@ class MainWindow(QMainWindow):
             tree_fname = '../tree_files/exemplarTree.obj'
             self.whole_tree_view = GLWidget(tree_fname)
 
-        self.whole_tree_view.setFixedSize(200, 150)
-        self.layout.addWidget(self.whole_tree_view, 0, 1, 1, 1)  # Row 0, Column 1, Span 1 row and 1 column
+        # self.whole_tree_view.setFixedSize(200, 150)
+
+        # if the interface gets laggy (even when the whole_tree_view does not have a changing width), then try just disabling this
+        # https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QLayoutItem.html#PySide2.QtWidgets.PySide2.QtWidgets.QLayoutItem.heightForWidth
+        self.whole_tree_view.cached_width = 0
+        self.whole_tree_view.cached_height = 0
+        def whole_tree_view_height_for_width(w):
+            if self.whole_tree_view.cached_width != w:
+                h = w * 0.75
+                self.whole_tree_view.cached_width = w
+                self.whole_tree_view.cached_height = h
+            return self.whole_tree_view.cached_height
+
+        self.whole_tree_view.heightForWidth = whole_tree_view_height_for_width
+        self.whole_tree_view.hasHeightForWidth = lambda: True
+        # self.whole_tree_view.width 
+        # self.whole_tree_view.setFixedWidth(200)
+
+        # self.whole_tree_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.rightLayout.addWidget(self.whole_tree_view)
 
         # Create a QFrame for the directory and buttons column
-        self.frame = QFrame(self.central_widget) # self.central_widget
+        self.frame = QFrame() # self.central_widget
         self.frame.setFrameShape(QFrame.Shape.Box)
         self.frame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.layout.addWidget(self.frame, 1, 1, 1, 1)  # Row 1, Column 1, Span 1 row and 1 column
+        self.rightLayout.addWidget(self.frame)
 
         # Create a QVBoxLayout for the directory and buttons column
         self.directory_layout = QVBoxLayout(self.frame)
 
-        # Create a QLabel to display the directory
-        self.directory_label = QLabel("Your Task:")
-        self.directory_layout.addWidget(self.directory_label)
+        self.progressbar_layout =  QVBoxLayout()
+        self.directory_layout.addLayout(self.progressbar_layout)
 
-        # Create a QLabel to display the task description
-        self.task_label = QLabel("Task description goes here")
-        self.directory_layout.addWidget(self.task_label)
+        temp_progressbar = QVBoxLayout()
+        temp_progressbar_label = QLabel("Course:")
+        temp_progressbar_bar = QProgressBar()
+        temp_progressbar.addWidget(temp_progressbar_label)
+        temp_progressbar.addWidget(temp_progressbar_bar)
+        self.progressbars = [(temp_progressbar, temp_progressbar_label, temp_progressbar_bar)]
 
+        self.progressbar_layout.addLayout(temp_progressbar)
+
+        self.directory_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+        self.task = QHBoxLayout()
+        self.taskImage = QLabel()
+        self.taskImage.setFixedWidth(80)
+        self.taskImage.setFixedHeight(80)
+        self.taskImagePixMap = QPixmap("../icons/missing.png").scaled(80, 80, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+        self.taskImage.setPixmap(self.taskImagePixMap)
+        self.task.addWidget(self.taskImage)
+        self.taskDescription = QLabel("This is a description that should be written but isn't. Or, maybe it is. Who knows? I don't. Should I? Yikes, I better get on figuring that one out.")
+        self.taskDescription.setWordWrap(True)
+        self.task.addWidget(self.taskDescription)
+        self.directory_layout.addLayout(self.task)
+
+        self.prev_next_layout = QHBoxLayout()
+        self.directory_layout.addLayout(self.prev_next_layout)
 
         # Create buttons for navigation
         self.previous_button = QPushButton("Previous")
         # self.previous_button.clicked.connect(self.show_previous_image)
-        self.directory_layout.addWidget(self.previous_button)
+        self.prev_next_layout.addWidget(self.previous_button)
 
         self.next_button = QPushButton("Next")
-        # self.next_button.clicked.connect(self.show_next_image)
-        self.directory_layout.addWidget(self.next_button)
+        self.next_button.clicked.connect(self.update_from_course)
+        self.prev_next_layout.addWidget(self.next_button)
 
         # Create a Help button
         self.help_button = QPushButton("Help")
         # self.help_button.clicked.connect(self.show_help)
-        self.directory_layout.addWidget(self.help_button)
+        self.rightLayout.addWidget(self.help_button)
        
-        
+    def update_from_course(self):
+        print("e")
+
     
     def create_slider(self, direction, changedSignal, setSlot):
         slider = QSlider()
@@ -144,7 +195,7 @@ class MainWindow(QMainWindow):
 
 #######################################################
 # CLASS NAME: Slider
-# DESCRIPTION: Creates a slider on the widegt screen
+# DESCRIPTION: Creates a slider on the widget screen
 #######################################################
 class Slider(QWidget):
     def __init__(self, connectWidget, horiz=True, rDir=None, sDir=None, label="Slider", sliderType=1):
@@ -245,7 +296,7 @@ class Slider(QWidget):
 
     ##########################################
     #
-    # NAME: createscaleSlider
+    # NAME: createScaleSlider
     # DESCRIPTION: creates a slider for controlling the scale/size of the branch
     # INPUT: None
     # OUTPUT: 
