@@ -8,15 +8,20 @@ sys.path.append('../')
 
 
 from PySide2 import QtCore, QtGui
-from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget, QProgressBar, QSpacerItem, QSizePolicy, QSplitter
+from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget, QProgressBar, QSpacerItem, QSizePolicy, QSplitter, QAction, QMenu
 from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint
 from PySide2.QtOpenGL import QGLWidget
 from PySide2.QtGui import QPixmap, QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4
 from shiboken2 import VoidPtr
+
 from scripts.MeshAndShaders import Mesh
 from scripts.BranchGeometry import BranchGeometry
 from scripts.GLWidget import GLWidget
-from scripts.Course import Course
+
+from scripts.Course import Course, QuizMode, ModuleOrder
+from scripts.Learning import _LearningComponent, _LearningContent
+
+from typing import List, Literal, Tuple, Union
 
 # from PySide2.shiboken2 import VoidPtr
 
@@ -34,6 +39,22 @@ import ctypes                 # to communicate with c code under the hood
 
 
 
+""" 
+TODO:
+DONE Progress Marker
+     Right click progress bars to skip
+        bar.considered is incorrect right now
+        either doesn't update properly or never got set right
+DONE Right click Course to change mode
+     Review Comments on Learning.py
+DONE Fix not getting to 100% in at the end mode
+     Check other todo list
+     Add comments to Course.py
+     clean up this file some more
+     PUSH!
+"""
+
+
 
 ################################################
 # NAME: MainWindow
@@ -47,6 +68,8 @@ import ctypes                 # to communicate with c code under the hood
 class MainWindow(QMainWindow):
     def __init__(self, parent=None, tree_fname=None):
         super().__init__()
+
+        self.course: _LearningComponent = Course().next()
 
         # self.main_window = main_window
         self.setWindowTitle("Pruning Interface Test")
@@ -97,21 +120,10 @@ class MainWindow(QMainWindow):
 
         # self.whole_tree_view.setFixedSize(200, 150)
 
-        # if the interface gets laggy (even when the whole_tree_view does not have a changing width), then try just disabling this
         # https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QLayoutItem.html#PySide2.QtWidgets.PySide2.QtWidgets.QLayoutItem.heightForWidth
-        self.whole_tree_view.cached_width = 0
-        self.whole_tree_view.cached_height = 0
-        def whole_tree_view_height_for_width(w):
-            if self.whole_tree_view.cached_width != w:
-                h = w * 0.75
-                self.whole_tree_view.cached_width = w
-                self.whole_tree_view.cached_height = h
-            return self.whole_tree_view.cached_height
-
-        self.whole_tree_view.heightForWidth = whole_tree_view_height_for_width
+        self.whole_tree_view.heightForWidth = lambda w: (w >> 1) + (w >> 2) # it is strongly recommended to cache, but in practice it is just as laggy as this so im not gonna
+        # if the interface gets laggy (even when the whole_tree_view does not have a changing width), then try removing this line of code ↓
         self.whole_tree_view.hasHeightForWidth = lambda: True
-        # self.whole_tree_view.width 
-        # self.whole_tree_view.setFixedWidth(200)
 
         # self.whole_tree_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.rightLayout.addWidget(self.whole_tree_view)
@@ -128,22 +140,18 @@ class MainWindow(QMainWindow):
         self.progressbar_layout =  QVBoxLayout()
         self.directory_layout.addLayout(self.progressbar_layout)
 
-        temp_progressbar = QVBoxLayout()
-        temp_progressbar_label = QLabel("Course:")
-        temp_progressbar_bar = QProgressBar()
-        temp_progressbar.addWidget(temp_progressbar_label)
-        temp_progressbar.addWidget(temp_progressbar_bar)
-        self.progressbars = [(temp_progressbar, temp_progressbar_label, temp_progressbar_bar)]
-
-        self.progressbar_layout.addLayout(temp_progressbar)
+        self.progressbars: List[Tuple[QLabel, QProgressBar]] = []
 
         self.directory_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
+        self.cachedImages = {
+            "missing.png": QPixmap("../icons/missing.png").scaled(80, 80, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+        }
         self.task = QHBoxLayout()
         self.taskImage = QLabel()
         self.taskImage.setFixedWidth(80)
         self.taskImage.setFixedHeight(80)
-        self.taskImagePixMap = QPixmap("../icons/missing.png").scaled(80, 80, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+        self.taskImagePixMap = self.cachedImages["missing.png"]
         self.taskImage.setPixmap(self.taskImagePixMap)
         self.task.addWidget(self.taskImage)
         self.taskDescription = QLabel("This is a description that should be written but isn't. Or, maybe it is. Who knows? I don't. Should I? Yikes, I better get on figuring that one out.")
@@ -156,23 +164,118 @@ class MainWindow(QMainWindow):
 
         # Create buttons for navigation
         self.previous_button = QPushButton("Previous")
-        # self.previous_button.clicked.connect(self.show_previous_image)
+        self.previous_button.clicked.connect(self.prev_from_course)
         self.prev_next_layout.addWidget(self.previous_button)
 
         self.next_button = QPushButton("Next")
-        self.next_button.clicked.connect(self.update_from_course)
+        self.next_button.clicked.connect(self.next_from_course)
         self.prev_next_layout.addWidget(self.next_button)
 
         # Create a Help button
         self.help_button = QPushButton("Help")
         # self.help_button.clicked.connect(self.show_help)
         self.rightLayout.addWidget(self.help_button)
+
+        self.update_from_course()
        
-    def update_from_course(self):
-        print("e")
+    def next_from_course(self):
+        next = self.course.next()
+        if next is None:
+            print("you reached the end!")
+        else:
+            self.course = next
+            self.update_from_course()
 
     
-    def create_slider(self, direction, changedSignal, setSlot):
+    def prev_from_course(self):
+        prev = self.course.prev()
+        if prev is None:
+            print("you reached the beginning!")
+        else:
+            self.course = prev
+            self.update_from_course()
+    
+    def update_from_course(self):
+        #Content
+        if isinstance(self.course, _LearningContent):
+            if self.course.viewable:
+                (redirect, content) = self.course.view()
+                self.course = redirect
+                print(content)
+
+        #Progressbars
+        def progressBarContextMenu(self, event, main):
+            context_menu = QMenu(self)
+
+            beginning_action = QAction("Beginning", self)
+            skip_action = QAction("Skip", self)
+
+            def goToBeginning():
+                beginning = self.considered.firstChild()
+                main.redirect(beginning)
+            
+            def skip():
+                end = self.considered.lastChild()
+                beyond = end.next()
+                main.redirect(beyond or end)
+
+            beginning_action.triggered.connect(goToBeginning)
+            skip_action.triggered.connect(skip)
+
+            context_menu.addAction(beginning_action)
+            context_menu.addAction(skip_action)
+
+            context_menu.exec_(event.globalPos())
+
+        progressbars = self.course.getProgress()[::-1]
+
+        for i in range(len(progressbars)):
+            if i < len(self.progressbars):# edit
+                (label, bar) = self.progressbars[i]
+                label.setText(progressbars[i].title) 
+                bar.setValue(progressbars[i].value(0.5) * 100)
+                bar.considered = progressbars[i].owner
+            else: #add 
+                label = QLabel(progressbars[i].title, self)
+                bar = QProgressBar(self)
+                bar.setValue(progressbars[i].value(0.5) * 100)
+                self.progressbar_layout.addWidget(label)
+                self.progressbar_layout.addWidget(bar)
+                self.progressbars.append((label, bar))
+                bar.considered = progressbars[i].owner
+                bar.contextMenuEvent = lambda event: progressBarContextMenu(bar, event, self)
+
+
+        for _ in range(len(progressbars), len(self.progressbars)): # remove
+            (label, bar) = self.progressbars.pop(len(progressbars))
+            self.progressbar_layout.removeWidget(label)
+            self.progressbar_layout.removeWidget(bar)
+            label.setParent(None)
+            bar.setParent(None)
+            # label.deleteLater()
+            # bar.deleteLater()
+
+        # Marker
+        marker = self.course.getProgressMarker()
+        if marker is None:
+            self.taskDescription.setText("")
+            self.taskImage.setPixmap(self.cachedImages["missing.png"])
+        else:
+            self.taskDescription.setText(marker.description)
+            if marker.image not in self.cachedImages:
+                loaded = QPixmap(f"../icons/{marker.image}")
+                if loaded.isNull():
+                    self.cachedImages[marker.image] = self.cachedImages["missing.png"]
+                else:
+                    self.cachedImages[marker.image] = loaded.scaled(80, 80, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+            self.taskImage.setPixmap(self.cachedImages[marker.image])
+
+    def redirect(self, place: _LearningComponent):
+        self.course = place
+        self.update_from_course()
+
+    
+    def create_slider(self, direction: Literal["horizontal", "vertical"], changedSignal, setSlot):
         slider = QSlider()
         if direction == "horizontal":
             slider.setOrientation(Qt.Horizontal)
@@ -190,8 +293,73 @@ class MainWindow(QMainWindow):
         self.tree_section_widget.connect(slider, SIGNAL("valueChanged(int)"), setSlot)
         # QWidget.connect(self.tree_section_widget, changedSignal, slider, SLOT("setValue(int)")) 
     
-        return slider       
-       
+        return slider
+    
+    def contextMenuEvent(self, event):
+        # Create a custom context menu
+        contextMenu = QMenu(self)
+
+        actualCourse:Course = self.course.getRoot()
+        
+        # Add custom actions
+        at_the_end = QAction('At The End', self)
+        build_off = QAction('Build Off', self)
+        spatial = QAction('Spatial', self)
+        rule = QAction('Rule', self)
+
+        at_the_end.setCheckable(True)
+        build_off.setCheckable(True)
+        spatial.setCheckable(True)
+        rule.setCheckable(True)
+
+        match actualCourse.quizMode:
+            case QuizMode.AT_THE_END:
+                at_the_end.setChecked(True)
+                at_the_end.setDisabled(True)
+            case QuizMode.BUILD_OFF:
+                build_off.setChecked(True)
+                build_off.setDisabled(True)
+
+        match actualCourse.moduleOrder:
+            case ModuleOrder.SPATIAL:
+                spatial.setChecked(True)
+                spatial.setDisabled(True)
+            case ModuleOrder.RULE:
+                rule.setChecked(True)
+                rule.setDisabled(True)
+
+        at_the_end.triggered.connect(self.switchToAtTheEnd)
+        build_off.triggered.connect(self.switchToBuildOff)
+        spatial.triggered.connect(self.switchToSpatial)
+        rule.triggered.connect(self.switchToRule)
+
+        # .setCheckable(True)
+        
+        contextMenu.addAction(at_the_end)
+        contextMenu.addAction(build_off)
+        contextMenu.addSeparator()
+        contextMenu.addAction(spatial)
+        contextMenu.addAction(rule)
+        
+        # Show the context menu at the position of the right-click
+        contextMenu.exec_(event.globalPos())
+
+    def switchToAtTheEnd(self):
+        self.course.getRoot().quizMode = QuizMode.AT_THE_END
+        self.update_from_course()
+
+    def switchToBuildOff(self):
+        self.course.getRoot().quizMode = QuizMode.BUILD_OFF
+        self.update_from_course()
+
+    def switchToSpatial(self):
+        self.course.getRoot().moduleOrder = ModuleOrder.SPATIAL
+        self.update_from_course()
+
+    def switchToRule(self):
+        self.course.getRoot().moduleOrder = ModuleOrder.RULE
+        self.update_from_course()
+
 
 #######################################################
 # CLASS NAME: Slider
@@ -231,7 +399,7 @@ class Slider(QWidget):
     # OUTPUT: 
     #   - slider: a slider that is either vertical or horizontal for controlling the branch length
     ###########################################
-    def createLengthSlider(self):
+    def createLengthSlider(self) -> QSlider:
         slider = QSlider()
         if self.horiz:
             slider.setOrientation(Qt.Horizontal)
@@ -258,7 +426,7 @@ class Slider(QWidget):
     #   - slider: a slider that is either vertical or horizontal for controlling the rotation of the branch
     ###########################################
     
-    def createRotationSlider(self):
+    def createRotationSlider(self) -> QSlider:
         slider = QSlider()
         if self.horiz:
             slider.setOrientation(Qt.Horizontal)
@@ -302,7 +470,7 @@ class Slider(QWidget):
     # OUTPUT: 
     #   - slider: a slider that is either vertical or horizontal for controlling the scale/size of the branch
     ###########################################
-    def createScaleSlider(self):
+    def createScaleSlider(self) -> QSlider:
         slider = QSlider()
         if self.horiz:
             slider.setOrientation(Qt.Horizontal)
@@ -344,10 +512,10 @@ class Slider(QWidget):
     #   - getSlider: a slider that is either vertical or horizontal for controlling the branch length
     #   - setSlider: None
     ###########################################
-    def setValue(self, val):
+    def setValue(self, val: Union[int, float]):
         self.slider.setValue(val)
 
-    def getSlider(self):
+    def getSlider(self) -> QSlider:
         return self.slider
     # different functions for changing values
     
@@ -416,7 +584,7 @@ class TestWindow(QWidget):
         self.setLayout(mainLayout)
 
     
-    def createRotationSlider(self, direction):
+    def createRotationSlider(self, direction: Literal["horizontal", "vertical"]) -> QSlider:
         slider = QSlider()
         if direction == "horizontal":
             slider.setOrientation(Qt.Horizontal)
@@ -433,7 +601,7 @@ class TestWindow(QWidget):
     
         return slider
 
-    def createScaleSlider(self, direction):
+    def createScaleSlider(self, direction: Literal["horizontal", "vertical"]) -> QSlider:
         slider = QSlider()
         if direction == "horizontal":
             slider.setOrientation(Qt.Horizontal)
