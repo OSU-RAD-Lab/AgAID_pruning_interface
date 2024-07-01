@@ -1,5 +1,6 @@
 
 import sys
+from typing import Optional
 sys.path.append('../')
 from scripts.Learning import LearningContent, ListLearningStructure , _LearningStructure, ProgressMarker, QuizStructure, RandomlyOrderedStringMultipleChoice
 from enum import Enum
@@ -130,9 +131,10 @@ class Course(ListLearningStructure):
                     self.vigorModule,
                     self.canopyModule,
                     self.spacingModule,
+                    self.vigorCanopySpacingQuiz,
                     self.spacingVigorCanopyFinal
                 ]
-        self.markDirty = True
+        self.lengthDirty = True
 
 
 def createIntroductionModule():
@@ -191,7 +193,7 @@ def createCanopyModule():
     root.addChild(LearningContent("Canopy Module", "Canopy Module"))
     return root
 
-def createSpacingQuiz(title = "Spacing Quiz", progressMarker = ProgressMarker("test", "test.png")):
+def createSpacingQuiz(title = "Spacing Quiz", progressMarker: Optional[ProgressMarker] = ProgressMarker("test", "test.png")):
     root = QuizStructure(title, progressMarker)
     root.addChild(RandomlyOrderedStringMultipleChoice(
         "Which quiz is this?",
@@ -201,7 +203,7 @@ def createSpacingQuiz(title = "Spacing Quiz", progressMarker = ProgressMarker("t
     ))
     return root
 
-def createVigorQuiz(title = "Vigor Quiz", progressMarker = ProgressMarker("test", "test.png")):
+def createVigorQuiz(title = "Vigor Quiz", progressMarker: Optional[ProgressMarker] = ProgressMarker("test", "test.png")):
     root = QuizStructure(title, progressMarker)
     root.addChild(RandomlyOrderedStringMultipleChoice(
         "Which quiz is this?",
@@ -211,7 +213,7 @@ def createVigorQuiz(title = "Vigor Quiz", progressMarker = ProgressMarker("test"
     ))
     return root
 
-def createSpacingVigorQuiz(title = "Vigor+ Quiz", progressMarker = ProgressMarker("test", "test.png")):
+def createSpacingVigorQuiz(title = "Vigor+ Quiz", progressMarker: Optional[ProgressMarker] = ProgressMarker("test", "test.png")):
     root = QuizStructure(title, progressMarker)
     root.addChild(RandomlyOrderedStringMultipleChoice(
         "Which quiz is this?",
@@ -221,7 +223,7 @@ def createSpacingVigorQuiz(title = "Vigor+ Quiz", progressMarker = ProgressMarke
     ))
     return root
 
-def createVigorCanopyQuiz(title = "Canopy+ Quiz", progressMarker = ProgressMarker("test", "test.png")):
+def createVigorCanopyQuiz(title = "Canopy+ Quiz", progressMarker: Optional[ProgressMarker] = ProgressMarker("test", "test.png")):
     root = QuizStructure(title, progressMarker)
     root.addChild(RandomlyOrderedStringMultipleChoice(
         "Which quiz is this?",
@@ -231,7 +233,7 @@ def createVigorCanopyQuiz(title = "Canopy+ Quiz", progressMarker = ProgressMarke
     ))
     return root
 
-def createSpacingVigorCanopyQuiz(title = "Canopy++ Quiz", progressMarker = ProgressMarker("test", "test.png")):
+def createSpacingVigorCanopyQuiz(title = "Canopy++ Quiz", progressMarker: Optional[ProgressMarker] = ProgressMarker("test", "test.png")):
     root = QuizStructure(title, progressMarker)
     root.addChild(RandomlyOrderedStringMultipleChoice(
         "Which quiz is this?",
@@ -241,7 +243,7 @@ def createSpacingVigorCanopyQuiz(title = "Canopy++ Quiz", progressMarker = Progr
     ))
     return root
 
-def createVigorCanopySpacingQuiz(title = "Spacing++ Quiz", progressMarker = ProgressMarker("test", "test.png")):
+def createVigorCanopySpacingQuiz(title = "Spacing++ Quiz", progressMarker: Optional[ProgressMarker] = ProgressMarker("test", "test.png")):
     root = QuizStructure(title, progressMarker)
     root.addChild(RandomlyOrderedStringMultipleChoice(
         "Which quiz is this?",

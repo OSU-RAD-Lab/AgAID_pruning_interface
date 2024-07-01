@@ -12,14 +12,14 @@ from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, Q
 from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint
 from PySide2.QtOpenGL import QGLWidget
 from PySide2.QtGui import QPixmap, QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4
-from shiboken2 import VoidPtr
+# from shiboken2 import VoidPtr
 
 from scripts.MeshAndShaders import Mesh
 from scripts.BranchGeometry import BranchGeometry
 from scripts.GLWidget import GLWidget
 
 from scripts.Course import Course, QuizMode, ModuleOrder
-from scripts.Learning import _LearningComponent, _LearningContent
+from scripts.Learning import _LearningComponent, _LearningContent, _LearningStructure
 
 from typing import List, Literal, Tuple, Union
 
@@ -42,14 +42,16 @@ import ctypes                 # to communicate with c code under the hood
 """ 
 TODO:
 DONE Progress Marker
-     Right click progress bars to skip
-        bar.considered is incorrect right now
-        either doesn't update properly or never got set right
+DONE Right click progress bars to skip
 DONE Right click Course to change mode
      Review Comments on Learning.py
 DONE Fix not getting to 100% in at the end mode
-     Check other todo list
+     Maybe?? move _LearningContent and subclasses of it into course.py
+DONE Make last three quizzes be in final check
+DONE Test in python 3.10
+DONE Check other todo list
      Add comments to Course.py
+     Add comments to InterfaceLayout.py
      clean up this file some more
      PUSH!
 """
@@ -69,7 +71,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None, tree_fname=None):
         super().__init__()
 
-        self.course: _LearningComponent = Course().next()
+        self.course: _LearningComponent = Course().next() # type: ignore
 
         # self.main_window = main_window
         self.setWindowTitle("Pruning Interface Test")
@@ -121,7 +123,7 @@ class MainWindow(QMainWindow):
         # self.whole_tree_view.setFixedSize(200, 150)
 
         # https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QLayoutItem.html#PySide2.QtWidgets.PySide2.QtWidgets.QLayoutItem.heightForWidth
-        self.whole_tree_view.heightForWidth = lambda w: (w >> 1) + (w >> 2) # it is strongly recommended to cache, but in practice it is just as laggy as this so im not gonna
+        self.whole_tree_view.heightForWidth = lambda arg__1: (arg__1 >> 1) + (arg__1 >> 2) # it is strongly recommended to cache, but in practice it is just as laggy as this so im not gonna
         # if the interface gets laggy (even when the whole_tree_view does not have a changing width), then try removing this line of code ↓
         self.whole_tree_view.hasHeightForWidth = lambda: True
 
@@ -185,7 +187,6 @@ class MainWindow(QMainWindow):
         else:
             self.course = next
             self.update_from_course()
-
     
     def prev_from_course(self):
         prev = self.course.prev()
@@ -204,54 +205,29 @@ class MainWindow(QMainWindow):
                 print(content)
 
         #Progressbars
-        def progressBarContextMenu(self, event, main):
-            context_menu = QMenu(self)
-
-            beginning_action = QAction("Beginning", self)
-            skip_action = QAction("Skip", self)
-
-            def goToBeginning():
-                beginning = self.considered.firstChild()
-                main.redirect(beginning)
-            
-            def skip():
-                end = self.considered.lastChild()
-                beyond = end.next()
-                main.redirect(beyond or end)
-
-            beginning_action.triggered.connect(goToBeginning)
-            skip_action.triggered.connect(skip)
-
-            context_menu.addAction(beginning_action)
-            context_menu.addAction(skip_action)
-
-            context_menu.exec_(event.globalPos())
-
         progressbars = self.course.getProgress()[::-1]
 
         for i in range(len(progressbars)):
             if i < len(self.progressbars):# edit
                 (label, bar) = self.progressbars[i]
                 label.setText(progressbars[i].title) 
-                bar.setValue(progressbars[i].value(0.5) * 100)
+                bar.setValue(int(progressbars[i].value(0.5) * 100))
                 bar.considered = progressbars[i].owner
             else: #add 
                 label = QLabel(progressbars[i].title, self)
-                bar = QProgressBar(self)
-                bar.setValue(progressbars[i].value(0.5) * 100)
+                bar = ProgressBarWithContextMenuToSkip(progressbars[i].owner, self)
+                bar.setValue(int(progressbars[i].value(0.5) * 100))
                 self.progressbar_layout.addWidget(label)
                 self.progressbar_layout.addWidget(bar)
                 self.progressbars.append((label, bar))
-                bar.considered = progressbars[i].owner
-                bar.contextMenuEvent = lambda event: progressBarContextMenu(bar, event, self)
 
 
         for _ in range(len(progressbars), len(self.progressbars)): # remove
             (label, bar) = self.progressbars.pop(len(progressbars))
             self.progressbar_layout.removeWidget(label)
             self.progressbar_layout.removeWidget(bar)
-            label.setParent(None)
-            bar.setParent(None)
+            label.setParent(None) # type: ignore
+            bar.setParent(None) # type: ignore
             # label.deleteLater()
             # bar.deleteLater()
 
@@ -273,7 +249,6 @@ class MainWindow(QMainWindow):
     def redirect(self, place: _LearningComponent):
         self.course = place
         self.update_from_course()
-
     
     def create_slider(self, direction: Literal["horizontal", "vertical"], changedSignal, setSlot):
         slider = QSlider()
@@ -299,7 +274,7 @@ class MainWindow(QMainWindow):
         # Create a custom context menu
         contextMenu = QMenu(self)
 
-        actualCourse:Course = self.course.getRoot()
+        actualCourse:Course = self.course.getRoot() # type: ignore
         
         # Add custom actions
         at_the_end = QAction('At The End', self)
@@ -345,20 +320,62 @@ class MainWindow(QMainWindow):
         contextMenu.exec_(event.globalPos())
 
     def switchToAtTheEnd(self):
-        self.course.getRoot().quizMode = QuizMode.AT_THE_END
+        self.course.getRoot().quizMode = QuizMode.AT_THE_END # type: ignore
         self.update_from_course()
 
     def switchToBuildOff(self):
-        self.course.getRoot().quizMode = QuizMode.BUILD_OFF
+        self.course.getRoot().quizMode = QuizMode.BUILD_OFF # type: ignore
         self.update_from_course()
 
     def switchToSpatial(self):
-        self.course.getRoot().moduleOrder = ModuleOrder.SPATIAL
+        self.course.getRoot().moduleOrder = ModuleOrder.SPATIAL # type: ignore
         self.update_from_course()
 
     def switchToRule(self):
-        self.course.getRoot().moduleOrder = ModuleOrder.RULE
+        self.course.getRoot().moduleOrder = ModuleOrder.RULE # type: ignore
         self.update_from_course()
+
+
+class ProgressBarWithContextMenuToSkip(QProgressBar):
+    main: MainWindow
+    considered: _LearningStructure
+
+    def __init__(self, considered: _LearningStructure, main: MainWindow):
+        super().__init__(main)
+        self.main = main
+        self.considered = considered
+    
+    def contextMenuEvent(self, event):
+
+        context_menu = QMenu(self)
+
+        beginning_action = QAction("Beginning", self)
+        skip_action = QAction("Skip", self)
+
+        def goToBeginning():
+            beginning = self.considered.firstChild()
+            if beginning is None: return
+            if not beginning.viewable:
+                beginning = beginning.next()
+            self.main.redirect(beginning)
+        
+        def skip():
+            parent = self.considered.parent
+            if parent is None: return
+            next = parent.intoNext(self.considered)
+            end = self.considered.lastChild()
+            if end is not None: end = end.intoPrev(parent)
+            if next is None and end is None: return
+            self.main.redirect(next or end)
+
+        beginning_action.triggered.connect(goToBeginning)
+        skip_action.triggered.connect(skip)
+
+        context_menu.addAction(beginning_action)
+        if (self.considered.parent is not None): context_menu.addAction(skip_action)
+
+        context_menu.exec_(event.globalPos())
+
 
 
 #######################################################

@@ -39,10 +39,7 @@ class ProgressReturn:
     def makeStringFromList(list: List['ProgressReturn'], bias = 0.5) -> str:
         result = ""
         for i in list[::-1]:
-            result += f"{i.title} {int(100 * i.value(bias))}%"
-            if i.marker is not None:
-                result += f" {i.marker.description} {i.marker.image}"
-            result += "\n"
+            result += f"{i.title} {int(100 * i.value(bias))}%\n"
         
         return result
 
@@ -230,7 +227,7 @@ class _LearningStructure(_LearningComponent):
             if child == endChild: return length
             child = self.nextChild(child) # type: ignore - child should never return None before == endChild
         raise OverflowError("Probable infinite loop: Was not able to find endChild by calling nextChild within 100000 times on firstChild")
-    
+
 
     # subclasses of _LearningStructure that modify the order of children / store children in a different way than an list  will need to modify these couple methods
     
