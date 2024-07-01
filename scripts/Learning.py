@@ -1,7 +1,7 @@
-# very OOP heavy hierarchal data structure to represent the entire learning course as a tree
+# hierarchal/OOP data structure to represent the entire learning course as a tree
 # In the tree, the vertices are subclasses of _LearningComponent
 # Something is is viewable and requires pressing the NEXT button to continue if it has self.viewable = True
-# Something's title is shown if it is viewed OR any of its descendants are viewed (will act like a breadcrumb trail)
+# If something has a title and is an ancestor of the currently viewed, then there will be a progress bar for it.
 # _LearningStructure (and subclasses of it) are currently the only _LearningComponent that have children
 # You may wish to subclass _LearningStructure if you want to be able to dynamically change the ordering of the children (for example top level Course to change the order of modules)
 # _LearningStructure is currently the only class that can take ProgressMarkers which is not a _LearningComponent but will show up with an image and a description
@@ -18,16 +18,18 @@ from typing import Any, List, Optional, Tuple, Union
 
 # Used for returns from when .getProgress() is called on _LearningComponent 
 class ProgressReturn:
-    title: str
     completed: int
     total: int
     owner: '_LearningStructure'
 
-    def __init__(self, title: str, completed: int, total:int, owner):
-        self.title = title
+    def __init__(self, completed: int, total:int, owner):
         self.completed = completed
         self.total = total
         self.owner = owner
+
+    @property
+    def title(self):
+        return self.owner.title
 
     # return the amount the way through as a number between 0 and 1
     # bias is added on so a bias of 0 will count the current question as incomplete (you will never get to 100%) and a bias of 1 will count the current question as completed (you will start with some progress)
@@ -35,6 +37,7 @@ class ProgressReturn:
     def value(self, bias: float = 0) -> float:
         return (self.completed + bias) / self.total
     
+    # just a nice way to see what a list of progress returns looks like
     @staticmethod
     def makeStringFromList(list: List['ProgressReturn'], bias = 0.5) -> str:
         result = ""
@@ -43,18 +46,20 @@ class ProgressReturn:
         
         return result
 
+# for handling a single component without any children without any content
+# everything that is a learning component extends this
+
+# should only be subclassed
+# if you image a course as a tree, subclasses of this represent vertices
 class _LearningComponent:
     title: str
     parent: Optional['_LearningStructure']
     viewable: bool
 
-    # should only be subclassed
-    # if you image a course as a tree, subclasses of this represent vertices
-    # `title` is a string and if its empty will be ignored
     # `viewable` should be true for any component that can be viewed
     def __init__(self, title = "", viewable = True):
         self.title = title
-        self.parent = None # every component should only have zero or one parent
+        self.parent = None # every component should only have zero or one parent. A component can have a parent that does not recognize it as a child as long the component is not directly interacted with.
         self.viewable = viewable
 
     # used to find the next viewable component in the course
@@ -70,7 +75,6 @@ class _LearningComponent:
         if self.parent is None: return None
         return self.parent.intoPrev(self)
     
-    # should not be called externally
     # while next() goes to the next _LearningComponent, intoNext(previous) tries to enter this _LearningComponent - but if it is not viewable, it goes onto the next one
     # it returns a _LearningComponent (which might be itself or a different one or None)
     # if it is not viewable then it calls next to determine what the next component should be
@@ -96,6 +100,7 @@ class _LearningComponent:
         if self.parent is None: return self
         return self.parent.getRoot()
     
+    # get a list of all ancestors with a title captured in a progress return
     def getProgress(self) -> List[ProgressReturn]:
         if self.parent is None: return []
         return self.parent.getProgressFromChild(self, 0, [])
@@ -105,10 +110,33 @@ class _LearningComponent:
         if self.parent is None: return None
         else: return self.parent.getProgressMarker()
 
+    # returns true if recursively self.parent.hasChild(self) returns True - meaning that from the root it is possible to navigate to this Component
+    def isConnectedToRoot(self, previous = None):
+        if previous is not None: return False
+        if not self.viewable: return False
+        if self.parent is None: return True
+        return self.parent.isConnectedToRoot(self)
 
+
+# This will hold all the data that will be displayed on the page
+# currently it just holds a string but that will change!
+# In the future it should hold the information such as
+#     which model to show, where to show it, how to orient the camera,
+#     wether or not this is a quiz, if it is what the questions are,
+#     any call-outs where those are what they say,
+#     what controls the user has etc
+class Content():
+    content: str
+
+    def __init__(self, content = ""):
+        self.content = content
+
+
+# has a view method and can return some content
 class _LearningContent():
+
     # should return in the form of a 2 sized tuple, the new thing to LearningComponent and the actual content to display 
-    def view(self) -> Tuple[_LearningComponent, Any]:
+    def view(self) -> Tuple[_LearningComponent, Content]:
         return (self, None) # type: ignore
     
 
@@ -169,7 +197,6 @@ class _LearningStructure(_LearningComponent):
         if lastChild is None: return super().prev()
         return lastChild.intoPrev(self)
     
-    # not for external use
     # same as superclass's but implemented to handle having children
     def intoNext(self, previous: _LearningComponent) -> Optional[_LearningComponent]:
         # calling this from something that is not a child means is assumed to be the first visit - so because of pre-ordering call its super().intoNext(previous) to go into this _LearningComponent
@@ -209,7 +236,7 @@ class _LearningStructure(_LearningComponent):
         totalCompleted = progressTill + current
 
         if self.title != "":
-            array.append(ProgressReturn(self.title, totalCompleted, self.length(), self))
+            array.append(ProgressReturn(totalCompleted, self.length(), self))
 
         if self.parent is None: return array
         return self.parent.getProgressFromChild(self, totalCompleted, array)
@@ -227,6 +254,14 @@ class _LearningStructure(_LearningComponent):
             if child == endChild: return length
             child = self.nextChild(child) # type: ignore - child should never return None before == endChild
         raise OverflowError("Probable infinite loop: Was not able to find endChild by calling nextChild within 100000 times on firstChild")
+
+    # returns true if recursively self.parent.hasChild(self) returns True - meaning that from the root it is possible to navigate to this Component
+    def isConnectedToRoot(self, previous = None):
+        if previous is not None: 
+            if not self.hasChild(previous):
+                return False
+        if self.parent is None: return True
+        return self.parent.isConnectedToRoot(self)
 
 
     # subclasses of _LearningStructure that modify the order of children / store children in a different way than an list  will need to modify these couple methods
@@ -264,7 +299,7 @@ class _LearningStructure(_LearningComponent):
     def prevChild(self, next: _LearningComponent) -> Optional[_LearningComponent]:
         return None
 
-# a simple implementation of 
+# a simple implementation of _LearningStructure using a list
 class ListLearningStructure(_LearningStructure):
     children: List[_LearningComponent]
 
@@ -303,18 +338,24 @@ class ListLearningStructure(_LearningStructure):
 
 
 class LearningContent(_LearningComponent, _LearningContent):
+    content: Content
+    
     # this is a place holder and an example - this should be replaced with multiple other classes that have other real pieces of content
     # for example a page that displays text in a formatted way or a video that plays or a question or the result of a question - the possibilities are endless
     # for things that display, a title is recommended (to skip use empty string)
-    def __init__(self, title: str, content):
-        super().__init__(title)
-        self.content = content
+    def __init__(self, title: str, content: str):
 
-    def view(self):
+        super().__init__(title)
+        self.content = Content(content)
+
+    def view(self) -> Tuple[_LearningComponent, Content]:
         return (self, self.content)
             
 # pretends to be have a length larger even though it is actually only one instance
 # need to call next multiple times to get through it
+# !! !! !! WARNING !! !! !! not rigorously tested, and probably has multiple bugs
+# however, it does the trick in its current use case as a subclass for UnviewedQuizQuestion
+# # so I dont think spending development time on it right now is important
 class _LearningMultiComponent(_LearningComponent):
     current: int
     _size: int
@@ -346,10 +387,12 @@ class _LearningMultiComponent(_LearningComponent):
             self.viewable = self._viewable
         self._size = size
 
+    # get the instance of this but it is at the beginning
     def first(self) -> '_LearningMultiComponent':
         self.current = 0
         return self
     
+    # get the instance of this but it is at the end
     def last(self) -> '_LearningMultiComponent':
         self.current = self.size - 1
         return self
@@ -389,12 +432,14 @@ class _LearningMultiComponent(_LearningComponent):
         else: return 0
 
     # potentially broken
+    # see superclass
     def getProgress(self) -> List[ProgressReturn]:
         if self.size <= 1 or self.title == "" or not self.viewable: return super().getProgress()
-        if self.parent is None: return [ProgressReturn(self.title, self.current, self.length(), self)]
-        return self.parent.getProgressFromChild(self, self.length(), [ProgressReturn(self.title, self.current, self.length(), self)])
+        if self.parent is None: return [ProgressReturn(self.current, self.length(), self)]
+        return self.parent.getProgressFromChild(self, self.length(), [ProgressReturn(self.current, self.length(), self)])
 
 # should not be created outside of being used within QuizStructure
+# is used to make QuizStructure seem the appropriate length
 class UnviewedQuizQuestion(_LearningMultiComponent, _LearningContent):
     parent: 'QuizStructure'
 
@@ -402,9 +447,9 @@ class UnviewedQuizQuestion(_LearningMultiComponent, _LearningContent):
         super().__init__(0, "???")
         self.viewable = True
 
-    def view(self) -> Tuple['_LearningComponent', Any]:
+    def view(self) -> Tuple[_LearningComponent, Content]:
         if self.size == 0:
-            return (self, None)
+            return (self, Content())
         return self.parent.viewUnviewed()
 
 # This is a subclass of _LearningStructure that can only have subclasses of _QuizQuestion as children
@@ -458,7 +503,7 @@ class QuizStructure(_LearningStructure):
     # instead of viewing the UnviewedQuizQuestion, it views a randomChild from randomizeBucket
     # transfers holdingBucket to randomizeBucket if nessarary
     # errors if both buckets are empty or the size of UnviewedQuizQuestion is zero
-    def viewUnviewed(self) -> Tuple['_LearningComponent', Any]:
+    def viewUnviewed(self) -> Tuple[_LearningComponent, Content]:
         if self.unviewed.size == 0:
             raise OverflowError("UnviewedQuizQuestion with size zero was attempted to be viewed - which is illegal")
         self.unviewed.size -= 1
@@ -492,6 +537,7 @@ class QuizStructure(_LearningStructure):
         else:
             return self.viewedChildren[0]
         
+    # see superclass
     def hasChild(self, child: Optional[_LearningComponent]) -> bool:
         return child in self.viewedChildren or child == self.unviewed
 
@@ -583,10 +629,10 @@ class _QuizQuestion(_LearningComponent, _LearningContent):
     # you will probably want to use self.state somewhere in your implementation of this
     # EXAMPLE:
     # def view(self):
-    #    if self.state == QuestionState.INCORRECT: return "WRONG"
-    #    else: return self.questionDataThatIsAddedByYourSubClass
-    def view(self) -> Tuple['_QuizQuestion', Any]:
-        return (self, None)
+    #    if self.state == QuestionState.INCORRECT: return (self, Content("WRONG"))
+    #    else: return (self, self.questionDataThatIsAddedByYourSubClassThatIsAContent)
+    def view(self) -> Tuple[_LearningComponent, Content]:
+        return (self, Content())
     
     # !!must be implemented!!
     # you must call the superclass at the end of your implementation of it with answer being a QuestionState of what the state should change to
@@ -666,17 +712,17 @@ class RandomlyOrderedStringMultipleChoice(_QuizQuestion):
         return result
     
     # returns the tuple for viewing (as defined by _LearningContent (a _LearningComponent to redirect to and the content (a string in this example) to display))
-    def view(self) -> Tuple[_LearningComponent, Any]:
+    def view(self) -> Tuple[_LearningComponent, Content]:
         match self.state:
             case QuestionState.INCOMPLETE:
                 if self.showInputHint:
-                    return (self, self.viewBasic() + f"\nYour answer must be an int between 1 and {len(self.options)}")
+                    return (self, Content(self.viewBasic() + f"\nYour answer must be an int between 1 and {len(self.options)}"))
                 else:
-                    return (self, self.viewBasic())
+                    return (self, Content(self.viewBasic()))
             case QuestionState.CORRECT:
-                return (self, f"Correct!\nThe answer was {self.correctIndex + 1}\n{self.viewBasic()}")
+                return (self, Content(f"Correct!\nThe answer was {self.correctIndex + 1}\n{self.viewBasic()}"))
             case QuestionState.INCORRECT:
-                return (self, f"Incorrect.\nYou guessed: {self.guess}\n But the answer was {self.correctIndex + 1}\n{self.viewBasic()}")
+                return (self, Content(f"Incorrect.\nYou guessed: {self.guess}\n But the answer was {self.correctIndex + 1}\n{self.viewBasic()}"))
     
     # implementation as described by _QuizQuestion
     # take answer as number input - validates it

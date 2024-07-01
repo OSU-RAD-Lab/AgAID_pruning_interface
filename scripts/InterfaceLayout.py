@@ -21,7 +21,7 @@ from scripts.GLWidget import GLWidget
 from scripts.Course import Course, QuizMode, ModuleOrder
 from scripts.Learning import _LearningComponent, _LearningContent, _LearningStructure
 
-from typing import List, Literal, Tuple, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 # from PySide2.shiboken2 import VoidPtr
 
@@ -38,26 +38,6 @@ import numpy as np
 import ctypes                 # to communicate with c code under the hood
 
 
-
-""" 
-TODO:
-DONE Progress Marker
-DONE Right click progress bars to skip
-DONE Right click Course to change mode
-     Review Comments on Learning.py
-DONE Fix not getting to 100% in at the end mode
-     Maybe?? move _LearningContent and subclasses of it into course.py
-DONE Make last three quizzes be in final check
-DONE Test in python 3.10
-DONE Check other todo list
-     Add comments to Course.py
-     Add comments to InterfaceLayout.py
-     clean up this file some more
-     PUSH!
-"""
-
-
-
 ################################################
 # NAME: MainWindow
 # DESCRIPTION: Defines the standard layout of our interface with:
@@ -68,15 +48,28 @@ DONE Check other todo list
 #################################################
 
 class MainWindow(QMainWindow):
+    course: _LearningComponent # keeps track of where in the course it is and is used for viewing different pages and similar
+    # images in ../icons/{str} have images scaled to 80px by 80px and is used for the task icons 
+    # should not be accessed directly and only through self.getIcon(path)
+    cachedImages: Dict[str, QPixmap]
+
     def __init__(self, parent=None, tree_fname=None):
         super().__init__()
 
         self.course: _LearningComponent = Course().next() # type: ignore
 
+        # other images should be otherwise accessed with getIcon, and not directly
+        # this image needs to be added before hand tho
+        self.cachedImages = {
+            "missing.png": QPixmap("../icons/missing.png").scaled(80, 80, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+        }
+
         # self.main_window = main_window
         self.setWindowTitle("Pruning Interface Test")
         self.setGeometry(100, 100, 800, 600)
 
+        # set up splitter
+        # notably self.leftWidget and self.rightWidget are created
         self.central_widget = QWidget() # GLWidget()
         self.setCentralWidget(self.central_widget)
         self.central_layout = QHBoxLayout(self.central_widget)
@@ -139,21 +132,23 @@ class MainWindow(QMainWindow):
         # Create a QVBoxLayout for the directory and buttons column
         self.directory_layout = QVBoxLayout(self.frame)
 
+        # progress bars are dynamicly created and edited
+        # they are put into progressbar_layout layout
+        # they are stored in progressbars arry
         self.progressbar_layout =  QVBoxLayout()
         self.directory_layout.addLayout(self.progressbar_layout)
-
+        # currently displayed progress bars are stored here
         self.progressbars: List[Tuple[QLabel, QProgressBar]] = []
 
+        # make it so anything above it is pushed up and anything below it is pushed down
         self.directory_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
-        self.cachedImages = {
-            "missing.png": QPixmap("../icons/missing.png").scaled(80, 80, Qt.IgnoreAspectRatio, Qt.FastTransformation)
-        }
+        # create task icon and description
         self.task = QHBoxLayout()
         self.taskImage = QLabel()
         self.taskImage.setFixedWidth(80)
         self.taskImage.setFixedHeight(80)
-        self.taskImagePixMap = self.cachedImages["missing.png"]
+        self.taskImagePixMap = self.getIcon("missing.png")
         self.taskImage.setPixmap(self.taskImagePixMap)
         self.task.addWidget(self.taskImage)
         self.taskDescription = QLabel("This is a description that should be written but isn't. Or, maybe it is. Who knows? I don't. Should I? Yikes, I better get on figuring that one out.")
@@ -174,35 +169,53 @@ class MainWindow(QMainWindow):
         self.prev_next_layout.addWidget(self.next_button)
 
         # Create a Help button
+        # does not do anything right now
         self.help_button = QPushButton("Help")
         # self.help_button.clicked.connect(self.show_help)
         self.rightLayout.addWidget(self.help_button)
 
         self.update_from_course()
        
+    # gets an icon from ../icons/{path}
+    # does caching and resizing the icon to 80x80 for you
+    def getIcon(self, path: str) -> QPixmap:
+        if path not in self.cachedImages:
+                loaded = QPixmap(f"../icons/{path}")
+                if loaded.isNull():
+                    self.cachedImages[path] = self.cachedImages["missing.png"]
+                else:
+                    self.cachedImages[path] = loaded.scaled(80, 80, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+        return self.cachedImages[path]
+
+    # triggered with the next button
+    # will move to the next viewable content then display it
     def next_from_course(self):
         next = self.course.next()
         if next is None:
             print("you reached the end!")
         else:
-            self.course = next
-            self.update_from_course()
+            self.redirect(next)
     
+    # triggered with the previous button
+    # will move to the next viewable content then display it
     def prev_from_course(self):
         prev = self.course.prev()
         if prev is None:
             print("you reached the beginning!")
         else:
-            self.course = prev
-            self.update_from_course()
+            self.redirect(prev)
     
+    # updates various things
+    # does the view (currently just prints (in the future should do something other than printing here) the content and follows the redirect)
+    # updates the progress bars
+    # updates task marker and related
     def update_from_course(self):
         #Content
         if isinstance(self.course, _LearningContent):
             if self.course.viewable:
                 (redirect, content) = self.course.view()
-                self.course = redirect
-                print(content)
+                self.redirect(redirect, False)
+                print(content.content)
 
         #Progressbars
         progressbars = self.course.getProgress()[::-1]
@@ -238,17 +251,17 @@ class MainWindow(QMainWindow):
             self.taskImage.setPixmap(self.cachedImages["missing.png"])
         else:
             self.taskDescription.setText(marker.description)
-            if marker.image not in self.cachedImages:
-                loaded = QPixmap(f"../icons/{marker.image}")
-                if loaded.isNull():
-                    self.cachedImages[marker.image] = self.cachedImages["missing.png"]
-                else:
-                    self.cachedImages[marker.image] = loaded.scaled(80, 80, Qt.IgnoreAspectRatio, Qt.FastTransformation)
-            self.taskImage.setPixmap(self.cachedImages[marker.image])
+            self.taskImage.setPixmap(self.getIcon(marker.image))
 
-    def redirect(self, place: _LearningComponent):
-        self.course = place
-        self.update_from_course()
+    # will follow a redirect to a different content and then update the display
+    # should be used instead of self.course = foobar unless you have a good reason
+    # update is optional and if its false will never update, if its true will always update, and if its None (default) will update if its needed
+    def redirect(self, place: _LearningComponent, update: Optional[bool] = None):
+        if place != self.course:
+            self.course = place
+            if update is not False: self.update_from_course()
+        else:
+            if update is True: self.update_from_course()
     
     def create_slider(self, direction: Literal["horizontal", "vertical"], changedSignal, setSlot):
         slider = QSlider()
@@ -270,8 +283,8 @@ class MainWindow(QMainWindow):
     
         return slider
     
+    # adds a context menu with options to change the course/presentation mode
     def contextMenuEvent(self, event):
-        # Create a custom context menu
         contextMenu = QMenu(self)
 
         actualCourse:Course = self.course.getRoot() # type: ignore
@@ -282,6 +295,7 @@ class MainWindow(QMainWindow):
         spatial = QAction('Spatial', self)
         rule = QAction('Rule', self)
 
+        # makes it effectively 2 radio buttons even tho they are technically checkboxes
         at_the_end.setCheckable(True)
         build_off.setCheckable(True)
         spatial.setCheckable(True)
@@ -307,8 +321,6 @@ class MainWindow(QMainWindow):
         build_off.triggered.connect(self.switchToBuildOff)
         spatial.triggered.connect(self.switchToSpatial)
         rule.triggered.connect(self.switchToRule)
-
-        # .setCheckable(True)
         
         contextMenu.addAction(at_the_end)
         contextMenu.addAction(build_off)
@@ -319,26 +331,42 @@ class MainWindow(QMainWindow):
         # Show the context menu at the position of the right-click
         contextMenu.exec_(event.globalPos())
 
+    # if it is no longer connected to the root of the course (a component that is being viewed got removed)
+    # then redirect to the beginning of the course to prevent unexpected behavior
+    # update is similar to redirect's update
+    def ensureConnectivityToCourse(self, update: Optional[bool] = None):
+        if not self.course.isConnectedToRoot():
+            print("redirecting to the beginning because connectivity to root was lost")
+            self.redirect(self.course.getRoot().firstChild().next(), update) # type: ignore
+        if update is True:
+            self.update_from_course()
+
+    # all four are the same:
+    # change the mode
+    # ensure not disconnected
+    # update display
     def switchToAtTheEnd(self):
         self.course.getRoot().quizMode = QuizMode.AT_THE_END # type: ignore
-        self.update_from_course()
+        self.ensureConnectivityToCourse(True)
 
     def switchToBuildOff(self):
         self.course.getRoot().quizMode = QuizMode.BUILD_OFF # type: ignore
-        self.update_from_course()
+        self.ensureConnectivityToCourse(True)
 
     def switchToSpatial(self):
         self.course.getRoot().moduleOrder = ModuleOrder.SPATIAL # type: ignore
-        self.update_from_course()
+        self.ensureConnectivityToCourse(True)
 
     def switchToRule(self):
         self.course.getRoot().moduleOrder = ModuleOrder.RULE # type: ignore
-        self.update_from_course()
+        self.ensureConnectivityToCourse(True)
 
-
+# should be only used in the main directory
+# they are normal progress bars except,
+# they can be right clicked to skip it or to go to the beginning of it
 class ProgressBarWithContextMenuToSkip(QProgressBar):
-    main: MainWindow
-    considered: _LearningStructure
+    main: MainWindow # so that it can call .redirect(foobar)
+    considered: _LearningStructure # so it knows what it is so that it knows where to redirect to 
 
     def __init__(self, considered: _LearningStructure, main: MainWindow):
         super().__init__(main)
@@ -346,7 +374,6 @@ class ProgressBarWithContextMenuToSkip(QProgressBar):
         self.considered = considered
     
     def contextMenuEvent(self, event):
-
         context_menu = QMenu(self)
 
         beginning_action = QAction("Beginning", self)
@@ -355,16 +382,22 @@ class ProgressBarWithContextMenuToSkip(QProgressBar):
         def goToBeginning():
             beginning = self.considered.firstChild()
             if beginning is None: return
+            # doesn't go to first child but first viewable thing starting from the first child - this if does the later part
             if not beginning.viewable:
                 beginning = beginning.next()
+            
             self.main.redirect(beginning)
         
         def skip():
             parent = self.considered.parent
+            # you cant skip the top level progress bar (because there is nothing after it)
             if parent is None: return
             next = parent.intoNext(self.considered)
+            # if it is the last, then you cant skip it
+            # but instead of skipping it will go to the end of it instead
             end = self.considered.lastChild()
             if end is not None: end = end.intoPrev(parent)
+
             if next is None and end is None: return
             self.main.redirect(next or end)
 
@@ -372,8 +405,10 @@ class ProgressBarWithContextMenuToSkip(QProgressBar):
         skip_action.triggered.connect(skip)
 
         context_menu.addAction(beginning_action)
+        # you cant skip the top level progress bar (because there is nothing after it)
         if (self.considered.parent is not None): context_menu.addAction(skip_action)
 
+        # Show the context menu at the position of the right-click
         context_menu.exec_(event.globalPos())
 
 

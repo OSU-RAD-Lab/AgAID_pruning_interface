@@ -1,8 +1,13 @@
+# makes the Course class which creates the entire course
+# create a course and go to the first viewable child use: Course().next()
+# to edit the content of the course edit this file
 
 import sys
-from typing import Optional
 sys.path.append('../')
+
 from scripts.Learning import LearningContent, ListLearningStructure , _LearningStructure, ProgressMarker, QuizStructure, RandomlyOrderedStringMultipleChoice
+
+from typing import Optional
 from enum import Enum
 
 class QuizMode(Enum):
@@ -13,7 +18,8 @@ class ModuleOrder(Enum):
     SPATIAL = False
     RULE = True
 
-
+# is the top level structure that modifies its order based on the quiz mode and module order
+# it is a list learning structure which edits the list when the order changes
 class Course(ListLearningStructure):
     _quizMode: QuizMode
     _moduleOrder: ModuleOrder
@@ -136,6 +142,11 @@ class Course(ListLearningStructure):
                 ]
         self.lengthDirty = True
 
+# here are a lot of method that Course calls in its constructor to make all of its children
+# these are the actual content of the entire thing will be located
+# right now the content and quizzes are strings, but in the future they will probably changed to some object
+# those future objects will be the instructions to the main window of what to display, say for example a certain model at a certain position with the camera as a certain position and some extra text as a certain location and a callout added some where the text for the call out etc
+# all this right now tho, is just for example and certainly not final - just something to show something
 
 def createIntroductionModule():
     root = ListLearningStructure("Introduction Module", ProgressMarker("Introduction to the course","start.png"))
@@ -255,9 +266,9 @@ def createVigorCanopySpacingQuiz(title = "Spacing++ Quiz", progressMarker: Optio
 
 def createVigorCanopySpacingFinal():
     root = ListLearningStructure("Final Test", ProgressMarker("Show you knowledge!", "final.png"))
-    root.addChild(createVigorQuiz("", None))
-    root.addChild(createVigorCanopyQuiz("", None))
-    root.addChild(createVigorCanopySpacingQuiz("", None))
+    root.addChild(createVigorQuiz("Easy", None))
+    root.addChild(createVigorCanopyQuiz("Medium", None))
+    root.addChild(createVigorCanopySpacingQuiz("Hard", None))
     return root
 
 def createSpacingVigorCanopyFinal():
