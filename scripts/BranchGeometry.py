@@ -450,5 +450,5 @@ if __name__ == '__main__':
     # branch.write_mesh(f"tree_files/testSplineBranch.obj")
 
     face = branch.faces
-    print(face[:10])
-    print(branch.vertices[:10])
+    # print(face[:10])
+    # print(branch.vertices[:10])

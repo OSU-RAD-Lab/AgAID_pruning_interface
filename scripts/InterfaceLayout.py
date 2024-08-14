@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #######################################
 # OWNER: OSURobotics
 # PURPOSE: Defining the layout of our pruning interface
@@ -16,6 +18,7 @@ from shiboken2 import VoidPtr
 from scripts.MeshAndShaders import Mesh
 from scripts.BranchGeometry import BranchGeometry
 from scripts.GLWidget import GLWidget
+from scripts.DrawTest import Test
 # from PySide2.shiboken2 import VoidPtr
 
 # from PyQt6 import QtCore      # core Qt functionality
@@ -55,11 +58,12 @@ class MainWindow(QMainWindow):
 
         self.layout = QGridLayout(self.central_widget)
 
-        if tree_fname is not None:
-            self.tree_section_widget = GLWidget(tree_fname) #GLWidget(self.central_widget)
-        else:
-            tree_fname = '../tree_files/exemplarTree.obj'
-            self.tree_section_widget = GLWidget(tree_fname)
+        self.tree_section_widget = Test() # GLDemo()
+        # if tree_fname is not None:
+        #     self.tree_section_widget = GLWidget(tree_fname) #GLWidget(self.central_widget)
+        # else:
+        #     tree_fname = '../tree_files/exemplarTree.obj'
+        #     self.tree_section_widget = GLWidget(tree_fname)
         
         self.layout.addWidget(self.tree_section_widget, 0, 0, 2, 1)  # Row 0, Column 0, Span 2 rows and 1 column
 
@@ -69,20 +73,22 @@ class MainWindow(QMainWindow):
         #                                 SIGNAL("valueChanged(int)"), 
         #                                 self.tree_section_widget.setXRotation)
 
-        self.horiz_slider = self.create_slider("horizontal", # the direction of the 
-                                               SIGNAL("valueChanged(int)"), 
-                                               self.tree_section_widget.setXRotation)
-        self.layout.addWidget(self.horiz_slider, 2, 0, 1, 1)
+        # self.horiz_slider = self.create_slider("horizontal", # the direction of the 
+        #                                        SIGNAL("valueChanged(int)"), 
+        #                                        self.tree_section_widget.setXRotation)
+        # self.layout.addWidget(self.horiz_slider, 2, 0, 1, 1)
 
 
         # self.vert_slider = self.create_slider(direction="vertical")
         # self.layout.addWidget(self.vert_slider, 0, 0, 2, 1)
 
-        if tree_fname is not None:
-            self.whole_tree_view = GLWidget(tree_fname) #GLWidget(self.central_widget)
-        else:
-            tree_fname = '../tree_files/exemplarTree.obj'
-            self.whole_tree_view = GLWidget(tree_fname)
+        # if tree_fname is not None:
+        #     self.whole_tree_view = GLWidget(tree_fname) #GLWidget(self.central_widget)
+        # else:
+        #     tree_fname = '../tree_files/exemplarTree.obj'
+        #     self.whole_tree_view = GLWidget(tree_fname)
+
+        self.whole_tree_view = Test() #GLDemo()
 
         self.whole_tree_view.setFixedSize(200, 150)
         self.layout.addWidget(self.whole_tree_view, 0, 1, 1, 1)  # Row 0, Column 1, Span 1 row and 1 column
