@@ -29,5 +29,5 @@ void main()
     vec3 result = (ambient + diffuse) * vec3(0.5, 0.25, 1.0);
     //vec3 result = ambient + diffuse;
     treeColor = vec4(result, 1.0) * texture(ourTexture, TexCoord);
-    //treeColor = vec4(result, 1.0);             
+    //treeColor = vec4(result, 0.2);             
 }

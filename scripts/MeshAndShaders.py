@@ -157,34 +157,64 @@ class Mesh(QWidget):
     #   - intersectFaces: a list of faces that have values inside the bounded box of (x1, y1), (x1, y2), (x2, y1), (x2, y2).
     #                     Will return None if no face intersects the area
     ################################################
-    def faces_in_area(self, point1, point2, modelMt):
+    def faces_in_area(self, pt1, pt2, modelMt):
         # need to find points that are in between pts 1 and 2
         # pts will be in world spaces
-        intersectFaces = None
-        minX = np.min(point1[0], point2[0])
-        maxX = np.max(point1[0], point2[0])
-        minY = np.min(point1[1], point2[1])
-        maxY = np.max(point1[1], point2[1])
+        minX = np.min([pt1[0], pt2[0]])
+        maxX = np.max([pt1[0], pt2[0]])
+        minY = np.min([pt1[1], pt2[1]])
+        maxY = np.max([pt1[1], pt2[1]])
 
-        count = 0
+        intercepts = []
+        worldFaces = self.convertToWorldCoord(modelMt, self.vertexFaces)
         # Need to loop through each vertexFace
-        for face in self.vertexFaces:
-            for vertex in face:
-                # convert to world coordinates
-                coord = np.ones(4)
-                coord[:3] = vertex 
-                worldVtx = modelMt @ worldVtx
-                if count < 10:
-                    print(f"World coordinates: {worldVtx}")
-                
-                # Test for vertices in between
-                # logically, only 1 vertex need to in between the points to be added to the list
+        for face in worldFaces:
+            faceIntercept = False
+            for worldVtx in face:                
+                # check if inside bounding box
+                if (worldVtx[0] >= minX) and (worldVtx[0] <= maxX) and (worldVtx[1] >= minY) and (worldVtx[1] <= maxY):
+                    faceIntercept = True
+        
+            # check if the line is possibly inside a face as well:
+            # mainly check if within the bounding box of the face
+            # Need to check if one or both vertices are inside the 
 
-                
+            triangleMinX = np.min([face[0][0], face[1][0], face[2][0]])
+            triangleMaxX = np.max([face[0][0], face[1][0], face[2][0]])
+            triangleMinY = np.min([face[0][1], face[1][1], face[2][1]])
+            triangleMaxY = np.max([face[0][1], face[1][1], face[2][1]])
 
+            pt1Inside = (pt1[0] >= triangleMinX) and (pt1[0] <= triangleMaxX) and (pt1[1] >= triangleMinY) and (pt1[1] <= triangleMaxY)
+            pt2Inside = (pt2[0] >= triangleMinX) and (pt2[0] <= triangleMaxX) and (pt2[1] >= triangleMinY) and (pt2[1] <= triangleMaxY)
+
+            # as long as one point could be inside the triangle, then test
+            if pt1Inside or pt2Inside:
+                faceIntercept = True
             
+            if faceIntercept:
+                intercepts.append(face)  
 
-        return intersectFaces
+        if len(intercepts) == 0:
+            return None           
+
+        return np.array(intercepts, dtype=np.float32)
+
+    def convertToWorldCoord(self, modelMt, faces):
+        worldFaces = []
+        for face in faces:
+            f = []
+            for v in face:
+                # do the math to convert to world coordinates
+                coord = np.ones(4)
+                coord[:3] = v 
+                vertex = modelMt @ coord
+                # append to list
+                f.append(vertex[:3])        
+            worldFaces.append(f)
+        
+        return np.array(worldFaces, dtype=np.float32)
+    
+                
 
 
     def set_translate(self, x, y, z):
@@ -204,7 +234,11 @@ class TestMeshOpenGL(QOpenGLWidget):
     def __init__(self, parent=None):
         QOpenGLWidget.__init__(self, parent)
 
-        # self.mesh = Mesh("../obj_files/testMonkey.obj")
+        self.mesh = Mesh("../obj_files/testMonkey.obj")
+        self.vertices = np.array(self.mesh.vertices, dtype=np.float32)
+        self.vao = None
+        self.vbo = None
+        self.texture = None
         # # self.mesh = Mesh("../obj_files/exemplarTree.obj")
         # self.vertices = np.array(self.mesh.vertices, dtype=np.float32)
 
@@ -212,54 +246,12 @@ class TestMeshOpenGL(QOpenGLWidget):
         self.skyMesh = Mesh("../obj_files/skyBox.obj")
         self.skyVertices = np.array(self.skyMesh.vertices, dtype=np.float32)
 
-        # self.skyVertices = np.array([       
-        #                 -1.0,  1.0, -1.0,
-        #                 -1.0, -1.0, -1.0,
-        #                 1.0, -1.0, -1.0,
-        #                 1.0, -1.0, -1.0,
-        #                 1.0,  1.0, -1.0,
-        #                 -1.0,  1.0, -1.0,
-
-        #                 -1.0, -1.0,  1.0,
-        #                 -1.0, -1.0, -1.0,
-        #                 -1.0,  1.0, -1.0,
-        #                 -1.0,  1.0, -1.0,
-        #                 -1.0,  1.0,  1.0,
-        #                 -1.0, -1.0,  1.0,
-
-        #                 1.0, -1.0, -1.0,
-        #                 1.0, -1.0,  1.0,
-        #                 1.0,  1.0,  1.0,
-        #                 1.0,  1.0,  1.0,
-        #                 1.0,  1.0, -1.0,
-        #                 1.0, -1.0, -1.0,
-
-        #                 -1.0, -1.0,  1.0,
-        #                 -1.0,  1.0,  1.0,
-        #                 1.0,  1.0,  1.0,
-        #                 1.0,  1.0,  1.0,
-        #                 1.0, -1.0,  1.0,
-        #                 -1.0, -1.0,  1.0,
-
-        #                 -1.0,  1.0, -1.0,
-        #                 1.0,  1.0, -1.0,
-        #                 1.0,  1.0,  1.0,
-        #                 1.0,  1.0,  1.0,
-        #                 -1.0,  1.0,  1.0,
-        #                 -1.0,  1.0, -1.0,
-
-        #                 -1.0, -1.0, -1.0,
-        #                 -1.0, -1.0,  1.0,
-        #                 1.0, -1.0, -1.0,
-        #                 1.0, -1.0, -1.0,
-        #                 -1.0, -1.0,  1.0,
-        #                 1.0, -1.0,  1.0], dtype=np.float32)
         
         self.skyProgram = None
         self.skyTexture = None
         self.skyVAO = None
         self.skyVBO = None
-        self.skyMapDir = "../textures/skymap/"
+        # self.skyMapDir = "../textures/skymap/"
         self.cubeTypes = [gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
                           gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
                           gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 
@@ -274,13 +266,18 @@ class TestMeshOpenGL(QOpenGLWidget):
         #                   "pz.png", # front (flipped from pz)
         #                   "nz.png"] # back (flipped from nz)
 
-        self.cubeFaces = ["posx.jpg",
-                          "negx.jpg",
-                          "posy.jpg",
-                          "negy.jpg",
-                          "posz.jpg",
-                          "negz.jpg"]
+        self.skyMapDir = "../textures/skymap/"        
+        self.cubeFaces = ["px.png", # right
+                          "nx.png", # left
+                          "py.png", # top
+                          "ny.png", # bottom
+                          "pz.png", # front
+                          "nz.png"] # back
         
+        self.hdrTexture = None
+        self.hdrVAO = None
+        self.hdrVBO = None
+        self.hdrProgram = None
 
 
 
@@ -335,6 +332,50 @@ class TestMeshOpenGL(QOpenGLWidget):
 
         """
 
+        self.CUBE_VERTEX_SHADER = """
+        # version 330 core
+        //layout (location = 0) in vec2 aTexCoord;
+        layout (location = 2) in vec3 vertexPos; // location 2
+
+        uniform mat4 projection;
+        uniform mat4 view;
+
+        out vec3 localPos;
+
+        void main()
+        {
+            
+            gl_Position = projection * view * vec4(vertexPos, 1.0);
+            localPos = aPos
+        }  
+        """
+
+        self.CUBE_FRAGMENT_SHADER = """
+        # version 330 core
+        in vec3 localPos;
+
+        //uniform sampler2D equirectangularMap;
+
+        const vec2 invAtan = vec2(0.15191, 0.3183);
+
+        vec2 SampleSphericalMap(vec3 v)
+        {
+            vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+            uv *= invAtan;
+            uv += 0.5;
+            return uv;
+        }
+
+        void main()
+        {   
+            vec2 uv = SampleSphericalMap(normalize(localPos));
+            vec3 color = texture(equirectangularMap, uv).rgb
+            FragColor = vec4(color, 1.0);
+        }        
+
+        """
+        
+
     def calculatePos(self):
         print(self.projection)
         print(self.view)
@@ -346,25 +387,10 @@ class TestMeshOpenGL(QOpenGLWidget):
             mvp = mvp / mvp[3]
             print(mvp)
 
-
-    def initializeGL(self):
-        # gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        
-        gl.glDisable(gl.GL_CULL_FACE)
-
-        gl.glClearColor(1.0, 1.0, 1.0, 1.0)
-
+    def initializeSkyBox(self):
         gl.glUseProgram(0)
-        # vertexShader = Shader("vertex", "skybox_shader.vert").shader # get out the shader value    
-        # fragmentShader = Shader("fragment", "skybox_shader.frag").shader
-        vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-        gl.glShaderSource(vertexShader, self.SIMPLE_VERTEX_SHADER)
-        gl.glCompileShader(vertexShader)
-    
-        fragmentShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
-        gl.glShaderSource(fragmentShader, self.SIMPLE_FRAGMENT_SHADER)
-        gl.glCompileShader(fragmentShader)
+        vertexShader = Shader("vertex", "skybox_shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "skybox_shader.frag").shader
 
         self.skyProgram = gl.glCreateProgram()
         gl.glAttachShader(self.skyProgram, vertexShader)
@@ -380,16 +406,14 @@ class TestMeshOpenGL(QOpenGLWidget):
         self.skyVBO = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.skyVBO)
 
-        # gl.glDisable(gl.GL_DEPTH_TEST)
-        # LOAD THE TEXTURE CUBEMAP
+        # laod the texture cube map
         self.skyTexture = gl.glGenTextures(1)
         gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.skyTexture) 
 
 
         # Loop through the faces and add
-        # for type, face in zip(self.cubeTypes, self.cubeFaces)
-        for i, face in enumerate(self.cubeFaces): 
-            fname = str("../textures/skymap2/") + str(face)
+        for i, face in enumerate(self.cubeFaces):
+            fname = str(self.skyMapDir) + str(face)
             # LOAD IN THE TEXTURE IMAGE AND READ IT IN TO OPENGL
             texImg = Image.open(fname)
             # texImg = texImg.transpose(Image.FLIP_TO_BOTTOM)
@@ -412,15 +436,14 @@ class TestMeshOpenGL(QOpenGLWidget):
         gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
         gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
         gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_R, gl.GL_CLAMP_TO_EDGE)
-        
 
         # Reshape the list for loading into the vbo 
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.skyVertices.nbytes, self.skyVertices, gl.GL_STATIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.skyVertices.nbytes, self.skyVertices, gl.GL_DYNAMIC_DRAW) # gl.GL_STATIC_DRAW
         # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
 
         # SET THE ATTRIBUTE POINTERS SO IT KNOWS LCOATIONS FOR THE SHADER
-        stride = self.skyVertices.itemsize * 3
-        # VERTICES COORDINATES
+        stride = self.skyVertices.itemsize * 8 # times 8 given there are 8 vertices across texture coords, normals, and vertex positions before next set
+        # TEXTURE COORDINATES
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0)) 
 
@@ -433,86 +456,195 @@ class TestMeshOpenGL(QOpenGLWidget):
         gl.glEnableVertexAttribArray(2) # SETTING THE VERTEX POSITIONS
         # gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(12)) # for location = 1
         gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
-        # gl.glEnable(gl.GL_CULL_FACE)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-    
 
 
-
-    # def initializeGL(self):
-    #     print(self.getGlInfo())
-    #     gl.glClearColor(1.0, 1.0, 1.0, 1.0)
-    #     gl.glEnable(gl.GL_DEPTH_TEST)
-    #     gl.glDisable(gl.GL_CULL_FACE)
+    def drawSkyBox(self):
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+        gl.glUseProgram(0)
+        # gl.glDisable(gl.GL_CULL_FACE)
+       
+        # gl.glDisable(gl.GL_DEPTH_TEST)
+        # set the depth function to equal
+        oldDepthFunc = gl.glGetIntegerv(gl.GL_DEPTH_FUNC)
+        gl.glDepthFunc(gl.GL_LEQUAL)
+        gl.glDepthMask(gl.GL_FALSE)
         
-    #     # TREE SHADER
-    #     vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-    #     gl.glShaderSource(vertexShader, self.SIMPLE_VERTEX_SHADER)
-    #     gl.glCompileShader(vertexShader)
+
+        # Deal with the rotation of the object
+        # scale = mt.create_from_scale([-4.3444, 4.1425, -10.00])
+        scale = mt.create_from_scale([-4, 4, -9.99])
+        # translate = mt.create_from_translation([0, -4, 0])
+        # angle = self.angle_to_radians(self.turntable)
+        # rotation = mt.create_from_y_rotation(angle)
+        model = scale # for rotating the modelView
+
+        # set last row and column to 0 so it doesn't affect translations but only rotations
+        view = mt.create_identity()
+        view[:,3] = np.zeros(4)
+        view[3, :] = np.zeros(4)
+
+        # set the shader for the skybox
+        gl.glUseProgram(self.skyProgram)
+
+        modelLoc = gl.glGetUniformLocation(self.skyProgram, "model")
+        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+
+        projLoc = gl.glGetUniformLocation(self.skyProgram, "projection")
+        gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection) # use the same projection values
+
+        viewLoc = gl.glGetUniformLocation(self.skyProgram, "view")
+        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, view) # use the same location view values
+
+        # BIND VAO AND TEXTURE
+        gl.glBindVertexArray(self.skyVAO)
+        gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.skyTexture)
+
+        gl.glDrawArrays(gl.GL_QUADS, 0, int(self.skyVertices.size)) 
+        # gl.glDrawElements(gl.GL_QUADS, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
+
+        # Reset values
+        gl.glDepthMask(gl.GL_TRUE)
+        gl.glDepthFunc(oldDepthFunc) # set back to default value
+        # gl.glEnable(gl.GL_DEPTH_TEST)
+
+        gl.glUseProgram(0)
+        gl.glBindVertexArray(0) # unbind the vao
+        gl.glPopMatrix()
+
+
+    def angle_to_radians(self, angle):
+        return angle * (np.pi / 180.0)
+
+
+    def loadHDRImage(self, fname):        
+        fname = str("../textures/") + str(fname)
+        # LOAD IN THE TEXTURE IMAGE AND READ IT IN TO OPENGL
+        texImg = Image.open(fname)
+        # texImg = texImg.transpose(Image.FLIP_TO_BOTTOM)
+        texData = texImg.convert("RGB").tobytes()
+
+        self.hdrTexture = gl.glGenTextures(1)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.hdrTexture)
+
+        # need to load the texture into our program
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 
+                        0,                      # mipmap setting (can change for manual setting)
+                        gl.GL_RGB16F,              # texture file storage format
+                        texImg.width,           # texture image width
+                        texImg.height,          # texture image height
+                        0,                      # 0 for legacy 
+                        gl.GL_RGB,              # format of the texture image
+                        gl.GL_UNSIGNED_BYTE,    # datatype of the texture image
+                        texData)                # data texture  
+        
+        # SET THE PARAMETERS OF THE TEXTURE
+        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR) 
+        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+        # gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_R, gl.GL_CLAMP_TO_EDGE)
+
+
+    def initHDRCubeMap(self):
+        self.captureFBO = gl.glGenFramebuffers(1)
+        self.captureRBO = gl.glGenRenderbuffers(1)
+
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.captureFBO)
+        gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self.captureRBO)
+        gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, gl.GL_DEPTH_ATTACHMENT, self.width, self.height)
+        gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT, gl.GL_RENDERBUFFER, self.captureRBO)
+
+        self.envCubeMap = gl.glGenTextures(1)
+        gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.envCubeMap)
+        for i in range(6):
+            gl.glTexImage2D(gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, gl.GL_RGB16F, self.width, self.height, 0, gl.GL_RGB, gl.GL_FLOAT, None)
+
+        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_R, gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR) 
+        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+        
+
     
-    #     fragmentShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
-    #     gl.glShaderSource(fragmentShader, self.SIMPLE_FRAGMENT_SHADER)
-    #     gl.glCompileShader(fragmentShader)
 
-    #     self.program = gl.glCreateProgram()
-    #     gl.glAttachShader(self.program, vertexShader)
-    #     gl.glAttachShader(self.program, fragmentShader)
-    #     gl.glLinkProgram(self.program)
+    def initializeGL(self):
+        print(self.getGlInfo())
+        gl.glClearColor(1.0, 1.0, 1.0, 1.0)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glDisable(gl.GL_CULL_FACE)
+        
+        # # TREE SHADER
+        # vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+        # gl.glShaderSource(vertexShader, self.SIMPLE_VERTEX_SHADER)
+        # gl.glCompileShader(vertexShader)
+    
+        # fragmentShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+        # gl.glShaderSource(fragmentShader, self.SIMPLE_FRAGMENT_SHADER)
+        # gl.glCompileShader(fragmentShader)
 
-    #     gl.glUseProgram(self.program)
+        # self.program = gl.glCreateProgram()
+        # gl.glAttachShader(self.program, vertexShader)
+        # gl.glAttachShader(self.program, fragmentShader)
+        # gl.glLinkProgram(self.program)
 
-    #     # create and bind the vertex attribute array
-    #     self.vao = gl.glGenVertexArrays(1)
-    #     gl.glBindVertexArray(self.vao)
+        # gl.glUseProgram(self.program)
 
-    #     # bind the vertex buffer object
-    #     self.vbo = gl.glGenBuffers(1)
-    #     gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
+        # # create and bind the vertex attribute array
+        # self.vao = gl.glGenVertexArrays(1)
+        # gl.glBindVertexArray(self.vao)
 
-    #     # Bind the texture and set our preferences of how to handle texture
-    #     self.texture = gl.glGenTextures(1)
-    #     # print(f"texture ID {self.texture}")
-    #     gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture) 
-    #     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT) # will repeat the image if any texture coordinates are outside [0, 1] range for x, y values
-    #     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
-    #     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST) # describing how to perform texture filtering (could use a MipMap)
-    #     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+        # # bind the vertex buffer object
+        # self.vbo = gl.glGenBuffers(1)
+        # gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
 
-    #     # LOAD IN THE TEXTURE IMAGE AND READ IT IN TO OPENGL
-    #     texImg = Image.open("../textures/bark.jpg")
-    #     texData = texImg.convert("RGB").tobytes()
+        # # Bind the texture and set our preferences of how to handle texture
+        # self.texture = gl.glGenTextures(1)
+        # # print(f"texture ID {self.texture}")
+        # gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture) 
+        # gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT) # will repeat the image if any texture coordinates are outside [0, 1] range for x, y values
+        # gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+        # gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST) # describing how to perform texture filtering (could use a MipMap)
+        # gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
 
-    #     # need to load the texture into our program
-    #     gl.glTexImage2D(gl.GL_TEXTURE_2D, 
-    #                     0,                      # mipmap setting (can change for manual setting)
-    #                     gl.GL_RGB,              # texture file storage format
-    #                     texImg.width,           # texture image width
-    #                     texImg.height,          # texture image height
-    #                     0,                      # 0 for legacy 
-    #                     gl.GL_RGB,              # format of the texture image
-    #                     gl.GL_UNSIGNED_BYTE,    # datatype of the texture image
-    #                     texData)                # data texture 
+        # # LOAD IN THE TEXTURE IMAGE AND READ IT IN TO OPENGL
+        # texImg = Image.open("../textures/bark.jpg")
+        # texData = texImg.convert("RGB").tobytes()
 
-    #     # Reshape the list for loading into the vbo 
-    #     gl.glBufferData(gl.GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, gl.GL_STATIC_DRAW)
-    #     # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
+        # # need to load the texture into our program
+        # gl.glTexImage2D(gl.GL_TEXTURE_2D, 
+        #                 0,                      # mipmap setting (can change for manual setting)
+        #                 gl.GL_RGB,              # texture file storage format
+        #                 texImg.width,           # texture image width
+        #                 texImg.height,          # texture image height
+        #                 0,                      # 0 for legacy 
+        #                 gl.GL_RGB,              # format of the texture image
+        #                 gl.GL_UNSIGNED_BYTE,    # datatype of the texture image
+        #                 texData)                # data texture 
 
-    #     # SET THE ATTRIBUTE POINTERS SO IT KNOWS LOCATIONS FOR THE SHADER
-    #     stride = self.vertices.itemsize * 8 # times 8 given there are 8 vertices across texture coords, normals, and vertex positions before next set
-    #     print(stride)
-    #     # TEXTURE COORDINATES
-    #     gl.glEnableVertexAttribArray(0)
-    #     gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0)) 
+        # # Reshape the list for loading into the vbo 
+        # gl.glBufferData(gl.GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, gl.GL_STATIC_DRAW)
+        # # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
 
-    #     # NORMAL VECTORS (aNormal)
-    #     gl.glEnableVertexAttribArray(1)     # SETTING THE NORMAL
-    #     # gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(0)) # for location = 0
-    #     gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(8)) # starts at position 2 with size 4 for float32 --> 2*4
+        # # SET THE ATTRIBUTE POINTERS SO IT KNOWS LOCATIONS FOR THE SHADER
+        # stride = self.vertices.itemsize * 8 # times 8 given there are 8 vertices across texture coords, normals, and vertex positions before next set
+        # print(stride)
+        # # TEXTURE COORDINATES
+        # gl.glEnableVertexAttribArray(0)
+        # gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0)) 
 
-    #     # VERTEX POSITIONS (vertexPos)
-    #     gl.glEnableVertexAttribArray(2) # SETTING THE VERTEX POSITIONS
-    #     # gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(12)) # for location = 1
-    #     gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
+        # # NORMAL VECTORS (aNormal)
+        # gl.glEnableVertexAttribArray(1)     # SETTING THE NORMAL
+        # # gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(0)) # for location = 0
+        # gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(8)) # starts at position 2 with size 4 for float32 --> 2*4
+
+        # # VERTEX POSITIONS (vertexPos)
+        # gl.glEnableVertexAttribArray(2) # SETTING THE VERTEX POSITIONS
+        # # gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(12)) # for location = 1
+        # gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
+
+        self.initializeSkyBox()
 
 
 
@@ -542,96 +674,98 @@ class TestMeshOpenGL(QOpenGLWidget):
         # self.projection = mt.create_perspective_projection_matrix(45.0, aspect, 0.1, 10.0)
         gl.glMatrixMode(gl.GL_MODELVIEW)
 
-    # def paintGL(self): 
-    #     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
-    #     gl.glLoadIdentity()
-    #     gl.glPushMatrix()
-
-    #     translation = np.transpose(mt.create_from_translation([0, 0, -5.883])) # 0, -2, -5.883
-
-    #     self.model = mt.create_identity()
-    #     self.model = translation # @ x_rotation  # x-rotation only needed for some files
-
-    #     # CALCULATE NEW VIEW (at our origin (0, 0, 0))
-    #     self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0)  
-
-    #     gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
-    #     gl.glUseProgram(self.program) 
-    #     gl.glBindVertexArray(self.vao)
-
-    #     modelLoc = gl.glGetUniformLocation(self.program, "model")
-    #     gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, self.model) # self.rotation
-
-    #     projLoc = gl.glGetUniformLocation(self.program, "projection")
-    #     gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
-
-    #     viewLoc = gl.glGetUniformLocation(self.program, "view")
-    #     gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view)
-
-    #     gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vertices.size / 3)) # int(self.vertices.size / 3)
-    #     gl.glBindVertexArray(0) # unbind the vao
-    #     gl.glPopMatrix()
-
-
-    def paintGL(self):
+    def paintGL(self): 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glDisable(gl.GL_CULL_FACE)
 
         gl.glLoadIdentity()
         gl.glPushMatrix()
 
-        gl.glUseProgram(0)
+        translation = np.transpose(mt.create_from_translation([0, 0, -5.883])) # 0, -2, -5.883
 
-        # set last row and column to 0 so it doesn't affect translations but only rotations
-        model = mt.create_identity()
-        # model = mt.create_from_scale([41.421, 41.421, -100])
-        model = mt.create_from_scale([0, 0, -5.3888])
+        self.model = mt.create_identity()
+        self.model = translation # @ x_rotation  # x-rotation only needed for some files
 
-        self.view = mt.create_identity()
-        # view[:,3] = np.zeros(4)
-        # view[3, :] = np.zeros(4)
-        # view = np.zeros((4, 4))
-        # view[:-1, :-1] = mt.create_identity()[:-1, :-1]
+        # CALCULATE NEW VIEW (at our origin (0, 0, 0))
+        self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0)  
 
-        # projection = np.transpose(mt.create_perspective_projection_matrix(45.0, self.width / float(self.height), 0.1, 100.0))
+        # gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
+        # gl.glUseProgram(self.program) 
+        # gl.glBindVertexArray(self.vao)
 
-        # set the depth function to equal
-        # oldDepthFunc = gl.glGetIntegerv(gl.GL_DEPTH_FUNC)
-        gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glDepthMask(gl.GL_FALSE)
+        # modelLoc = gl.glGetUniformLocation(self.program, "model")
+        # gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, self.model) # self.rotation
 
-        gl.glUseProgram(self.skyProgram)
-        gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.skyTexture)
-        gl.glBindVertexArray(self.skyVAO)
+        # projLoc = gl.glGetUniformLocation(self.program, "projection")
+        # gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
 
-        modelLoc = gl.glGetUniformLocation(self.skyProgram, "model")
-        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+        # viewLoc = gl.glGetUniformLocation(self.program, "view")
+        # gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view)
 
-        projLoc = gl.glGetUniformLocation(self.skyProgram, "projection")
-        gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection) # use the same projection values
-        # print(np.transpose(mt.create_perspective_projection_matrix(45.0, self.width / float(self.height), 0.1, 10.0)))
+        # gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vertices.size / 3)) # int(self.vertices.size / 3)
+        # gl.glBindVertexArray(0) # unbind the vao
+        # gl.glPopMatrix()
 
-        viewLoc = gl.glGetUniformLocation(self.skyProgram, "view")
-        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) # use the same location view values
-
-        # self.calculatePos()
+        self.drawSkyBox()
 
 
-        # gl.glDrawArrays(gl.GL_LINES, 0, int(self.skyVertices.size))
-        gl.glDrawElements(gl.GL_QUADS, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
-        # gl.glDrawElements(gl.GL_POINTS, 0, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
+    # def paintGL(self):
+    #     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+    #     gl.glDisable(gl.GL_DEPTH_TEST)
+    #     gl.glDisable(gl.GL_CULL_FACE)
 
-        gl.glBindVertexArray(0) # unbind the vao
-        gl.glPopMatrix()
+    #     gl.glLoadIdentity()
+    #     gl.glPushMatrix()
 
-        gl.glDepthFunc(gl.GL_LESS)
-        # gl.glDepthFunc(oldDepthFunc) # set back to default value
-        gl.glDepthMask(gl.GL_TRUE)
-        gl.glUseProgram(0)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_CULL_FACE)
+    #     gl.glUseProgram(0)
+
+    #     # set last row and column to 0 so it doesn't affect translations but only rotations
+    #     model = mt.create_identity()
+    #     # model = mt.create_from_scale([41.421, 41.421, -100])
+    #     model = mt.create_from_scale([0, 0, -5.3888])
+
+    #     self.view = mt.create_identity()
+    #     # view[:,3] = np.zeros(4)
+    #     # view[3, :] = np.zeros(4)
+    #     # view = np.zeros((4, 4))
+    #     # view[:-1, :-1] = mt.create_identity()[:-1, :-1]
+
+    #     # projection = np.transpose(mt.create_perspective_projection_matrix(45.0, self.width / float(self.height), 0.1, 100.0))
+
+    #     # set the depth function to equal
+    #     # oldDepthFunc = gl.glGetIntegerv(gl.GL_DEPTH_FUNC)
+    #     gl.glDepthFunc(gl.GL_LEQUAL)
+    #     gl.glDepthMask(gl.GL_FALSE)
+
+    #     gl.glUseProgram(self.skyProgram)
+    #     gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.skyTexture)
+    #     gl.glBindVertexArray(self.skyVAO)
+
+    #     modelLoc = gl.glGetUniformLocation(self.skyProgram, "model")
+    #     gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+
+    #     projLoc = gl.glGetUniformLocation(self.skyProgram, "projection")
+    #     gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection) # use the same projection values
+    #     # print(np.transpose(mt.create_perspective_projection_matrix(45.0, self.width / float(self.height), 0.1, 10.0)))
+
+    #     viewLoc = gl.glGetUniformLocation(self.skyProgram, "view")
+    #     gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) # use the same location view values
+
+    #     # self.calculatePos()
+
+
+    #     # gl.glDrawArrays(gl.GL_LINES, 0, int(self.skyVertices.size))
+    #     gl.glDrawElements(gl.GL_QUADS, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
+    #     # gl.glDrawElements(gl.GL_POINTS, 0, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
+
+    #     gl.glBindVertexArray(0) # unbind the vao
+    #     gl.glPopMatrix()
+
+    #     gl.glDepthFunc(gl.GL_LESS)
+    #     # gl.glDepthFunc(oldDepthFunc) # set back to default value
+    #     gl.glDepthMask(gl.GL_TRUE)
+    #     gl.glUseProgram(0)
+    #     gl.glEnable(gl.GL_DEPTH_TEST)
+    #     gl.glEnable(gl.GL_CULL_FACE)
 
 
     def getGlInfo(self):

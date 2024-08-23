@@ -146,10 +146,19 @@ if __name__ == '__main__':
         # check if the line is possibly inside a face as well:
         # mainly check if within the bounding box of the face
         # Need to check if one or both vertices are inside the 
+        triangleMinX = np.min([face[0][0], face[1][0], face[2][0]])
+        triangleMaxX = np.max([face[0][0], face[1][0], face[2][0]])
+        triangleMinY = np.min([face[0][1], face[1][1], face[2][1]])
+        triangleMaxY = np.max([face[0][1], face[1][1], face[2][1]])
 
+        pt1Inside = (pt1[0] >= triangleMinX) and (pt1[0] <= triangleMaxX) and (pt1[1] >= triangleMinY) and (pt1[1] <= triangleMaxY)
+        pt2Inside = (pt2[0] >= triangleMinX) and (pt2[0] <= triangleMaxX) and (pt2[1] >= triangleMinY) and (pt2[1] <= triangleMaxY)
+
+        if pt1Inside or pt2Inside:
+            faceIntercept = True
         
-        
-        intercepts.append(face)
+        if faceIntercept:
+            intercepts.append(face)
 
     print(intercepts)
     # Need to test if the line could theoretically cross a face within the bounding box of x1, y1 and x2, y2

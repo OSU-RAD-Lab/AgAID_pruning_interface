@@ -46,15 +46,17 @@ class Test(QOpenGLWidget):
         #                           [0.5, -0.5, 0.0],
         #                           [0.0, 0.5, 0.0]], dtype=np.float32)
         self.turntable = 0
-
         self.rotation = mt.create_identity()        # Gets an identity matrix
         self.projection = mt.create_identity()      # Sets the projection perspective
         self.view = mt.create_identity()            # sets the camera location
-        
         self.projLoc = 0
+
+        self.ZNEAR = 0.1
+        self.ZFAR = 10.0
 
         # self.mesh = Mesh("../obj_files/exemplarTree.obj")
         self.mesh = Mesh("../obj_files/testMonkey.obj")
+        # self.mesh = Mesh("../obj_files/skyBox.obj")
         self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
         self.texture = None
         self.vao = None
@@ -88,11 +90,50 @@ class Test(QOpenGLWidget):
         self.width = -1
         self.height = -1
 
-        # for undoing drawings done by participants
-        self.drawArray = {
-            "vertices": [],
-            "count": 0
+        # DRAWING VALUES
+        self.drawVAO = None
+        self.drawVBO = None
+        self.drawProgram = None
+        self.drawLines = False # dtermine if to show the line
+        self.drawVertices = np.zeros(1200, dtype=np.float32) # give me a set of values to declare for vbo
+        self.drawCount = 0
+        # self.drawVertices[:18] = np.array([-2, -2, 0, # -2, -2
+        #                               2, -2, 0,
+        #                               2, -2, -4.99,
+        #                               -2, -2, -4.99,
+        #                               -3.99, -3.99, -4.99,
+        #                               3.99, -3.99, -4.99], dtype=np.float32)
+        
+
+
+        self.SIMPLE_VERTEX_SHADER = """
+        # version 330 core
+
+        layout (location = 0) in vec3 aPos;
+
+        uniform mat4 projection;
+        uniform mat4 view;
+        uniform mat4 model;
+
+        out vec4 color;
+
+        void main()
+        {
+            gl_Position = projection * view * model * vec4(aPos, 1.0);
+            color = vec4(1.0, 0.0, 0.0, 0.0);
         }
+        """
+
+        self.SIMPLE_FRAGMENT_SHADER = """
+        # version 330 core
+        in vec4 color;
+        out vec4 FragColor;
+
+        void main()
+        {
+            FragColor = color;
+        }
+        """
 
     def normalizeAngle(self, angle):
         while angle < 0:
@@ -127,7 +168,7 @@ class Test(QOpenGLWidget):
         return info 
     
 
-    def initialize_skyBox(self):
+    def initializeSkyBox(self):
         gl.glUseProgram(0)
         vertexShader = Shader("vertex", "skybox_shader.vert").shader # get out the shader value    
         fragmentShader = Shader("fragment", "skybox_shader.frag").shader
@@ -178,7 +219,7 @@ class Test(QOpenGLWidget):
         gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_R, gl.GL_CLAMP_TO_EDGE)
 
         # Reshape the list for loading into the vbo 
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.skyVertices.nbytes, self.skyVertices, gl.GL_STATIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.skyVertices.nbytes, self.skyVertices, gl.GL_DYNAMIC_DRAW) # gl.GL_STATIC_DRAW
         # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
 
         # SET THE ATTRIBUTE POINTERS SO IT KNOWS LCOATIONS FOR THE SHADER
@@ -199,8 +240,6 @@ class Test(QOpenGLWidget):
 
 
     def drawSkyBox(self):
-
-
         gl.glLoadIdentity()
         gl.glPushMatrix()
         gl.glUseProgram(0)
@@ -254,6 +293,77 @@ class Test(QOpenGLWidget):
         gl.glBindVertexArray(0) # unbind the vao
         gl.glPopMatrix()
 
+
+
+    def initializeDrawing(self):
+        gl.glUseProgram(0)
+
+        vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+        gl.glShaderSource(vertexShader, self.SIMPLE_VERTEX_SHADER)
+        gl.glCompileShader(vertexShader)
+    
+        fragmentShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+        gl.glShaderSource(fragmentShader, self.SIMPLE_FRAGMENT_SHADER)
+        gl.glCompileShader(fragmentShader)
+
+        self.drawProgram = gl.glCreateProgram()
+        gl.glAttachShader(self.drawProgram, vertexShader)
+        gl.glAttachShader(self.drawProgram, fragmentShader)
+        gl.glLinkProgram(self.drawProgram)
+
+        gl.glUseProgram(self.drawProgram)
+
+        self.drawVAO = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(self.drawVAO)
+
+        self.drawVBO = gl.glGenBuffers(1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.drawVBO)
+
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.drawVertices.nbytes, self.drawVertices, gl.GL_STATIC_DRAW)
+
+        stride = self.drawVertices.itemsize * 3
+
+        # enable the pointer for the shader
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0))  
+
+    
+    def drawPruningLines(self):
+        gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+
+        gl.glUseProgram(self.drawProgram) 
+        
+        # SET THE LIGHT COLOR
+        # angle = self.angle_to_radians(self.turntable)
+        # # x_rotation = mt.create_from_x_rotation(-np.pi/2) # for certain files to get upright
+        # model = mt.create_from_y_rotation(angle) # for rotating the modelView
+        
+        modelLoc = gl.glGetUniformLocation(self.drawProgram, "model")
+        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, self.model) # self.rotation
+
+        projLoc = gl.glGetUniformLocation(self.drawProgram, "projection")
+        gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
+
+        viewLoc = gl.glGetUniformLocation(self.drawProgram, "view")
+        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
+
+        # # self.draw(self.vertices)
+        # end = self.drawCount * 3
+        gl.glBindVertexArray(self.drawVAO)
+        # gl.glLineWidth(2.0)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.drawVBO)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.drawVertices.nbytes, self.drawVertices, gl.GL_DYNAMIC_DRAW)
+
+        # gl.glPointSize(3.0)
+        gl.glLineWidth(2.0)
+        gl.glDrawArrays(gl.GL_QUADS, 0, int(self.drawVertices.size / 3))
+        # gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.drawCount) 
+
+        gl.glBindVertexArray(0) # unbind the vao
+        gl.glPopMatrix()
+        gl.glUseProgram(0)
         
 
 
@@ -264,8 +374,8 @@ class Test(QOpenGLWidget):
         # gl.glClearColor(1.0, 1.0, 1.0, 1.0)
         # gl.glClearColor(0.56, 0.835, 1.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND)
         gl.glDisable(gl.GL_CULL_FACE)
-
         
         # TREE SHADER
         vertexShader = Shader("vertex", "shader.vert").shader # get out the shader value    
@@ -334,9 +444,13 @@ class Test(QOpenGLWidget):
         # gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(12)) # for location = 1
         gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
 
-        self.initialize_skyBox() # initialize all the skybox data
 
+        # INITIALIZE THE DRAWING PROGRAM
+        self.initializeDrawing() # initialize the places for the drawing of values
 
+        self.initializeSkyBox() # initialize all the skybox data
+        
+        
     def resizeGL(self, width, height):
         self.width = width 
         self.height = height
@@ -346,21 +460,17 @@ class Test(QOpenGLWidget):
             return
         
         gl.glViewport(0, 0, width, height)
-        # self.view = np.array(gl.glGetIntegerv(gl.GL_VIEWPORT))
-
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
         aspect = width / float(height)
 
         # Set the perspective of the scene
-        GLU.gluPerspective(45.0,    # FOV in y direction
-                           aspect,  # FOV in x direction
-                           0.1,     # z near
-                           10.0)   # z far
+        GLU.gluPerspective(45.0,            # FOV in y direction
+                           aspect,          # FOV in x direction
+                           self.ZNEAR,      # z near
+                           self.ZFAR)       # z far
         self.projection = np.array(gl.glGetDoublev(gl.GL_PROJECTION_MATRIX))
         self.projection = np.transpose(self.projection)
-        # print(self.projection)
-        # self.projection = mt.create_perspective_projection_matrix(45.0, aspect, 0.1, 10.0)
         gl.glMatrixMode(gl.GL_MODELVIEW)
 
     
@@ -381,11 +491,11 @@ class Test(QOpenGLWidget):
         # rotate and translate the model to the correct position
         # Deal with the rotation of the object
         angle = self.angle_to_radians(self.turntable)
-        x_rotation = mt.create_from_x_rotation(-np.pi/2) # for certain files to get upright
+        # x_rotation = mt.create_from_x_rotation(-np.pi/2) # for certain files to get upright
         rotation = mt.create_from_y_rotation(angle) # for rotating the modelView
-        translation = np.transpose(mt.create_from_translation([0, 0, -5.883])) # 0, -2, -5.883
+        translation = np.transpose(mt.create_from_translation([0, 0, -5.0])) # 0, -0, -5.883
         # scale = mt.create_from_scale([-4.344, 4.1425, -9.99])
-        scale = mt.create_from_scale([0.5, 0.5, 0.5])
+        scale = mt.create_from_scale([1, 1, 1])
 
         self.model = mt.create_identity()
         self.model = translation @ rotation @ scale # @ x_rotation  # x-rotation only needed for some files
@@ -418,87 +528,32 @@ class Test(QOpenGLWidget):
 
         # # self.draw(self.vertices)
         gl.glBindVertexArray(self.vao)
+        gl.glPointSize(2.0)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vertices.size / 3)) 
 
         gl.glBindVertexArray(0) # unbind the vao
         gl.glPopMatrix()
 
+
+        # WANT TO DRAW THE POINTS BASED ON WHAT SOMEONE WAS DRAWING
+        if self.drawLines:
+            self.drawPruningLines()
+
+        # DRAW THE BACKGROUND SKYBOX
         gl.glUseProgram(0)
-        self.drawSkyBox()
-        gl.glUseProgram(0)     
-
-
-        
-        # gl.glBindVertexArray(self.vao)
-        # gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-
-       
-        # gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vertex.size/3))
-
-        # gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-        
-        # gl.glPopMatrix()
-
-        # drawing for the lines we make
-        # print(self.drawArray)
-
-        # # FOR DRAWING THE LINES ADDED BY PARTICIPANTS
-        # self.drawLines()
+        # self.drawSkyBox()
+        # gl.glUseProgram(0) 
     
-            
-        # gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-        # gl.glBindVertexArray(0)
-        
 
-    def loadCubeMap(self, directory):
-       # Bind the texture and set our preferences of how to handle texture
-        self.skyTexture = gl.glGenTextures(1)
-        gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.skyTexture) 
-
-
-        # Loop through the faces and add
-        for type, face in zip(self.cubeTypes, self.cubeFaces):
-            fname = str(directory) + str(face)
-            # LOAD IN THE TEXTURE IMAGE AND READ IT IN TO OPENGL
-            texImg = Image.open(fname)
-            # texImg = texImg.transpose(Image.FLIP_TO_BOTTOM)
-            texData = texImg.convert("RGB").tobytes()
-
-            # need to load the texture into our program
-            gl.glTexImage2D(type, 
-                            0,                      # mipmap setting (can change for manual setting)
-                            gl.GL_RGB,              # texture file storage format
-                            texImg.width,           # texture image width
-                            texImg.height,          # texture image height
-                            0,                      # 0 for legacy 
-                            gl.GL_RGB,              # format of the texture image
-                            gl.GL_UNSIGNED_BYTE,    # datatype of the texture image
-                            texData)                # data texture  
-        
-        # SET THE PARAMETERS OF THE TEXTURE
-        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR) 
-        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
-        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
-        gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_WRAP_R, gl.GL_CLAMP_TO_EDGE)
-
-        
-
-
-
+    # MOUSE ACTION EVENTS WITH GLWIDGET SCREEN
     def mousePressEvent(self, event) -> None:
         self.startPose = QPoint(event.pos()) # returns the last position of the mouse when clicked
     
-
 
     def mouseReleaseEvent(self, event) -> None:
         self.lastPose = QPoint(event.pos())
         self.rayDraw()
         # _ = self.rayDirection(self.lastPose.x(), self.lastPose.y())
-
-        # print("Ray: ", ray)
-        # print("Last mouse position", self.lastPose)
-        # self.mouseDraw() 
     
 
     def convertXYtoUV(self, x=0, y=0):
@@ -506,17 +561,36 @@ class Test(QOpenGLWidget):
         v = 1.0 - ((2 * y) / self.height)
         return u, v
 
-    def convertUVdtoXYZ(self, u=0, v=0, d=0):
-        clip_space = [u, v, d, 1] # the equivalent of doing x'/w, y'/w, z'/w, w/w
-        eye_space = np.linalg.inv(self.projection) @ np.transpose(clip_space) 
-        world_space = np.linalg.inv(self.view) @ eye_space
+
+    def convertUVDtoXYZ(self, u=0, v=0, d=0):
+        clip_space = np.array([u, v, d, 1]) # the equivalent of doing x'/w, y'/w, z'/w, w/w
+        # print(f"Clip space: ", clip_space)
+        # originally eye
+        eye = np.linalg.inv(self.projection) @ np.transpose(clip_space) # convert to eye space from homogeneous clip space
+        # print("Eye Space Ray: ", np.transpose(eye))
+        
+        # ray inverse of our current view 
+        # current view is down the -z access
+        world_space = np.linalg.inv(self.view) @ eye # convert to world view space
+
+        # convert back to local space
         local_space = np.linalg.inv(self.model) @ world_space
-
+        
         # converts back to x, y, z
-        return local_space[:3] # only want the first 3 points
+        return local_space # only want the first 3 points
 
 
-    
+
+    def convertWorldtoUVD(self, pt):
+        vertex = np.ones(4)
+        vertex[:3] = pt
+
+        mvp = self.projection @ self.view @ np.transpose(vertex)
+        mvp /= mvp[3]
+
+        return mvp
+
+
     ##############################################################################################
     # DESCRIPTION: Calculates the direction of a ray with the origin being at the camera position, 
     #              i.e., (0, 0, 0) but pointing in the direction of the mouse click (x, y)
@@ -525,7 +599,7 @@ class Test(QOpenGLWidget):
     #   - y: an integer representing the y position on the screen
     #
     # OUTPUT:
-    #   - ray: a 1x4 array containing the direction of a ray based on the mouse click
+    #   - ray: a 1x4 array containing the direction of a ray based on the mouse click in world space
     # See: https://antongerdelan.net/opengl/raycasting.html
     ##############################################################################################
     def rayDirection(self, x, y):
@@ -534,25 +608,43 @@ class Test(QOpenGLWidget):
 
         # Convert x, y, to u, v (i.e., between [-1, 1])
         u, v = self.convertXYtoUV(x, y)
-        print(f"Euclidean Coordinates: ({x}, {y})")
-        print(f"UV Coordinates: ({u}, {v})")
-        # u = ((2 * x) / self.width) - 1.0 
-        # v = 1.0 - ((2 * y) / self.height)
+        # print(f"Euclidean Coordinates: ({x}, {y})")
+        # print(f"UV Coordinates: ({u}, {v})")
         
         # Want the clip to be pointing down the direction of -z given that is where the camera is pointed
         clip = np.array([u, v, -1.0, 1.0])
         # originally eye
         eye = np.linalg.inv(self.projection) @ clip # convert to eye space from homogeneous clip space
-        print("Eye Space Ray: ", np.transpose(eye))
+        # print("Ray direction (eye): ", eye)
+        # print("Eye Space Ray: ", np.transpose(eye))
+
+        ray_eye = np.array([eye[0], eye[1], -1.0, 0.0])
         
         # ray inverse of our current view 
         # current view is down the -z access
-        ray = np.linalg.inv(self.view) @ eye # convert to world view space
+        ray = np.linalg.inv(self.view) @ ray_eye # convert to world view space
         # print("Ray (not normalized): ", np.transpose(ray))
-        print(f"World Ray (not normalized): {np.transpose(ray)}")
+        # print(f"World Ray (not normalized): {np.transpose(ray)}")
         ray = ray / np.linalg.norm(ray)
-        print(f"World Ray (normalized): {np.transpose(ray)}\n") 
+        # print(f"World Ray (normalized): {np.transpose(ray)}\n") 
         # print("Ray (normalized): ", np.transpose(ray))
+        return ray
+
+
+    def convertXYToWorld(self, x, y):
+        u, v = self.convertXYtoUV(x, y)
+
+        # Want the clip to be pointing down the direction of -z given that is where the camera is pointed
+        clip = np.array([u, v, 0, 1.0])
+        # originally eye
+        eye = np.linalg.inv(self.projection) @ clip # convert to eye space from homogeneous clip space
+        # print("Eye Space Ray: ", np.transpose(eye))
+
+        ray_eye = np.array([eye[0], eye[1], 0, 0.0])
+        
+        # ray inverse of our current view 
+        # current view is down the -z access
+        ray = np.linalg.inv(self.view) @ ray_eye # convert to world view space
         return ray
 
 
@@ -571,54 +663,126 @@ class Test(QOpenGLWidget):
         return mvpVertex[:3]
 
 
+    def convertWorldToLocal(self, pt):
+        vertex = np.ones(4)
+        vertex[:3] = pt
+        # print(vertex)
+
+        local = np.linalg.inv(self.model) @ np.transpose(vertex)
+        # print(local)
+        return local[:3]
+
+
+
+    def addDrawVertices(self, pt1, pt2, pt3, pt4):
+        quad = [pt1, pt2, pt3, pt4]
+
+        for i in range(4):
+            # start adding at point 3*count in draw array
+            start = (self.drawCount+i) * 3
+            # localPt = self.convertWorldToLocal(quad[i])
+            self.drawVertices[start:start+3] = quad[i]
+
+            # self.draw["vertices"].extend(quad[i])
+        
+        self.drawCount += 4 # add 4 since added 4 vertices to create a quad
+        # self.draw["count"] += 4
+
+
+    def get_drawn_coords(self, x, y, z):
+        # convert x, y, to u, v
+        u, v = self.convertXYtoUV(x, y)
+
+        # x,y coordinate clicked on scene is at depth d=0 
+        # want to have the same u,v, coordinates but at the same depth as z
+        # find the corresponding z value corresponding to one of the depths that intersects the mesh face
+        depth = self.convertWorldtoUVD([0, 0, z])
+        d = depth[2]
+
+        # find the local coordinates for value u, v, d
+        localPt = self.convertUVDtoXYZ(u=u, v=v, d=d)
+        # need to divide by w value to get x, y, z
+        localPt /= localPt[-1]
+
+        return localPt[:3]
+
+
     def rayDraw(self):
         # Use the first and last pose to get the midpoint 
         print(f"Start ({self.startPose.x()}, {self.startPose.y()})")
-        print(f"End ({self.lastPose.x()}, {self.lastPose.y()})")
+        # print(f"End ({self.lastPose.x()}, {self.lastPose.y()})")
+
+        # checking the midpoint value
         midPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
         dir = self.rayDirection(x=midPt[0], y=midPt[1])[:3]
+        # print(dir)
         
-        # Determine faces in a given region
+        pt1 = self.rayDirection(x=self.startPose.x(), y=self.startPose.y())
+        pt2 = self.rayDirection(x=self.lastPose.x(), y=self.lastPose.y())
 
+        # get the set of faces that could possibly intersect the line
+        intersectFaces = self.mesh.faces_in_area(pt1, pt2, self.model)
+        
+        if intersectFaces is not None:
+            # Determine faces in a given region        
+            depth, intercept = self.interception(origin=self.camera_pos, rayDirection=dir, faces=intersectFaces)
+            # Need to pass in the vertices to the code
+            if len(intercept) == 0:
+                print("No intercept detected")
+       
+            else:
+                # Now I need to find the min and max z but max their value slightly larger for the rectangle
+                # Depth given in world space
+                self.drawLines = True
+                minZ = np.min(depth)
+                maxZ = np.max(depth)
+                print(f"World Zs: {minZ} & {maxZ}")
+                # testLocal = self.eyeCast(self.startPose.x(), self.startPose.y(), minZ)
+                drawPt1 = self.get_drawn_coords(self.startPose.x(), self.startPose.y(), minZ)
+                drawPt2 = self.get_drawn_coords(self.startPose.x(), self.startPose.y(), maxZ)
+                drawPt3 = self.get_drawn_coords(self.lastPose.x(), self.lastPose.y(), maxZ)
+                drawPt4 = self.get_drawn_coords(self.lastPose.x(), self.lastPose.y(), minZ)
+                
+                print(f"New coordinates at {self.startPose.x()},{self.startPose.y()},{minZ} is {drawPt1}")
+                print(f"New coordinates at {self.startPose.x()},{self.startPose.y()},{maxZ} is {drawPt2}")
+                print(f"New coordinates at {self.lastPose.x()},{self.lastPose.y()},{maxZ} is {drawPt3}")
+                print(f"New coordinates at {self.lastPose.x()},{self.lastPose.y()},{minZ} is {drawPt4}")
 
+                self.addDrawVertices(drawPt1, drawPt2, drawPt3, drawPt4)
 
-        # intercept = self.interception(origin=self.camera_pos, rayDirection=dir, vertexPos=self.vertexPos)
-        # Need to pass in the vertices to the code
-        # if len(intercept) == 0:
-        #     print("No intercept detected")
-        # return 
+                # UPDATE VBO TO INCORPORATE THE NEW VERTICES
+                gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
 
+        self.update()              
+                             
 
-    def interception(self, origin, rayDirection, vertexPos):
+    ###############################################
+    # INPUT: 
+    #   - origin: a 3x1 vertex representing the origin position (0, 0, 0)
+    #   - rayDirection: a vector representing the direction the ray is travelling towards the faces
+    #   - vertexPos: an array of faces represented by 3 vertices in world coordinates that exist within the drawing coordinates
+    # OUTPUT:
+    #   - an array of 3x1 vertices (in world coordinates) that intersect a face given a ray going in direction rayDirection starting at the origin
+    ################################################
+    def interception(self, origin, rayDirection, faces):
     # Need to loop through the list of all vertex positions
     # grab out each face, and pass that to the rayCast algorithm
     # append intercepts to a list of values 
+        depth = []
         intercepts = []
-        for i in range(int(len(self.vertexPos) / 3)): # divide by 3 since 3 vertices per triangle face
-            
-            # Need to consider where the vertices are in world space!
-            v1 = np.ones(4)
-            v1[:3] = vertexPos[3*i]
-            v1 = self.model @ np.transpose(v1)
-            v1 = v1[:3]
-            
-            v2 = np.ones(4)
-            v2[:3] = vertexPos[3*i + 1]
-            v2 = self.model @ np.transpose(v2)
-            v2 = v2[:3]
-
-            v3 = np.ones(4)
-            v3[:3] = vertexPos[3*i + 2]
-            v3 = self.model @ np.transpose(v3)
-            v3 = v3[:3]
-
+        for face in faces:
+            v1 = face[0]
+            v2 = face[1]
+            v3 = face[2]
             # Only want the first 3 values for the vertex points
             pt = self.rayCast(origin, rayDirection, v1, v2, v3)
             if pt is not None:
                 intercepts.append(pt)
-                print(f"Intercept at {pt}")
-        
-        return intercepts
+                depth.append(pt[2])
+                # print(f"Intercept at {pt}")
+        return depth, intercepts
+
+
 
     # return normalVector of the plane
     def normalVector(self, v1, v2, v3):
@@ -626,7 +790,8 @@ class Test(QOpenGLWidget):
 
 
     ###############################
-    # Algorithm inspired by: https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution.html
+    # Algorithm inspired by: 
+    # https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution.html
     ################################
     def rayCast(self, origin, rayDirection, v1, v2, v3):
         # take a 3D direction and calculate if it intersects the plane
@@ -648,26 +813,28 @@ class Test(QOpenGLWidget):
         
         pt = origin + t * rayDirection # possible intercept point
         
-        # DETERMINING IF THE RAY INTERXECTS USING BARYCENTRIC COORDINATES
+        # DETERMINING IF THE RAY INTERSECTS USING BARYCENTRIC COORDINATES WITHIN SOME THRESHOLD
+        delta = 0.1 # arrived after testing as most values were negative -0.004 which is close enough to zero
+        
         edgeBA = v2 - v1
         pEdgeA = pt - v1 # vector between possible intercept point and pt A of the triangle
         perp = np.cross(edgeBA, pEdgeA) # vector perpendicular to triangle's plane
         u = np.dot(normal, perp)
-        if u < 0:
+        if abs(u) > delta:
             return None
 
         edgeCB = v3 - v2
         pEdgeB = pt - v2
         perp = np.cross(edgeCB, pEdgeB)
         v = np.dot(normal, perp)
-        if v < 0:
+        if abs(v) > delta:
             return None
         
         edgeAC = v1 - v3
         pEdgeC = pt - v3
         perp = np.cross(edgeAC, pEdgeC)
         w = np.dot(normal, perp)
-        if w < 0:
+        if abs(w) > delta:
             return None
 
         return pt
@@ -675,109 +842,29 @@ class Test(QOpenGLWidget):
 
     # The purpose of this button is to undo the drawing that participants have drawn so far on the screen
     def undoDraw(self):
-        if self.drawArray["count"] > 0:
-            self.drawArray["vertices"] = self.drawArray["vertices"][:-2]
-            self.drawArray["count"] -= 2
-            print("Removed line")
-            self.update()               # need to redraw the scene so call update
+        if self.drawCount > 0:
+            start = (self.drawCount - 4) * 3
+            end = self.drawCount * 3
+
+            print(f"Delete vertices from indices {start}:{end}")
+            # need to replace all the values from drawCount
+            self.drawVertices[start:end] = np.zeros(12)
+            self.drawCount -= 4
+            gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
+            self.update()
         else:
             print("No line to remove")
+        # if self.drawArray["count"] > 0:
+        #     self.drawArray["vertices"] = self.drawArray["vertices"][:-2]
+        #     self.drawArray["count"] -= 2
+        #     print("Removed line")
+        #     self.update()               # need to redraw the scene so call update
+        # else:
+        #     print("No line to remove")
 
-
-
-    def rotatedDraw(self, x1, y1, x2, y2):
-        # Calculate based on rotation
-        diffAngle = self.angle_to_radians(90 - self.turntable)
-        angle = self.angle_to_radians(self.turntable)
-        # negativeAngle = self.angle_to_radians(360 - self.turntable)
-
-
-        startX = x1 * np.cos(angle)
-        startY = y1 
-        # x1 * cos(90 - rotation) * sin(diffAngle)
-        # At 90 degrees, z values are negated
-        startZ = x1 * np.cos(diffAngle) # * np.sin(negativeAngle)
-
-        # Calculate the new coordinates based on the rotation
-        endX = x2 * np.cos(angle)
-        endY = y2
-        endZ = x2 * np.cos(diffAngle) # * np.sin(negativeAngle)
-
-        if self.turntable >= 90:
-            endZ *= -1
-            startZ *= -1
-        
-        pt1 = np.array([startX, startY, startZ], dtype=np.float32)
-        pt2 = np.array([endX, endY, endZ], dtype=np.float32)
-        return pt1, pt2
 
     
-    def mouseDraw(self):
-        diffX = np.abs(self.startPose.x() - self.lastPose.x())
-        diffY = np.abs(self.startPose.y() - self.lastPose.y())
-        if diffX < (self.width / 20) and diffY < (self.height / 20):
-            print(f"Difference between drawing points is too small {diffX} and {diffY}")
-            # print(self.rayCast(self.startPose.x(), self.lastPose.y()))
-        else:
-            # Convert the coordinates between [-1, 1]
-            x1 = ((2 * self.startPose.x()) / self.width) - 1.0
-            y1 = 1.0 - ((2 * self.startPose.y() / self.height))
-            print(f"Rotation: {self.turntable} pt 1: {x1},{y1}")
-
-            # depth = gl.glReadPixels(x1, y1, 1, 1, gl.GL_DEPTH_COMPONENT, gl.GL_FLOAT)
-            # print("Depth: ", depth)
-
-            # model_view = np.array(gl.glGetDoublev(gl.GL_MODELVIEW_MATRIX))
-            # projection_view = np.array(gl.glGetDoublev(gl.GL_PROJECTION_MATRIX))
-            # view = np.array(gl.glGetIntegerv(gl.GL_VIEWPORT))
-
-            # rotation = np.array(self.rotation)
-            # point = GLU.gluUnProject(x1, y1, depth, model_view, projection_view, view)
-            # print(point)
-           
-            x2 = ((2 * self.lastPose.x()) / self.width) - 1.0
-            y2 = 1.0 - ((2 * self.lastPose.y() / self.height))
-
-            pt1, pt2 = self.rotatedDraw(x1, y1, x2, y2)
-            
-            # startPt = self.projection @ self.rotation @ np.array([startX, startY, 0, 1])
-            # print(f"Start pt {[startX, startY, 0]} vs translated point {startPt}")
-            # print(self.rayCast(self.startPose.x(), self.lastPose.y()))
-
-            self.drawArray["vertices"].append(pt1) # [x1, y1, 0]
-            self.drawArray["vertices"].append(pt2) # [x2, y2, 0]
-            self.drawArray["count"] += 2
-            
-            self.update()
-
     
-    def drawLines(self):
-        if self.drawArray["count"] > 0:
-            gl.glLoadIdentity()
-            gl.glPushMatrix()
-            gl.glUseProgram(self.draw_program)
-            # Set the uniforms
-            # projLoc = gl.glGetUniformLocation(self.program, "projection")
-            # viewLoc = gl.glGetUniformLocation(self.program, "view")
-            rotationLoc = gl.glGetUniformLocation(self.draw_program, "rotation")
-            gl.glUniformMatrix4fv(rotationLoc, 1, gl.GL_FALSE, self.rotation) # * self.camera
-
-            projLoc = gl.glGetUniformLocation(self.draw_program, "projection")
-            gl.glUniformMatrix4fv(projLoc, 1, gl.GL_FALSE, self.projection)
-
-            # viewLoc = gl.glGetUniformLocation(self.draw_program, "view")
-            # gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_FALSE, self.view)
-
-            # define information about the size of points
-            gl.glPointSize(2)
-            gl.glBegin(gl.GL_LINES)
-            for v in self.drawArray["vertices"]:
-                gl.glVertex3fv(v)
-            # gl.glVertex3d(x, y, 0)
-            gl.glEnd()
-            gl.glPopMatrix()
-
-
 
 # QWidget 
 # QtOpenGL.QMainWindow 
@@ -791,35 +878,23 @@ class Window(QMainWindow):
         self.setWindowTitle("TEST Window")
 
         self.central_widget = QWidget() # GLWidget()
-        self.setCentralWidget(self.central_widget)
-
         self.layout = QVBoxLayout(self.central_widget)
+        self.central_widget.setLayout(self.layout)
+        self.setCentralWidget(self.central_widget)    
         
         self.glWidget = Test()
         self.layout.addWidget(self.glWidget)
         
-        # self.glWidget = Test()
-        # self.setCentralWidget(self.glWidget)
-
-        # self.layout = QGridLayout(self.central_widget)
         
         self.slider = self.createSlider()
         self.slider.valueChanged.connect(self.glWidget.setTurnTableRotation)
         self.glWidget.turnTableRotation.connect(self.slider.setValue)
-
         self.layout.addWidget(self.slider)
 
 
         self.undoButton = QPushButton("Undo Button")
         self.undoButton.clicked.connect(self.glWidget.undoDraw)
-        # self.layout.addWidget(self.undoButton)
-
-        # main_layout = QVBoxLayout()
-        # main_layout.addWidget(self.glWidget)
-        # main_layout.addWidget(self.slider)
-        # self.setLayout(main_layout)
-
-
+        self.layout.addWidget(self.undoButton)
     
     
     def createSlider(self):
