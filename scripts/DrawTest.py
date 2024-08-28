@@ -95,7 +95,7 @@ class Test(QOpenGLWidget):
         self.drawVBO = None
         self.drawProgram = None
         self.drawLines = False # dtermine if to show the line
-        self.drawVertices = np.zeros(1200, dtype=np.float32) # give me a set of values to declare for vbo
+        self.drawVertices = np.zeros(3000, dtype=np.float32) # give me a set of values to declare for vbo
         self.drawCount = 0
         # self.drawVertices[:18] = np.array([-2, -2, 0, # -2, -2
         #                               2, -2, 0,
@@ -358,7 +358,7 @@ class Test(QOpenGLWidget):
 
         # gl.glPointSize(3.0)
         gl.glLineWidth(2.0)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.drawVertices.size / 3))
+        gl.glDrawArrays(gl.GL_QUADS, 0, int(self.drawVertices.size / 3))
         # gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.drawCount) 
 
         gl.glBindVertexArray(0) # unbind the vao
@@ -529,7 +529,7 @@ class Test(QOpenGLWidget):
         # # self.draw(self.vertices)
         gl.glBindVertexArray(self.vao)
         gl.glPointSize(2.0)
-        gl.glDrawArrays(gl.GL_POINTS, 0, int(self.vertices.size / 3)) 
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vertices.size / 3)) 
 
         gl.glBindVertexArray(0) # unbind the vao
         gl.glPopMatrix()
@@ -541,8 +541,8 @@ class Test(QOpenGLWidget):
 
         # DRAW THE BACKGROUND SKYBOX
         gl.glUseProgram(0)
-        # self.drawSkyBox()
-        # gl.glUseProgram(0) 
+        self.drawSkyBox()
+        gl.glUseProgram(0) 
     
 
     # MOUSE ACTION EVENTS WITH GLWIDGET SCREEN
@@ -590,7 +590,16 @@ class Test(QOpenGLWidget):
 
         return mvp
 
+    def convertUVDtoWorld(self, pt):
+        clip = np.ones(4)
+        clip[:3] = pt
+        eye = np.linalg.inv(self.projection) @ clip
+        world = np.linalg.inv(self.view) @ eye
+        world /= world[3]
+        return world[:3]
 
+
+    
     ##############################################################################################
     # DESCRIPTION: Calculates the direction of a ray with the origin being at the camera position, 
     #              i.e., (0, 0, 0) but pointing in the direction of the mouse click (x, y)
@@ -667,11 +676,16 @@ class Test(QOpenGLWidget):
         vertex = np.ones(4)
         vertex[:3] = pt
         # print(vertex)
-
         local = np.linalg.inv(self.model) @ np.transpose(vertex)
         # print(local)
         return local[:3]
 
+
+    def convertToWorld(self, pt):
+        vertex = np.ones(4)
+        vertex[:3] = pt
+        world = self.model @ np.transpose(vertex)
+        return world[:3]
 
 
     def addDrawVertices(self, pt1, pt2, pt3, pt4):
@@ -682,79 +696,77 @@ class Test(QOpenGLWidget):
             start = (self.drawCount+i) * 3
             # localPt = self.convertWorldToLocal(quad[i])
             self.drawVertices[start:start+3] = quad[i]
-
             # self.draw["vertices"].extend(quad[i])
-        
         self.drawCount += 4 # add 4 since added 4 vertices to create a quad
         # self.draw["count"] += 4
 
 
-    def get_drawn_coords(self, x, y, z):
-        # convert x, y, to u, v
-        u, v = self.convertXYtoUV(x, y)
-
-        # x,y coordinate clicked on scene is at depth d=0 
-        # want to have the same u,v, coordinates but at the same depth as z
-        # find the corresponding z value corresponding to one of the depths that intersects the mesh face
-        depth = self.convertWorldtoUVD([0, 0, z])
-        d = depth[2]
-
-        # find the local coordinates for value u, v, d
-        localPt = self.convertUVDtoXYZ(u=u, v=v, d=d)
+    def get_drawn_coords(self, u, v, z):
+        # convert z to d
+        depth = self.convertToUVD([0, 0, z])
+        print(f"UVD pt: {u}, {v}, {depth[2]}")
+        localPt = self.convertUVDtoXYZ(u=u, v=v, d=depth[2])            
         # need to divide by w value to get x, y, z
         localPt /= localPt[-1]
-
         return localPt[:3]
 
 
     def rayDraw(self):
         # Use the first and last pose to get the midpoint 
         print(f"Start ({self.startPose.x()}, {self.startPose.y()})")
-        # print(f"End ({self.lastPose.x()}, {self.lastPose.y()})")
+        print(f"End ({self.lastPose.x()}, {self.lastPose.y()})")
 
         # checking the midpoint value
         # midPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
         # dir = self.rayDirection(x=midPt[0], y=midPt[1])[:3]
         # print(dir)
-        
-        pt1 = self.rayDirection(x=self.startPose.x(), y=self.startPose.y())
-        pt2 = self.rayDirection(x=self.lastPose.x(), y=self.lastPose.y())
+
+        u1, v1 = self.convertXYtoUV(x=self.startPose.x(), y=self.startPose.y())
+        u2, v2 = self.convertXYtoUV(x=self.lastPose.x(), y=self.lastPose.y())
 
         # get the set of faces that could possibly intersect the line
-        intersectFaces = self.mesh.faces_in_area(pt1, pt2, self.model)
+        # intersectFaces = self.mesh.faces_in_area(pt1, pt2, self.model)
+        # print("Intersect Faces: ", int(intersectFaces.size / 9))
+
+        # returns intersect faces in local coordinates
+        intersectFaces = self.mesh.intersect_faces(u1=u1, v1=v1, u2=u2, v2=v2, proj=self.projection, view=self.view, model=self.model)
         
         if intersectFaces is not None:
             # Determine faces in a given region   
-            for i in range(10):
-                dirPt = [((i+1) * (self.startPose.x() + self.lastPose.x()))/10, ((i+1)*(self.startPose.y() + self.lastPose.y()))/10]
-                dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
-                depth, intercept = self.interception(origin=self.camera_pos, rayDirection=dir, faces=intersectFaces)
-                # Need to pass in the vertices to the code
-                if len(intercept) == 0:
-                    print("No intercept detected")
-        
-                else:
-                    # Now I need to find the min and max z but max their value slightly larger for the rectangle
-                    # Depth given in world space
-                    self.drawLines = True
-                    minZ = np.min(depth)
-                    maxZ = np.max(depth)
-                    # print(f"World Zs: {minZ} & {maxZ}")
-                    # testLocal = self.eyeCast(self.startPose.x(), self.startPose.y(), minZ)
-                    drawPt1 = self.get_drawn_coords(self.startPose.x(), self.startPose.y(), minZ)
-                    drawPt2 = self.get_drawn_coords(self.startPose.x(), self.startPose.y(), maxZ)
-                    drawPt3 = self.get_drawn_coords(self.lastPose.x(), self.lastPose.y(), maxZ)
-                    drawPt4 = self.get_drawn_coords(self.lastPose.x(), self.lastPose.y(), minZ)
-                    
-                    # print(f"New coordinates at {self.startPose.x()},{self.startPose.y()},{minZ} is {drawPt1}")
-                    # print(f"New coordinates at {self.startPose.x()},{self.startPose.y()},{maxZ} is {drawPt2}")
-                    # print(f"New coordinates at {self.lastPose.x()},{self.lastPose.y()},{maxZ} is {drawPt3}")
-                    # print(f"New coordinates at {self.lastPose.x()},{self.lastPose.y()},{minZ} is {drawPt4}")
+            dirPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
+            dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
+            depth, intercept = self.interception(origin=self.camera_pos, rayDirection=dir, faces=intersectFaces)
+            # Need to pass in the vertices to the code
+            if len(intercept) == 0:
+                print("No intercept detected")
+            else:
+                # Now I need to find the min and max z but max their value slightly larger for the rectangle
+                # Depth given in world space
+                self.drawLines = True
+                minZ = np.min(depth)
+                maxZ = np.max(depth)
+                print(f"Local Zs: {minZ} & {maxZ}")
+                # testLocal = self.eyeCast(self.startPose.x(), self.startPose.y(), minZ)
 
-                    # self.addDrawVertices(drawPt1, drawPt2, drawPt3, drawPt4)
+                # TROUBLE SECTION!!!!!
+                drawPt1 = self.get_drawn_coords(u1, v1, minZ)
+                drawPt2 = self.get_drawn_coords(u1, v1, maxZ)
+                drawPt3 = self.get_drawn_coords(u2, v2, maxZ)
+                drawPt4 = self.get_drawn_coords(u2, v2, minZ)
 
-                    # UPDATE VBO TO INCORPORATE THE NEW VERTICES
-                    gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
+                print(drawPt1)
+                print(drawPt2)
+                print(drawPt3)
+                print(drawPt4)
+                # print(f"New coordinates at {self.startPose.x()},{self.startPose.y()},{minZ} is {drawPt1}")
+                # print(f"New coordinates at {self.startPose.x()},{self.startPose.y()},{maxZ} is {drawPt2}")
+                # print(f"New coordinates at {self.lastPose.x()},{self.lastPose.y()},{maxZ} is {drawPt3}")
+                # print(f"New coordinates at {self.lastPose.x()},{self.lastPose.y()},{minZ} is {drawPt4}")
+
+                self.addDrawVertices(drawPt1, drawPt2, drawPt3, drawPt4)
+
+                # UPDATE VBO TO INCORPORATE THE NEW VERTICES
+                gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
 
         self.update()              
                              
@@ -763,7 +775,7 @@ class Test(QOpenGLWidget):
     # INPUT: 
     #   - origin: a 3x1 vertex representing the origin position (0, 0, 0)
     #   - rayDirection: a vector representing the direction the ray is travelling towards the faces
-    #   - vertexPos: an array of faces represented by 3 vertices in world coordinates that exist within the drawing coordinates
+    #   - faces: an array of faces represented by 3 vertices in world coordinates that exist within the drawing coordinates
     # OUTPUT:
     #   - an array of 3x1 vertices (in world coordinates) that intersect a face given a ray going in direction rayDirection starting at the origin
     ################################################
@@ -774,37 +786,48 @@ class Test(QOpenGLWidget):
         depth = []
         intercepts = []
         for face in faces:
-            v1 = face[0]
-            v2 = face[1]
-            v3 = face[2]
+            # v1 = self.convertUVDtoWorld(face[0])
+            # v2 = self.convertUVDtoWorld(face[1])
+            # v3 = self.convertUVDtoWorld(face[2])
+
+            v1 = self.convertToWorld(face[0])
+            v2 = self.convertToWorld(face[1])
+            v3 = self.convertToWorld(face[2])
             # Only want the first 3 values for the vertex points
-            start = self.drawCount * 3
+            
             pt = self.rayCast(origin, rayDirection, v1, v2, v3)
             if pt is not None:
                 intercepts.append(pt)
-                print(f"Intercepted face: {face}")
-                # extend the drawVertices so we can see what faces are intersected by the ray
-                wv1 = np.ones(4)
-                wv1[:3] = v1
-                local1 = np.linalg.inv(self.model) @ np.transpose(wv1)
-                self.drawVertices[start:start+3] = local1[:3]
+                depth.append(face[2]) # append the local depth to the depth
+                # print(f"Pt: {pt}")
+                # print(f"Intercepted face: {face}")
 
-                start += 3
-                wv2 = np.ones(4)
-                wv2[:3] = v2
-                local2 = np.linalg.inv(self.model) @ np.transpose(wv2)
-                self.drawVertices[start:start+3] = local2[:3]
+                # # extend the drawVertices so we can see what faces are intersected by the ray
+                # wv1 = np.ones(4)
+                # wv1[:3] = v1
+                # local1 = np.linalg.inv(self.model) @ np.transpose(wv1)
+                # self.drawVertices[start:start+3] = local1[:3]
 
-                start += 3
-                wv3 = np.ones(4)
-                wv3[:3] = v3
-                local3 = np.linalg.inv(self.model) @ np.transpose(wv3)
-                self.drawVertices[start:start+3] = local3[:3]
+                # wv2 = np.ones(4)
+                # wv2[:3] = v2
+                # local2 = np.linalg.inv(self.model) @ np.transpose(wv2)
+                
+                # # self.drawVertices[start:start+3] = local2[:3]
+                # self.drawVertices[start] = local2[0]
+                # self.drawVertices[start+1] = local2[1]
+                # self.drawVertices[start+2] = local2[2]
 
-                self.drawCount += 3
-                self.drawLines = True
+                # start = start + 3
+                # wv3 = np.ones(4)
+                # wv3[:3] = v3
+                # local3 = np.linalg.inv(self.model) @ np.transpose(wv3)
+                # self.drawVertices[start] = local3[0]
+                # self.drawVertices[start+1] = local3[1]
+                # self.drawVertices[start+2] = local3[2]
+                # self.drawCount += 3
+                # self.drawLines = True
 
-                depth.append(pt[2])
+                
                 # print(f"Intercept at {pt}")
         return depth, intercepts
 
@@ -864,7 +887,7 @@ class Test(QOpenGLWidget):
         if abs(w) > delta:
             return None
 
-        print(f"Pt: {pt}")
+        
         return pt
 
 

@@ -84,6 +84,7 @@ class Mesh(QWidget):
         # Load and set the vertices
         self.load_mesh(self.load_obj)
         self.vertexFaces = self.get_mesh_vertex() # all vertices grouped by their faces
+        # print(self.vertexFaces.size)s
 
         # self.normals, self.vertexPos, self.vertexFaces = self.split_vertices()
         # self.set_vertices()
@@ -144,7 +145,6 @@ class Mesh(QWidget):
             for vertex in face:
                 vertices.append(self.mesh.vertices[vertex]) # extracts the vertex at the position in the obj file
             faces.append(vertices)
-            
         return np.array(faces, dtype=np.float32)
 
     ###############################################
@@ -157,47 +157,179 @@ class Mesh(QWidget):
     #   - intersectFaces: a list of faces that have values inside the bounded box of (x1, y1), (x1, y2), (x2, y1), (x2, y2).
     #                     Will return None if no face intersects the area
     ################################################
-    def faces_in_area(self, pt1, pt2, modelMt):
+    def faces_in_area(self, pt1, pt2, model):
         # need to find points that are in between pts 1 and 2
         # pts will be in world spaces
-        minX = np.min([pt1[0], pt2[0]])
-        maxX = np.max([pt1[0], pt2[0]])
-        minY = np.min([pt1[1], pt2[1]])
-        maxY = np.max([pt1[1], pt2[1]])
+
+        # Check which is the minimum 
+        minU = np.min([pt1[0], pt2[0]])
+        maxU = np.max([pt1[0], pt2[0]])
+        minV = np.min([pt1[1], pt2[1]])
+        maxV = np.max([pt1[1], pt2[1]])
+
+        if maxU - minU < 0.1:
+            minU -= 0.1
+            maxU += 0.1
+        elif maxV - minV < 0.1:
+            minV -= 0.1
+            maxV += 0.1
+
+        print(f"Bounding box between ({minV}, {minV}) and ({maxV}, {maxV})")   
 
         intercepts = []
-        worldFaces = self.convertToWorldCoord(modelMt, self.vertexFaces)
+        worldFaces = self.convertToWorldCoord(model, self.vertexFaces)
+        # uvdFaces = self.convertFacesToUVD(projection, view, model, self.vertexFaces)
         # Need to loop through each vertexFace
         for face in worldFaces:
             faceIntercept = False
             for worldVtx in face:                
                 # check if inside bounding box
-                if (worldVtx[0] >= minX) and (worldVtx[0] <= maxX) and (worldVtx[1] >= minY) and (worldVtx[1] <= maxY):
+                if (worldVtx[0] >= minU) and (worldVtx[0] <= maxU) and (worldVtx[1] >= minV) and (worldVtx[1] <= maxV):
                     faceIntercept = True
         
             # check if the line is possibly inside a face as well:
             # mainly check if within the bounding box of the face
             # Need to check if one or both vertices are inside the 
 
-            triangleMinX = np.min([face[0][0], face[1][0], face[2][0]])
-            triangleMaxX = np.max([face[0][0], face[1][0], face[2][0]])
-            triangleMinY = np.min([face[0][1], face[1][1], face[2][1]])
-            triangleMaxY = np.max([face[0][1], face[1][1], face[2][1]])
+            # see if the drawing point is inside another face's bounding box
+            triangleMinU = np.min([face[0][0], face[1][0], face[2][0]])
+            triangleMaxU = np.max([face[0][0], face[1][0], face[2][0]])
+            triangleMinV = np.min([face[0][1], face[1][1], face[2][1]])
+            triangleMaxV = np.max([face[0][1], face[1][1], face[2][1]])
 
-            pt1Inside = (pt1[0] >= triangleMinX) and (pt1[0] <= triangleMaxX) and (pt1[1] >= triangleMinY) and (pt1[1] <= triangleMaxY)
-            pt2Inside = (pt2[0] >= triangleMinX) and (pt2[0] <= triangleMaxX) and (pt2[1] >= triangleMinY) and (pt2[1] <= triangleMaxY)
+            pt1Inside = ((pt1[0] >= triangleMinU) and (pt1[0] <= triangleMaxU)) and ((pt1[1] >= triangleMinV) and (pt1[1] <= triangleMaxV))
+            pt2Inside = ((pt2[0] >= triangleMinV) and (pt2[0] <= triangleMaxV)) and ((pt2[1] >= triangleMinV) and (pt2[1] <= triangleMaxV))
 
             # as long as one point could be inside the triangle, then test
             if pt1Inside or pt2Inside:
                 faceIntercept = True
             
             if faceIntercept:
-                intercepts.append(face)  
+                intercepts.append(face) # save the world faces  
 
         if len(intercepts) == 0:
             return None           
 
         return np.array(intercepts, dtype=np.float32)
+
+
+    def intersect_faces(self, u1, v1, u2, v2, proj, view, model): 
+        # need to find the set of faces that are 
+        #   A) within the bounded bowx given by (x1, y1) (x1, y2) (x2, y2) (x2, y1)
+        #   b) faces that contain either the point (x1, y1) or (x2, y2)
+        
+        # check if the line is near vertical or horizontal
+        # if so, add a little more area to the surrounding area
+        delta = 0.05
+        minU = np.min([u1, u2])
+        minV = np.min([v1, v2])
+        maxU = np.max([u1, u2])
+        maxV = np.max([v1, v2])
+
+        if maxU - minU <= delta:
+            print(f"Nearly vertical")
+            minU -= delta
+            maxU += delta
+        
+        if maxV - minV <= delta:
+            print("Nearly horizontal")
+            minV -= delta
+            maxV += delta
+        
+        print(f"Bounded u,v area: ({minU}, {minV}), ({minU}, {maxV}), ({maxU}, {maxV}), ({maxU}, {minV})")
+
+        # Convert faces to uvd coordinates
+        uvdFaces = self.convertFacesToUVD(proj, view, model, self.vertexFaces)
+
+        intersected = []
+        vertices = []
+        intersectCount = 0
+        # Need to compare and see if any of the faces are in the same u, v, bounded region 
+        for count, face in enumerate(uvdFaces):
+            bound = self.in_bound(minU, minV, maxU, maxV, face)
+            inside = self.in_face(u1, v1, u2, v2, face)
+            if bound or inside:
+                # intersected.append(face)
+                vertices.append(count)
+                intersectCount += 1
+
+        print("Intersect Face Count: ", intersectCount)
+        # print("Intersected face vertices:", vertices)
+        
+        if intersectCount > 0:
+            for v in vertices:
+                intersected.append(self.vertexFaces[v])
+            return np.array(intersected, dtype=np.float32)
+        else:
+            return None
+        
+
+
+    def in_bound(self, minU, minV, maxU, maxV, face):
+        # checks to see if the face (or part of the face) is in the given bounds
+        vertex1 = face[0]
+        vertex2 = face[1]
+        vertex3 = face[2]
+        bound1 = (vertex1[0] >= minU and vertex1[0] <= maxU) and (vertex1[1] >= minV and vertex1[1] <= maxV)
+        bound2 = (vertex2[0] >= minU and vertex2[0] <= maxU) and (vertex2[1] >= minV and vertex2[1] <= maxV)
+        bound3 = (vertex3[0] >= minU and vertex3[0] <= maxU) and (vertex3[1] >= minV and vertex3[1] <= maxV)
+        
+        return bound1 or bound2 or bound3
+    
+
+    def in_face(self, u1, v1, u2, v2, face):
+        # checks to see if one of the points drawn 
+        # get the bounded box for the points in the face
+        minFaceU = np.min([face[0][0], face[1][0], face[2][0]])
+        maxFaceU = np.max([face[0][0], face[1][0], face[2][0]])   
+        minFaceV = np.min([face[0][1], face[1][1], face[2][1]])
+        maxFaceV = np.max([face[0][1], face[1][1], face[2][1]])  
+
+        uv1Inside = (u1 >= minFaceU and u1 <= maxFaceU) and (v1 >= minFaceV and v1 <= maxFaceV) 
+        uv2Inside = (u2 >= minFaceU and u2 <= maxFaceU) and (v2 >= minFaceV and v2 <= maxFaceV) 
+        return uv1Inside or uv2Inside
+
+    
+    def convertFaceToWorld(self, model, face):
+        worldFace = []
+        for v in face:
+            vertex = np.ones(4)
+            vertex[:3] = v
+            world = model @ np.transpose(vertex)
+            worldFace.append(world[:3])
+        return np.array(worldFace, dtype=np.float32)
+
+
+    def convertFacesToUVD(self, projection, view, model, faces):
+        uvdFaces = []
+        for face in faces:
+            f = []
+            for v in face:
+                # do the math to convert to world coordinates
+                coord = np.ones(4)
+                coord[:3] = v 
+                vertex = projection @ view @ model @ coord
+                vertex /= vertex[3]
+                # append to list
+                f.append(vertex[:3])        
+            uvdFaces.append(f)
+        return np.array(uvdFaces, dtype=np.float32) 
+
+
+    def convertUVDtoWorld(self, projection, view, faces):
+        worldFace = []
+        for f in faces:
+            face = []
+            for vertex in f:
+                clip = np.ones(4)
+                clip[:3] = vertex
+                eye = np.linalg.inv(projection) @ clip
+                world = np.linalg.inv(view) @ eye
+                world /= world[3]
+                face.append(world[:3]) # only want the first 3 values x, y, z
+            worldFace.append(face)
+        return np.array(worldFace, dtype=np.float32)
+                
 
     def convertToWorldCoord(self, modelMt, faces):
         worldFaces = []
@@ -214,7 +346,7 @@ class Mesh(QWidget):
         
         return np.array(worldFaces, dtype=np.float32)
     
-                
+             
 
 
     def set_translate(self, x, y, z):
