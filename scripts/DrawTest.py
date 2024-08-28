@@ -33,9 +33,10 @@ from PIL import Image
 
 class Test(QOpenGLWidget):
     turnTableRotation = Signal(int)
+    verticalRotation = Signal(int)
 
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, wholeView=False):
         QOpenGLWidget.__init__(self, parent)
 
         # self.vertex = np.array([-0.5, -0.5, 0.0, 
@@ -45,7 +46,9 @@ class Test(QOpenGLWidget):
         # self.vertices = np.array([[-0.5, -0.5, 0.0,],
         #                           [0.5, -0.5, 0.0],
         #                           [0.0, 0.5, 0.0]], dtype=np.float32)
+        self.wholeView = wholeView
         self.turntable = 0
+        self.vertical = 0
         self.rotation = mt.create_identity()        # Gets an identity matrix
         self.projection = mt.create_identity()      # Sets the projection perspective
         self.view = mt.create_identity()            # sets the camera location
@@ -56,6 +59,7 @@ class Test(QOpenGLWidget):
 
         # self.mesh = Mesh("../obj_files/exemplarTree.obj")
         self.mesh = Mesh("../obj_files/testMonkey.obj")
+        # self.mesh = Mesh("../obj_files/textureTree.obj")
         # self.mesh = Mesh("../obj_files/skyBox.obj")
         self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
         self.texture = None
@@ -80,8 +84,8 @@ class Test(QOpenGLWidget):
         
 
         # UNIFORM VALUES FOR SHADERS
-        self.lightPos = [-1.0, 10.0, -1.0]
-        self.lightColor = [1.0, 0.87, 0.13]
+        self.lightPos = [0, 5.0, 0] # -1, 5.0, -1
+        self.lightColor = [1.0, 1.0, 0] # 1.0, 0.87, 0.13
         self.camera_pos = [0, 0, 0]
         self.tree_color = [1.0, 1.0, 1.0, 1.0]
         self.triangle_color = [1.0, 0.0, 1.0, 0.0]
@@ -144,14 +148,21 @@ class Test(QOpenGLWidget):
 
 
     def setTurnTableRotation(self, angle):
-        angle = self.normalizeAngle(angle)
+        # angle = self.normalizeAngle(angle)
         if angle != self.turntable:
             self.turntable = angle
             self.turnTableRotation.emit(angle)
             self.update()
 
     
+    def setVerticalRotation(self, angle):
+        # angle = self.normalizeAngle(angle)
+        if angle != self.vertical:
+            self.vertical = angle
+            self.verticalRotation.emit(angle)
+            self.update()
     
+
     def getGlInfo(self):
         "Get opengl info"
         info = """
@@ -256,8 +267,10 @@ class Test(QOpenGLWidget):
         # scale = mt.create_from_scale([-4.3444, 4.1425, -10.00])
         scale = mt.create_from_scale([-4, 4, -9.99])
         # translate = mt.create_from_translation([0, -4, 0])
-        angle = self.angle_to_radians(self.turntable)
-        rotation = mt.create_from_y_rotation(angle)
+        hAngle = self.angle_to_radians(self.turntable)
+        vAngle = self.angle_to_radians(self.vertical)
+
+        rotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
         model = rotation @ scale # for rotating the modelView
 
         # set last row and column to 0 so it doesn't affect translations but only rotations
@@ -490,10 +503,15 @@ class Test(QOpenGLWidget):
         # Based on calculations from the projection matrix with fovy = 45, aspect = (646/616), near = 0.1, far = 10.0
         # rotate and translate the model to the correct position
         # Deal with the rotation of the object
-        angle = self.angle_to_radians(self.turntable)
-        # x_rotation = mt.create_from_x_rotation(-np.pi/2) # for certain files to get upright
-        rotation = mt.create_from_y_rotation(angle) # for rotating the modelView
-        translation = np.transpose(mt.create_from_translation([0, 0, -5.0])) # 0, -0, -5.883
+        hAngle = self.angle_to_radians(self.turntable)
+        vAngle = self.angle_to_radians(self.vertical)
+
+        rotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
+
+        if self.wholeView: # looking at the whole tree view
+            translation = np.transpose(mt.create_from_translation([0, 0, -5.0])) # 0, -0, -5.883
+        else:
+            translation = np.transpose(mt.create_from_translation([0, 0, -2.0]))
         # scale = mt.create_from_scale([-4.344, 4.1425, -9.99])
         scale = mt.create_from_scale([1, 1, 1])
 
@@ -538,6 +556,11 @@ class Test(QOpenGLWidget):
         # WANT TO DRAW THE POINTS BASED ON WHAT SOMEONE WAS DRAWING
         if self.drawLines:
             self.drawPruningLines()
+
+        
+        # TO ADD CONCEPT TO DRAW BOUNDING BOX FOR WHOLE VIEW CAMERA
+
+        # TO ADD CONCEPT FOR DRAWING HINTS/CORRECT PRUNING CUTS WHEN ASKED
 
         # DRAW THE BACKGROUND SKYBOX
         gl.glUseProgram(0)
@@ -925,34 +948,69 @@ class Window(QMainWindow):
         # super(Window, self).__init__()
         QMainWindow.__init__(self, parent)
         # QtOpenGL.QMainWindow.__init__(self)
-        self.resize(700, 700)
+        # self.resize(1000, 1000)
+        self.setGeometry(100, 100, 1000, 1000)
         self.setWindowTitle("TEST Window")
 
         self.central_widget = QWidget() # GLWidget()
-        self.layout = QVBoxLayout(self.central_widget)
-        self.central_widget.setLayout(self.layout)
-        self.setCentralWidget(self.central_widget)    
-        
-        self.glWidget = Test()
-        self.layout.addWidget(self.glWidget)
-        
-        
-        self.slider = self.createSlider()
-        self.slider.valueChanged.connect(self.glWidget.setTurnTableRotation)
-        self.glWidget.turnTableRotation.connect(self.slider.setValue)
-        self.layout.addWidget(self.slider)
 
+        self.layout = QGridLayout(self.central_widget)
+
+        # self.layout = QVBoxLayout(self.central_widget)
+        # self.hLayout = QHBoxLayout(self.central_widget)
+        # self.central_widget.setLayout(self.layout)
+        self.setCentralWidget(self.central_widget)   
+
+        # getting the main screen
+        self.glWidget = Test()
+        self.glWidget.setFixedSize(600, 600)
+        # self.layout.addWidget(self.glWidget)
+        self.layout.addWidget(self.glWidget, 0, 1, 2, 1) # r=0, c=1, rs = 3, cs = 1
+
+        self.vSlider = self.createSlider(horizontal=False)
+        self.vSlider.valueChanged.connect(self.glWidget.setVerticalRotation)
+        self.glWidget.verticalRotation.connect(self.vSlider.setValue)
+        # self.layout.addWidget(self.vSlider)
+        self.layout.addWidget(self.vSlider, 0, 0, 2, 1) 
+        
+        
+        
+        # getting the horizontal slider
+        self.hSlider = self.createSlider(horizontal=True)
+        self.hSlider.valueChanged.connect(self.glWidget.setTurnTableRotation)
+        self.glWidget.turnTableRotation.connect(self.hSlider.setValue)
+        # self.layout.addWidget(self.hSlider)
+        self.layout.addWidget(self.hSlider, 2, 1, 1, 1)
+
+        # self.hLayout.addWidget(self.vSlider)
+        # self.hLayout.addLayout(self.layout)
 
         self.undoButton = QPushButton("Undo Button")
         self.undoButton.clicked.connect(self.glWidget.undoDraw)
-        self.layout.addWidget(self.undoButton)
+        # self.layout.addWidget(self.undoButton)
+        # self.layout.addWidget(self.undoButton, 0, 1, 1, 1)
+
+        self.viewGL = Test(wholeView=True)
+        self.viewGL.setFixedSize(200, 150)
+        self.layout.addWidget(self.viewGL, 0, 2, 1, 1)
+        self.hSlider.valueChanged.connect(self.viewGL.setTurnTableRotation)
+        self.viewGL.turnTableRotation.connect(self.hSlider.setValue)
+
+        self.vSlider.valueChanged.connect(self.viewGL.setVerticalRotation)
+        self.viewGL.verticalRotation.connect(self.vSlider.setValue)
+        # self.frame = QFrame()
     
     
-    def createSlider(self):
-        slider = QSlider(Qt.Horizontal)
-        slider.setRange(0, 360) # 0 - 360*16
+    def createSlider(self, horizontal=True):
+        if horizontal:
+            slider = QSlider(Qt.Horizontal)
+        else:
+            slider = QSlider(Qt.Vertical)
+        # slider.setRange(0, 360) # 0 - 360*16
+        slider.setRange(-30, 30)
         slider.setSingleStep(1) # 
-        slider.setPageStep(10)
+        # slider.setPageStep(10)
+        slider.setPageStep(5)
         slider.setTickPosition(QSlider.TicksBelow)
 
         return slider

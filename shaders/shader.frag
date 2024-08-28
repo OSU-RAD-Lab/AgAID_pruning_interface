@@ -26,7 +26,7 @@ void main()
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
 
-    vec3 result = (ambient + diffuse) * vec3(0.5, 0.25, 0.0); // 0.5, 0.25, 0.0
+    vec3 result = (ambient + diffuse) * vec3(0.251, 0.212, 0.169); // 0.5, 0.25, 0.0
     //vec3 result = ambient + diffuse;
     treeColor = vec4(result, 1.0) * texture(ourTexture, TexCoord);
     //treeColor = vec4(result, 0.2);             
