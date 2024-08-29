@@ -26,6 +26,8 @@ import pywavefront
 import numpy as np
 import ctypes                 # to communicate with c code under the hood
 import pyrr.matrix44 as mt
+from threading import Thread
+import time
 
 
 #########################################
@@ -80,7 +82,8 @@ class Mesh(QWidget):
         self.mesh_list = None
         self.normals = None
         self.vertexFaces  = None
-        
+        self.intersectFaces = []
+        self.intersectCount = 0
         # Load and set the vertices
         self.load_mesh(self.load_obj)
         self.vertexFaces = self.get_mesh_vertex() # all vertices grouped by their faces
@@ -220,6 +223,10 @@ class Mesh(QWidget):
         
         # check if the line is near vertical or horizontal
         # if so, add a little more area to the surrounding area
+        start = time.time()
+        # self.intersectFaces = [] # reset to empty
+        # self.intersectCount = 0
+        
         delta = 0.05
         minU = np.min([u1, u2])
         minV = np.min([v1, v2])
@@ -245,24 +252,49 @@ class Mesh(QWidget):
         vertices = []
         intersectCount = 0
         # Need to compare and see if any of the faces are in the same u, v, bounded region 
+        # zip together the faces
         for count, face in enumerate(uvdFaces):
+
+            # convert to threads
             bound = self.in_bound(minU, minV, maxU, maxV, face)
             inside = self.in_face(u1, v1, u2, v2, face)
+            # t1 = Thread(target=self.in_bound, args=(minU, minV, maxV, face))
+            # t2 = Thread(target=self.in_face, args=(u1, v1, u2, v2, face))
             if bound or inside:
                 # intersected.append(face)
                 vertices.append(count)
                 intersectCount += 1
 
+
+        # threads_list = []
+        # ti = 0
+        # for localFace, uvdFace in zip(self.vertexFaces, uvdFaces):
+        #     thread = Thread(target=self.doesIntersect, args=(minU, minV, maxU, maxV, u1, v1, u2, v2, uvdFace, localFace))
+        #     threads_list.append(thread) # keep adding threads to the list
+        #     threads_list[ti].start()
+        #     ti += 1 
+
+        # for thread in threads_list:
+        #     thread.join()   
         # print("Intersect Face Count: ", intersectCount)
         # print("Intersected face vertices:", vertices)
         
         if intersectCount > 0:
+            # return self.intersectFaces
             for v in vertices:
                 intersected.append(self.vertexFaces[v])
+            print(f"Total time: {time.time() - start}")
             return np.array(intersected, dtype=np.float32)
         else:
+            print(f"Total time: {time.time() - start}")
             return None
+
         
+
+    def doesIntersect(self, minU, minV, maxU, maxV, u1, v1, u2, v2, face, localFace):
+        if self.in_bound(minU, minV, maxU, maxV, face) or self.in_face(u1, v1, u2, v2, face):
+            self.intersectFaces.append(localFace)
+            self.intersectCount += 1
 
 
     def in_bound(self, minU, minV, maxU, maxV, face):

@@ -23,6 +23,7 @@ import numpy as np
 import ctypes                 # to communicate with c code under the hood
 import pyrr.matrix44 as mt
 from PIL import Image
+import time
 
 
 
@@ -743,7 +744,8 @@ class Test(QOpenGLWidget):
 
 
     def rayDraw(self):
-        # Use the first and last pose to get the midpoint 
+        # Use the first and last pose to get the midpoint
+        start = time.time()
         print(f"Start ({self.startPose.x()}, {self.startPose.y()})")
         print(f"End ({self.lastPose.x()}, {self.lastPose.y()})")
 
@@ -795,6 +797,7 @@ class Test(QOpenGLWidget):
                 # UPDATE VBO TO INCORPORATE THE NEW VERTICES
                 gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
 
+        print(f"Total time for draw: {time.time() - start}")
         self.update()              
                              
 
