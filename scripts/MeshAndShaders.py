@@ -253,7 +253,7 @@ class Mesh(QWidget):
                 vertices.append(count)
                 intersectCount += 1
 
-        print("Intersect Face Count: ", intersectCount)
+        # print("Intersect Face Count: ", intersectCount)
         # print("Intersected face vertices:", vertices)
         
         if intersectCount > 0:

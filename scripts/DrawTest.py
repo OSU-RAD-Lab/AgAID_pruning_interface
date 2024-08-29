@@ -58,8 +58,8 @@ class Test(QOpenGLWidget):
         self.ZFAR = 10.0
 
         # self.mesh = Mesh("../obj_files/exemplarTree.obj")
-        self.mesh = Mesh("../obj_files/testMonkey.obj")
-        # self.mesh = Mesh("../obj_files/textureTree.obj")
+        # self.mesh = Mesh("../obj_files/testMonkey.obj")
+        self.mesh = Mesh("../obj_files/textureTree.obj")
         # self.mesh = Mesh("../obj_files/skyBox.obj")
         self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
         self.texture = None
@@ -89,6 +89,11 @@ class Test(QOpenGLWidget):
         self.camera_pos = [0, 0, 0]
         self.tree_color = [1.0, 1.0, 1.0, 1.0]
         self.triangle_color = [1.0, 0.0, 1.0, 0.0]
+
+        self.WHOLE_TREE_DEPTH = -5.0
+        self.TREE_SECTION_DEPTH = -1.5
+        self.TREE_DY = -2
+        self.TREE_SECTION_DX = -0.25
         
         # dimensions of the screen
         self.width = -1
@@ -509,9 +514,9 @@ class Test(QOpenGLWidget):
         rotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
 
         if self.wholeView: # looking at the whole tree view
-            translation = np.transpose(mt.create_from_translation([0, 0, -5.0])) # 0, -0, -5.883
+            translation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH])) # 0, -0, -5.883
         else:
-            translation = np.transpose(mt.create_from_translation([0, 0, -2.0]))
+            translation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]))
         # scale = mt.create_from_scale([-4.344, 4.1425, -9.99])
         scale = mt.create_from_scale([1, 1, 1])
 
@@ -727,7 +732,10 @@ class Test(QOpenGLWidget):
     def get_drawn_coords(self, u, v, z):
         # convert z to d
         depth = self.convertToUVD([0, 0, z])
-        print(f"UVD pt: {u}, {v}, {depth[2]}")
+        # if depth[2] > 1:
+        #     localPt = self.convertUVDtoXYZ(u=u, v=v, d=1)
+        # # print(f"UVD pt: {u}, {v}, {depth[2]}")
+        # else:
         localPt = self.convertUVDtoXYZ(u=u, v=v, d=depth[2])            
         # need to divide by w value to get x, y, z
         localPt /= localPt[-1]
@@ -777,14 +785,10 @@ class Test(QOpenGLWidget):
                 drawPt3 = self.get_drawn_coords(u2, v2, maxZ)
                 drawPt4 = self.get_drawn_coords(u2, v2, minZ)
 
-                print(drawPt1)
-                print(drawPt2)
-                print(drawPt3)
-                print(drawPt4)
-                # print(f"New coordinates at {self.startPose.x()},{self.startPose.y()},{minZ} is {drawPt1}")
-                # print(f"New coordinates at {self.startPose.x()},{self.startPose.y()},{maxZ} is {drawPt2}")
-                # print(f"New coordinates at {self.lastPose.x()},{self.lastPose.y()},{maxZ} is {drawPt3}")
-                # print(f"New coordinates at {self.lastPose.x()},{self.lastPose.y()},{minZ} is {drawPt4}")
+                # print(drawPt1)
+                # print(drawPt2)
+                # print(drawPt3)
+                # print(drawPt4)
 
                 self.addDrawVertices(drawPt1, drawPt2, drawPt3, drawPt4)
 
@@ -808,50 +812,19 @@ class Test(QOpenGLWidget):
     # append intercepts to a list of values 
         depth = []
         intercepts = []
+        
         for face in faces:
             # v1 = self.convertUVDtoWorld(face[0])
             # v2 = self.convertUVDtoWorld(face[1])
             # v3 = self.convertUVDtoWorld(face[2])
-
             v1 = self.convertToWorld(face[0])
             v2 = self.convertToWorld(face[1])
             v3 = self.convertToWorld(face[2])
             # Only want the first 3 values for the vertex points
-            
             pt = self.rayCast(origin, rayDirection, v1, v2, v3)
             if pt is not None:
                 intercepts.append(pt)
                 depth.append(face[2]) # append the local depth to the depth
-                # print(f"Pt: {pt}")
-                # print(f"Intercepted face: {face}")
-
-                # # extend the drawVertices so we can see what faces are intersected by the ray
-                # wv1 = np.ones(4)
-                # wv1[:3] = v1
-                # local1 = np.linalg.inv(self.model) @ np.transpose(wv1)
-                # self.drawVertices[start:start+3] = local1[:3]
-
-                # wv2 = np.ones(4)
-                # wv2[:3] = v2
-                # local2 = np.linalg.inv(self.model) @ np.transpose(wv2)
-                
-                # # self.drawVertices[start:start+3] = local2[:3]
-                # self.drawVertices[start] = local2[0]
-                # self.drawVertices[start+1] = local2[1]
-                # self.drawVertices[start+2] = local2[2]
-
-                # start = start + 3
-                # wv3 = np.ones(4)
-                # wv3[:3] = v3
-                # local3 = np.linalg.inv(self.model) @ np.transpose(wv3)
-                # self.drawVertices[start] = local3[0]
-                # self.drawVertices[start+1] = local3[1]
-                # self.drawVertices[start+2] = local3[2]
-                # self.drawCount += 3
-                # self.drawLines = True
-
-                
-                # print(f"Intercept at {pt}")
         return depth, intercepts
 
 
@@ -869,10 +842,10 @@ class Test(QOpenGLWidget):
         # take a 3D direction and calculate if it intersects the plane
         normal = self.normalVector(v1, v2, v3)
         # area = np.linalg.norm(normal)
-        # print(normal)
-
-        denominator = np.dot(rayDirection, normal)    
-        if denominator <= 1e-3: # close to 0 emaning it is almost parallel
+       
+        denominator = np.dot(rayDirection, normal)
+        
+        if denominator <= 1e-8: # close to 0 emaning it is almost parallel
             return None # no intersect due to plane and ray being parallel
         
         # dist = origin - plane[0] # change from A to center point of the plane
@@ -880,13 +853,14 @@ class Test(QOpenGLWidget):
         numerator = -(np.dot(normal, origin) + dist)
         # numerator = np.dot(origin, normal) + plane[0] # to the distance of pt1 on the plane
         t = numerator / denominator
+       
         if t < 0:
             return None # triangle is behind the ray
         
         pt = origin + t * rayDirection # possible intercept point
         
         # DETERMINING IF THE RAY INTERSECTS USING BARYCENTRIC COORDINATES WITHIN SOME THRESHOLD
-        delta = 0.1 # arrived after testing as most values were negative -0.004 which is close enough to zero
+        delta = 1e-3 # arrived after testing as most values were negative -0.004 which is close enough to zero
         
         edgeBA = v2 - v1
         pEdgeA = pt - v1 # vector between possible intercept point and pt A of the triangle
@@ -909,7 +883,6 @@ class Test(QOpenGLWidget):
         w = np.dot(normal, perp)
         if abs(w) > delta:
             return None
-
         
         return pt
 
@@ -963,7 +936,7 @@ class Window(QMainWindow):
 
         # getting the main screen
         self.glWidget = Test()
-        self.glWidget.setFixedSize(600, 600)
+        self.glWidget.setFixedSize(800, 800)
         # self.layout.addWidget(self.glWidget)
         self.layout.addWidget(self.glWidget, 0, 1, 2, 1) # r=0, c=1, rs = 3, cs = 1
 
@@ -991,7 +964,7 @@ class Window(QMainWindow):
         # self.layout.addWidget(self.undoButton, 0, 1, 1, 1)
 
         self.viewGL = Test(wholeView=True)
-        self.viewGL.setFixedSize(200, 150)
+        self.viewGL.setFixedSize(250, 200)
         self.layout.addWidget(self.viewGL, 0, 2, 1, 1)
         self.hSlider.valueChanged.connect(self.viewGL.setTurnTableRotation)
         self.viewGL.turnTableRotation.connect(self.hSlider.setValue)
