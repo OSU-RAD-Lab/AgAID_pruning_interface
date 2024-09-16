@@ -8,9 +8,9 @@ os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
 from PySide2 import QtCore, QtGui, QtOpenGL
 from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget
-from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint, QCoreApplication
+from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint, QCoreApplication, QPoint
 from PySide2.QtOpenGL import QGLWidget, QGLContext
-from PySide2.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4, QSurfaceFormat
+from PySide2.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4, QSurfaceFormat, QPainter
 from shiboken2 import VoidPtr
 from OpenGL.GL.shaders import compileShader, compileProgram
 
@@ -23,13 +23,44 @@ import numpy as np
 import ctypes                 # to communicate with c code under the hood
 import pyrr.matrix44 as mt
 from PIL import Image
+import time
+import math
+from freetype import * # allows us to display text on the screen
 
 
 
 
 # QtOpenGL.QGLWidget
 # QOpenGLWidget
-        
+
+class Character:
+    def __init__(self, texID, size, bearing, advance):
+        self.texID = texID
+        self.size = size  # a tuple storing the size of the glyph
+        self.bearing = bearing # a tuple describing the bearing of the glyph
+        self.advance = advance
+
+
+class Label:
+    def __init__(self, texID, vao, vbo, world):
+        self.texID = texID
+        self.vao = vao
+        self.vbo = vbo
+        self.world = world # matrix of where to put the object
+
+
+class PaintEvent(QWidget):
+    def __init__(self, text, x, y):
+        # QOpenGLWidget.__init__(self)
+        self.text = text
+        self.point = QPoint(x, y)
+    
+    def paintEvent(self, event):
+        paint = QPainter()
+        paint.begin(self)
+        paint.setPen(Qt.yellow)
+        paint.drawText(self.point, self.text)
+        paint.end()
 
 class Test(QOpenGLWidget):
     turnTableRotation = Signal(int)
@@ -66,6 +97,7 @@ class Test(QOpenGLWidget):
         self.vao = None
         self.vbo = None 
 
+
         # GETTING THE BACKGROUND SKY BOX
         self.skyMesh = Mesh("../obj_files/skyBox.obj")
         self.skyVertices = np.array(self.skyMesh.vertices, dtype=np.float32)
@@ -93,7 +125,7 @@ class Test(QOpenGLWidget):
         self.WHOLE_TREE_DEPTH = -5.0
         self.TREE_SECTION_DEPTH = -1.5
         self.TREE_DY = -2
-        self.TREE_SECTION_DX = -0.25
+        self.TREE_SECTION_DX = -0.25 # -0.25
         
         # dimensions of the screen
         self.width = -1
@@ -106,43 +138,27 @@ class Test(QOpenGLWidget):
         self.drawLines = False # dtermine if to show the line
         self.drawVertices = np.zeros(3000, dtype=np.float32) # give me a set of values to declare for vbo
         self.drawCount = 0
-        # self.drawVertices[:18] = np.array([-2, -2, 0, # -2, -2
-        #                               2, -2, 0,
-        #                               2, -2, -4.99,
-        #                               -2, -2, -4.99,
-        #                               -3.99, -3.99, -4.99,
-        #                               3.99, -3.99, -4.99], dtype=np.float32)
+        
+        # TEXT DISPLAYING
+        self.characters = {}
+        self.textVAO = None
+        self.textVBO = None
+        self.textProgram = None
+        self.displayLabels = False
+        self.textVertices = np.array([[0.0, 0.0, 0.0, 0.0],
+                                    [0.0, 0.0, 0.0, 1.0],
+                                    [0.0, 0.0, 1.0, 1.0],
+                                    [0.0, 0.0, 0.0, 0.0],
+                                    [0.0, 0.0, 1.0, 1.0],
+                                    [0.0, 0.0, 1.0, 0.0]], dtype=np.float32)
         
 
-
-        self.SIMPLE_VERTEX_SHADER = """
-        # version 330 core
-
-        layout (location = 0) in vec3 aPos;
-
-        uniform mat4 projection;
-        uniform mat4 view;
-        uniform mat4 model;
-
-        out vec4 color;
-
-        void main()
-        {
-            gl_Position = projection * view * model * vec4(aPos, 1.0);
-            color = vec4(1.0, 0.0, 0.0, 0.0);
-        }
-        """
-
-        self.SIMPLE_FRAGMENT_SHADER = """
-        # version 330 core
-        in vec4 color;
-        out vec4 FragColor;
-
-        void main()
-        {
-            FragColor = color;
-        }
-        """
+                                # tx, ty, x, y, z
+        self.labelBox = np.array([1.0, 1.0, 1.0, 1.0, 0.0,
+                                  1.0, 0.0, 1.0, -1.0, 0.0,
+                                  0.0, 0.0, -1.0, -1.0, 0.0,
+                                  0.0, 1.0, -1.0, 1.0, 0.0], dtype=np.float32)
+        
 
     def normalizeAngle(self, angle):
         while angle < 0:
@@ -183,6 +199,7 @@ class Test(QOpenGLWidget):
             )
         return info 
     
+
 
     def initializeSkyBox(self):
         gl.glUseProgram(0)
@@ -255,6 +272,137 @@ class Test(QOpenGLWidget):
         gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
 
 
+    #########################################################
+    # DESCRIPTION: Initializing textures for loading text on the screen
+    # Code inspired by: https://learnopengl.com/In-Practice/Text-Rendering
+    ########################################################
+    def initializeText(self):
+        # Create a text program
+        gl.glUseProgram(0)
+        vertexShader = Shader("vertex", "text_shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "text_shader.frag").shader
+
+        self.textProgram = gl.glCreateProgram()
+        gl.glAttachShader(self.textProgram, vertexShader)
+        gl.glAttachShader(self.textProgram, fragmentShader)
+        gl.glLinkProgram(self.textProgram)
+        gl.glUseProgram(self.textProgram)
+    
+        # ft = FT_Library()
+        # FT_Init_FreeType(byref(ft))
+
+        face = Face(r'C:/Windows/Fonts/arial.ttf', 0)
+        # face = FT_Face()
+        # FT_New_Face(ft, r'C:/Windows/Fonts/arial.ttf', 0, byref(face))
+        # FT_Set_Pixel_Sizes(face, 0, 48)
+        face.set_pixel_sizes(0, 48) # set the size of the font to 48 with dynamically growing widths based on height
+        # if FT_Load_Char(face, 'X', freetype.FT_LOAD_RENDER):
+        #     print("Failed to load glyph")
+        #     return
+        if face.load_char("X"):
+            print("Failed to load glyph")
+            return
+        
+        slot = face.glyph
+        gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1) 
+        # START LOOP TO INITIALIZE GLYPH TEXTURES
+        for c in range(128): # want to loop through the first 128 characters
+            # if FT_Load_Char(face, chr(c), freetype.FT_LOAD_RENDER):
+            #     print(f"Failed to load glyph {chr(c)}")
+            #     continue
+            if face.load_char(chr(c)): 
+                print(f"Failed to load glyph {chr(c)}")
+                continue
+        
+            # Create a texture for the glpyh
+            texture = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D,
+                0,
+                gl.GL_RED,                  # internal format
+                slot.bitmap.width,
+                slot.bitmap.rows,
+                0,
+                gl.GL_RED,                  # format options
+                gl.GL_UNSIGNED_BYTE,
+                slot.bitmap.buffer
+            )
+
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+            
+            char = Character(texture, (slot.bitmap.width, slot.bitmap.rows), (slot.bitmap_left, slot.bitmap_top), slot.advance.x)
+            self.characters[chr(c)] = char # store the character in a dictionary for easy access
+    
+        # FT_Done_Face(face)
+        # FT_Done_FreeType(ft)
+        # create and bind the vertex attribute array
+        self.textVAO = gl.glGenVertexArrays(1)
+        # bind the vertex buffer object
+        self.textVBO = gl.glGenBuffers(1)
+        gl.glBindVertexArray(self.textVAO)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.textVBO)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.textVertices.itemsize * 6 * 4, self.textVertices, gl.GL_DYNAMIC_DRAW) 
+        gl.glEnableVertexAttribArray(0) # set location = 0 in text vertex shader
+        gl.glVertexAttribPointer(0, 4, gl.GL_FLOAT, gl.GL_FALSE, 4 * self.textVertices.itemsize, ctypes.c_void_p(0))
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindVertexArray(0)
+
+
+
+    def renderText(self, text, x, y, scale):
+        gl.glEnable(gl.GL_CULL_FACE)
+        gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+        gl.glUseProgram(self.textProgram) # activate the program
+        # allows us to map the text on screen using screen coordinates
+        textProject = np.transpose(mt.create_orthogonal_projection_matrix(0.0, self.width, 0.0, self.height, self.ZNEAR, self.ZFAR))
+        textProjLoc = gl.glGetUniformLocation(self.textProgram, "projection")
+        gl.glUniformMatrix4fv(textProjLoc, 1, gl.GL_TRUE, textProject)
+
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindVertexArray(self.textVAO)
+        
+        for char in text:
+            # intChar = ord(char) # convert the character to a number
+            character = self.characters[char]
+
+            xpos = x + character.bearing[0] * scale # get the x value from the bearing
+            ypos = y - (character.size[1] - character.bearing[1]) * scale # get the y value from bearing and scale
+
+            w = character.size[0] * scale
+            h = character.size[1] * scale
+
+            textVertices = np.array([[xpos,     ypos + h, 0.0, 0.0],
+                                        [xpos,     ypos,     0.0, 1.0],
+                                        [xpos + w, ypos,     1.0, 1.0],
+                                        [xpos,     ypos + h, 0.0, 0.0],
+                                        [xpos + w, ypos,     1.0, 1.0],
+                                        [xpos + w, ypos + h, 1.0, 0.0]], dtype=np.float32)
+
+            # Bind the character's texture
+            gl.glBindTexture(gl.GL_TEXTURE_2D, character.texID)
+            # Update the buffer
+            # gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.textVBO)
+            # print("Text VBO", self.textVBO)
+            gl.glNamedBufferSubData(self.textVBO, 0, textVertices.nbytes, textVertices)
+            # gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+            gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6) # number of rows for text
+            x += (character.advance >> 6) * scale
+            # print(f"{char} x value {x}")
+        
+        gl.glBindVertexArray(0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        gl.glPopMatrix()
+        gl.glUseProgram(0)
+        gl.glDisable(gl.GL_CULL_FACE)
+         
+
+
     def drawSkyBox(self):
         gl.glLoadIdentity()
         gl.glPushMatrix()
@@ -266,7 +414,7 @@ class Test(QOpenGLWidget):
         oldDepthFunc = gl.glGetIntegerv(gl.GL_DEPTH_FUNC)
         gl.glDepthFunc(gl.GL_LEQUAL)
         gl.glDepthMask(gl.GL_FALSE)
-        
+
 
         # Deal with the rotation of the object
         # scale = mt.create_from_scale([-4.3444, 4.1425, -10.00])
@@ -316,13 +464,8 @@ class Test(QOpenGLWidget):
     def initializeDrawing(self):
         gl.glUseProgram(0)
 
-        vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-        gl.glShaderSource(vertexShader, self.SIMPLE_VERTEX_SHADER)
-        gl.glCompileShader(vertexShader)
-    
-        fragmentShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
-        gl.glShaderSource(fragmentShader, self.SIMPLE_FRAGMENT_SHADER)
-        gl.glCompileShader(fragmentShader)
+        vertexShader = Shader("vertex", "simple_shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "simple_shader.frag").shader
 
         self.drawProgram = gl.glCreateProgram()
         gl.glAttachShader(self.drawProgram, vertexShader)
@@ -375,15 +518,16 @@ class Test(QOpenGLWidget):
         gl.glBufferData(gl.GL_ARRAY_BUFFER, self.drawVertices.nbytes, self.drawVertices, gl.GL_DYNAMIC_DRAW)
 
         # gl.glPointSize(3.0)
-        gl.glLineWidth(2.0)
+        gl.glLineWidth(5.0)
         gl.glDrawArrays(gl.GL_QUADS, 0, int(self.drawVertices.size / 3))
         # gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.drawCount) 
 
         gl.glBindVertexArray(0) # unbind the vao
         gl.glPopMatrix()
         gl.glUseProgram(0)
-        
 
+        
+        
 
     def initializeGL(self):
         print(self.getGlInfo())
@@ -392,8 +536,10 @@ class Test(QOpenGLWidget):
         # gl.glClearColor(1.0, 1.0, 1.0, 1.0)
         # gl.glClearColor(0.56, 0.835, 1.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
+        gl.glEnable(gl.GL_BLEND) # for text and skybox
         gl.glDisable(gl.GL_CULL_FACE)
+        # gl.glEnable(gl.GL_CULL_FACE)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         
         # TREE SHADER
         vertexShader = Shader("vertex", "shader.vert").shader # get out the shader value    
@@ -466,12 +612,18 @@ class Test(QOpenGLWidget):
         # INITIALIZE THE DRAWING PROGRAM
         self.initializeDrawing() # initialize the places for the drawing of values
 
+        self.initializeText()
+        # self.initializeLabelBoxes()
+
         self.initializeSkyBox() # initialize all the skybox data
-        
+
         
     def resizeGL(self, width, height):
         self.width = width 
         self.height = height
+
+        # if not self.wholeView:
+        #     print(f"Dimensions: {self.width} x {self.height}")
 
         side = min(width, height)
         if side < 0:
@@ -490,12 +642,14 @@ class Test(QOpenGLWidget):
         self.projection = np.array(gl.glGetDoublev(gl.GL_PROJECTION_MATRIX))
         self.projection = np.transpose(self.projection)
         gl.glMatrixMode(gl.GL_MODELVIEW)
+        # self.update()
 
     
     def angle_to_radians(self, angle):
         return angle * (np.pi / 180.0)
 
-    
+
+
     def paintGL(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -525,8 +679,9 @@ class Test(QOpenGLWidget):
         # self.model = rotation @ scale
 
         # CALCULATE NEW VIEW (at our origin (0, 0, 0))
-        self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0)   
+        self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0) 
 
+        
         # SET THE UNIFORMS FOR THE PROJECTION * CAMERA MOVEMENTS
         # projLoc = gl.glGetUniformLocation(self.program, "projection")
         gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
@@ -559,18 +714,26 @@ class Test(QOpenGLWidget):
 
 
         # WANT TO DRAW THE POINTS BASED ON WHAT SOMEONE WAS DRAWING
-        if self.drawLines:
+        if self.drawLines and not self.wholeView:
             self.drawPruningLines()
 
+        if not self.wholeView and self.displayLabels:
+            self.renderText("Testing", 500, 500, 5.0)
         
         # TO ADD CONCEPT TO DRAW BOUNDING BOX FOR WHOLE VIEW CAMERA
-
         # TO ADD CONCEPT FOR DRAWING HINTS/CORRECT PRUNING CUTS WHEN ASKED
 
         # DRAW THE BACKGROUND SKYBOX
         gl.glUseProgram(0)
         self.drawSkyBox()
         gl.glUseProgram(0) 
+
+        # if not self.wholeView:
+        #     labelPaint = QPainter(self)
+        #     labelPaint.setPen(Qt.red)
+        #     labelPaint.drawText(QPoint(500, 500), "Testing")
+        #     labelPaint.end()
+
     
 
     # MOUSE ACTION EVENTS WITH GLWIDGET SCREEN
@@ -580,7 +743,8 @@ class Test(QOpenGLWidget):
 
     def mouseReleaseEvent(self, event) -> None:
         self.lastPose = QPoint(event.pos())
-        self.rayDraw()
+        if abs(self.lastPose.x() - self.startPose.x()) > 5 and abs(self.lastPose.y() - self.startPose.y()) > 5:
+            self.rayDraw()
         # _ = self.rayDirection(self.lastPose.x(), self.lastPose.y())
     
 
@@ -594,16 +758,19 @@ class Test(QOpenGLWidget):
         clip_space = np.array([u, v, d, 1]) # the equivalent of doing x'/w, y'/w, z'/w, w/w
         # print(f"Clip space: ", clip_space)
         # originally eye
+        
         eye = np.linalg.inv(self.projection) @ np.transpose(clip_space) # convert to eye space from homogeneous clip space
         # print("Eye Space Ray: ", np.transpose(eye))
         
         # ray inverse of our current view 
         # current view is down the -z access
+        
         world_space = np.linalg.inv(self.view) @ eye # convert to world view space
 
         # convert back to local space
-        local_space = np.linalg.inv(self.model) @ world_space
         
+        local_space = np.linalg.inv(self.model) @ world_space
+        local_space /= local_space[3] # convert back to local space
         # converts back to x, y, z
         return local_space # only want the first 3 points
 
@@ -716,22 +883,21 @@ class Test(QOpenGLWidget):
         return world[:3]
 
 
-    def addDrawVertices(self, pt1, pt2, pt3, pt4):
-        quad = [pt1, pt2, pt3, pt4]
-
-        for i in range(4):
+    def addDrawVertices(self, drawPts):
+    
+        for i in range(len(drawPts)):
             # start adding at point 3*count in draw array
             start = (self.drawCount+i) * 3
             # localPt = self.convertWorldToLocal(quad[i])
-            self.drawVertices[start:start+3] = quad[i]
+            self.drawVertices[start:start+3] = drawPts[i]
             # self.draw["vertices"].extend(quad[i])
-        self.drawCount += 4 # add 4 since added 4 vertices to create a quad
+        self.drawCount += len(drawPts) # add 4 since added 4 vertices to create a quad
         # self.draw["count"] += 4
 
 
     def get_drawn_coords(self, u, v, z):
         # convert z to d
-        depth = self.convertToUVD([0, 0, z])
+        depth = self.convertWorldtoUVD(pt=[0, 0, z])
         # if depth[2] > 1:
         #     localPt = self.convertUVDtoXYZ(u=u, v=v, d=1)
         # # print(f"UVD pt: {u}, {v}, {depth[2]}")
@@ -740,12 +906,81 @@ class Test(QOpenGLWidget):
         # need to divide by w value to get x, y, z
         localPt /= localPt[-1]
         return localPt[:3]
+    
+
+    def determine_draw_plane(self, startPose, endPose, u1, v1, minZ, u2, v2, maxZ):
+        u3 = 0
+        v3 = 0
+        u4 = 0
+        v4 = 0
+        deltaY = endPose.y() - startPose.y()
+        deltaX = endPose.x() - startPose.x()
+        # Assuming the line is horizontal
+        if abs(deltaY) < 20:
+            u3 = u1
+            v3 = v1 - 0.005
+            u4 = u2
+            v4 = v2 - 0.005
+        # vertical line  
+        elif abs(deltaX) < 20:
+            u3 = u1 - 0.005
+            v3 = v1
+            u4 = u2 - 0.005
+            v4 = v2
+
+        # line slanted down
+        elif deltaY / deltaX < 0:
+            angle = math.atan2(deltaY, deltaX) # in radians
+            u3 = u1 - (0.005)*math.sin(angle)
+            v3 = v1 + (0.005)*math.cos(angle)
+            u4 = u2 - (0.005)*math.sin(angle)
+            v4 = v2 + (0.005)*math.cos(angle)
+        
+        else:
+            angle = math.atan2(deltaY, deltaX) # in radians
+            u3 = u1 - (0.005)*math.sin(angle)
+            v3 = v1 - (0.005)*math.cos(angle)
+            u4 = u2 - (0.005)*math.sin(angle)
+            v4 = v2 - (0.005)*math.cos(angle)
+
+
+        # remember that x increases as you go right and y increases as you go down
+        # convert coordinates from u,v and world to local coordinates abd arrange in a cube
+        #  2________4
+        #  /|      /|
+        # /_|_____/ |
+        # 1       3 |
+        # | |____|__|
+        # | 6    |  8
+        # | /    | /
+        # |/_____|/
+        # 5       7
+
+        drawPt1 = self.get_drawn_coords(u1, v1, minZ)
+        drawPt2 = self.get_drawn_coords(u1, v1, maxZ)
+        drawPt3 = self.get_drawn_coords(u2, v2, maxZ)
+        drawPt4 = self.get_drawn_coords(u2, v2, minZ)
+        drawPt5 = self.get_drawn_coords(u3, v3, minZ)
+        drawPt6 = self.get_drawn_coords(u3, v3, maxZ)
+        drawPt7 = self.get_drawn_coords(u4, v4, minZ)
+        drawPt8 = self.get_drawn_coords(u4, v4, maxZ)
+
+        cubeVertices = [drawPt1, drawPt2, drawPt3, drawPt4,
+                        drawPt1, drawPt2, drawPt6, drawPt5, 
+                        drawPt5, drawPt6, drawPt7, drawPt8,
+                        drawPt3, drawPt4, drawPt7, drawPt8,
+                        drawPt2, drawPt4, drawPt6, drawPt8,
+                        drawPt1, drawPt3, drawPt5, drawPt7]
+
+        return cubeVertices   
+
+
 
 
     def rayDraw(self):
-        # Use the first and last pose to get the midpoint 
-        print(f"Start ({self.startPose.x()}, {self.startPose.y()})")
-        print(f"End ({self.lastPose.x()}, {self.lastPose.y()})")
+        # Use the first and last pose to get the midpoint
+        start = time.time()
+        
 
         # checking the midpoint value
         # midPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
@@ -755,13 +990,11 @@ class Test(QOpenGLWidget):
         u1, v1 = self.convertXYtoUV(x=self.startPose.x(), y=self.startPose.y())
         u2, v2 = self.convertXYtoUV(x=self.lastPose.x(), y=self.lastPose.y())
 
-        # get the set of faces that could possibly intersect the line
-        # intersectFaces = self.mesh.faces_in_area(pt1, pt2, self.model)
-        # print("Intersect Faces: ", int(intersectFaces.size / 9))
-
+        print(f"Start ({self.startPose.x()}, {self.startPose.y()}), or ({u1}, {v1})")
+        print(f"End ({self.lastPose.x()}, {self.lastPose.y()}) or ({u2}, {v2})")
         # returns intersect faces in local coordinates
-        intersectFaces = self.mesh.intersect_faces(u1=u1, v1=v1, u2=u2, v2=v2, proj=self.projection, view=self.view, model=self.model)
-        
+        intersectFaces = self.mesh.intersect_faces(u1=u1, v1=v1, u2=u2, v2=v2, projection=self.projection, view=self.view, model=self.model)
+        # intersectFaces = None
         if intersectFaces is not None:
             # Determine faces in a given region   
             dirPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
@@ -774,27 +1007,32 @@ class Test(QOpenGLWidget):
                 # Now I need to find the min and max z but max their value slightly larger for the rectangle
                 # Depth given in world space
                 self.drawLines = True
-                minZ = np.min(depth)
-                maxZ = np.max(depth)
+                minZ = np.min(depth) 
+                maxZ = np.max(depth) + 0.05 # need to offset to get in the right spot
                 print(f"Local Zs: {minZ} & {maxZ}")
-                # testLocal = self.eyeCast(self.startPose.x(), self.startPose.y(), minZ)
 
-                # TROUBLE SECTION!!!!!
-                drawPt1 = self.get_drawn_coords(u1, v1, minZ)
-                drawPt2 = self.get_drawn_coords(u1, v1, maxZ)
-                drawPt3 = self.get_drawn_coords(u2, v2, maxZ)
-                drawPt4 = self.get_drawn_coords(u2, v2, minZ)
 
-                # print(drawPt1)
-                # print(drawPt2)
-                # print(drawPt3)
-                # print(drawPt4)
+                # Check if the distance is too great between values as it shouldn't be larger than 0.15 at most
+                # print(maxZ - minZ)
+                if maxZ - minZ > 0.1:
+                    center = (maxZ + minZ) / 2
+                    print(f"Center {center}")
+                    minZ = center - ((maxZ + minZ) / 5)
+                    print(f"MinZ {minZ} and MaxZ {maxZ}")
+                    maxZ = center + ((maxZ + minZ) / 5)
+                    
 
-                self.addDrawVertices(drawPt1, drawPt2, drawPt3, drawPt4)
+                # See the distance:
+                drawPts = self.determine_draw_plane(self.startPose, self.lastPose, u1, v1, minZ, u2, v2, maxZ)
+
+                # Need to calculate difference in u1 v1 and u2 v2 for adding a description 
+                # self.addDrawVertices(drawPt1, drawPt2, drawPt3, drawPt4)
+                self.addDrawVertices(drawPts)
 
                 # UPDATE VBO TO INCORPORATE THE NEW VERTICES
                 gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
 
+        print(f"Total time for draw: {time.time() - start}\n")
         self.update()              
                              
 
@@ -824,7 +1062,10 @@ class Test(QOpenGLWidget):
             pt = self.rayCast(origin, rayDirection, v1, v2, v3)
             if pt is not None:
                 intercepts.append(pt)
-                depth.append(face[2]) # append the local depth to the depth
+
+                # localPt = self.convertWorldToLocal(pt)
+                # print(f"Pt {pt} has local depth: {localPt[2]}")
+                depth.append(pt[2]) # append the local depth to the depth
         return depth, intercepts
 
 
@@ -890,13 +1131,14 @@ class Test(QOpenGLWidget):
     # The purpose of this button is to undo the drawing that participants have drawn so far on the screen
     def undoDraw(self):
         if self.drawCount > 0:
-            start = (self.drawCount - 4) * 3
+            print(self.drawCount)
+            start = (self.drawCount - 24) * 3
             end = self.drawCount * 3
 
             print(f"Delete vertices from indices {start}:{end}")
             # need to replace all the values from drawCount
-            self.drawVertices[start:end] = np.zeros(12)
-            self.drawCount -= 4
+            self.drawVertices[start:end] = np.zeros(end - start)
+            self.drawCount -= 24  # becuase of the cube vertices count
             gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
             self.update()
         else:
@@ -909,6 +1151,13 @@ class Test(QOpenGLWidget):
         # else:
         #     print("No line to remove")
 
+    def addLabels(self, checked=False):
+        self.displayLabels = checked
+        # if checked:
+        #     self.displayLabel = checked
+        # else:
+        #     self.displayLabel = checked
+        self.update()
 
     
     
@@ -928,52 +1177,99 @@ class Window(QMainWindow):
         self.central_widget = QWidget() # GLWidget()
 
         self.layout = QGridLayout(self.central_widget)
+        # self.layout.setRowStretch(0, 40)
 
         # self.layout = QVBoxLayout(self.central_widget)
-        # self.hLayout = QHBoxLayout(self.central_widget)
+        self.hLayout = QHBoxLayout(self.central_widget)
         # self.central_widget.setLayout(self.layout)
         self.setCentralWidget(self.central_widget)   
 
+
+    
+
         # getting the main screen
         self.glWidget = Test()
-        self.glWidget.setFixedSize(800, 800)
+        # self.glWidget.setFixedSize(800, 800)
         # self.layout.addWidget(self.glWidget)
-        self.layout.addWidget(self.glWidget, 0, 1, 2, 1) # r=0, c=1, rs = 3, cs = 1
+        self.layout.addWidget(self.glWidget, 0, 1, 3, 1) # r=0, c=1, rs = 3, cs = 1
 
+        # UNDO BUTTON
+        self.undoButton = QPushButton("Undo")
+        self.undoButton.setStyleSheet("font-size: 50px;" "font:bold")
+        self.undoButton.setFixedSize(300, 100)
+        # self.undoButton.setGeometry(200, 200, 150, 100)
+        self.undoButton.clicked.connect(self.glWidget.undoDraw)
+        # self.layout.addWidget(self.undoButton)
+        self.hLayout.addWidget(self.undoButton)
+        # self.layout.addWidget(self.undoButton, 0, 1, 1, 1)
+
+        self.labelButton = QPushButton("Labels On") # Make a blank button
+        self.labelButton.setStyleSheet("font-size: 50px;" "font:bold")
+        self.labelButton.setCheckable(True)
+        self.labelButton.setFixedSize(300, 100)
+        self.labelButton.clicked.connect(self.labelButtonClicked)
+        # self.undoButton.clicked.connect(self.glWidget.undoDraw)
+        
+        self.hLayout.addWidget(self.labelButton)
+        # self.layout.addWidget(self.labelButton, 0, 1, 1, 1)
+        self.layout.addLayout(self.hLayout, 0, 1, Qt.AlignTop | Qt.AlignLeft)
+
+        # VERTICAL SLIDER
         self.vSlider = self.createSlider(horizontal=False)
         self.vSlider.valueChanged.connect(self.glWidget.setVerticalRotation)
         self.glWidget.verticalRotation.connect(self.vSlider.setValue)
         # self.layout.addWidget(self.vSlider)
-        self.layout.addWidget(self.vSlider, 0, 0, 2, 1) 
+        self.layout.addWidget(self.vSlider, 0, 0, 3, 1) 
         
-        
-        
-        # getting the horizontal slider
+        # HORIZONTAL SLIDER
         self.hSlider = self.createSlider(horizontal=True)
         self.hSlider.valueChanged.connect(self.glWidget.setTurnTableRotation)
         self.glWidget.turnTableRotation.connect(self.hSlider.setValue)
-        # self.layout.addWidget(self.hSlider)
-        self.layout.addWidget(self.hSlider, 2, 1, 1, 1)
+        self.layout.addWidget(self.hSlider, 3, 1, 1, 1) # 2 1 1 1
 
         # self.hLayout.addWidget(self.vSlider)
         # self.hLayout.addLayout(self.layout)
-
-        self.undoButton = QPushButton("Undo Button")
-        self.undoButton.clicked.connect(self.glWidget.undoDraw)
-        # self.layout.addWidget(self.undoButton)
-        # self.layout.addWidget(self.undoButton, 0, 1, 1, 1)
-
         self.viewGL = Test(wholeView=True)
-        self.viewGL.setFixedSize(250, 200)
-        self.layout.addWidget(self.viewGL, 0, 2, 1, 1)
+        self.viewGL.setFixedSize(800, 700)
+        self.layout.addWidget(self.viewGL, 0, 2, 1, 1) # 1, 2, 1, 1
         self.hSlider.valueChanged.connect(self.viewGL.setTurnTableRotation)
         self.viewGL.turnTableRotation.connect(self.hSlider.setValue)
 
         self.vSlider.valueChanged.connect(self.viewGL.setVerticalRotation)
         self.viewGL.verticalRotation.connect(self.vSlider.setValue)
-        # self.frame = QFrame()
+        
+        # Create a QFrame for the directory and buttons column
+        self.textFrame = QFrame(self.central_widget) # self.central_widget
+        self.textFrame.setFrameShape(QFrame.Shape.Box)
+        self.textFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(self.textFrame, 1, 2, 1, 1)  # Row 1, Column 1, Span 1 row and 1 column
+
+        # Create a QVBoxLayout for the directory and buttons column
+        self.directory_layout = QVBoxLayout(self.textFrame)
+
+        # Create a QLabel to display the directory
+        self.directory_label = QLabel("Your Task:")
+        self.directory_label.setStyleSheet("font-size: 50px;" "font:bold")
+
+        self.directory_layout.addWidget(self.directory_label)
+
+        # Create a QLabel to display the task description
+        self.task_label = QLabel("Draw on the tree section to prune back vigorous wood")
+        self.task_label.setStyleSheet("font-size: 35px;")
+        self.directory_layout.addWidget(self.task_label)
     
-    
+        self.progressFrame = QFrame(self.central_widget) # self.central_widget
+        self.progressFrame.setFrameShape(QFrame.Shape.Box)
+        self.progressFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(self.progressFrame, 2, 2, 1, 1)  # Row 1, Column 1, Span 1 row and 1 column
+
+        self.progress_layout = QVBoxLayout(self.progressFrame)
+        self.progress_label = QLabel("Your Progress:")
+        self.progress_label.setStyleSheet("font-size: 50px;" "font:bold")
+
+        self.progress_layout.addWidget(self.progress_label)
+
+
     def createSlider(self, horizontal=True):
         if horizontal:
             slider = QSlider(Qt.Horizontal)
@@ -988,9 +1284,16 @@ class Window(QMainWindow):
 
         return slider
         
-
-
-
+    def labelButtonClicked(self):
+        checked = True
+        if self.labelButton.isChecked():
+            self.labelButton.setText("Labels Off")
+            checked = True 
+        else:
+            self.labelButton.setText("Labels On")
+            checked = False
+        self.glWidget.addLabels(checked) # activate the label check
+        
 
 if __name__ == '__main__':
 
