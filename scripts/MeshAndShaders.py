@@ -29,6 +29,9 @@ import pyrr.matrix44 as mt
 from threading import Thread
 import time
 
+from multiprocessing import Process, Value, Array
+from freetype.raw import * # allows us to display text on the screen
+from freetype import *
 
 #########################################
 #
@@ -82,12 +85,16 @@ class Mesh(QWidget):
         self.mesh_list = None
         self.normals = None
         self.vertexFaces  = None
-        self.intersectFaces = []
         self.intersectCount = 0
+        self.bound = False
+        self.inside = True
+        self.faceCount = 0
+        self.clipFaces = []
+        self.centerFaces = None
         # Load and set the vertices
         self.load_mesh(self.load_obj)
-        self.vertexFaces = self.get_mesh_vertex() # all vertices grouped by their faces
-        # print(self.vertexFaces.size)s
+        self.vertexFaces, self.centerFaces = self.get_mesh_vertex() # all vertices grouped by their faces
+        # print(self.vertexFaces.size)
 
         # self.normals, self.vertexPos, self.vertexFaces = self.split_vertices()
         # self.set_vertices()
@@ -140,15 +147,32 @@ class Mesh(QWidget):
     #     # for v in self.mesh.vertices:
     #     #     listVertex.extend(v)
     #     # return np.array(listVertex, dtype=np.float32)
+
+    # GET THE CENTER OF THE FACE
+    def center_of_face(self, vertices):
+        v1 = vertices[0]
+        v2 = vertices[1]
+        v3 = vertices[2]
+
+        # look at the center point for each value
+        cX = (v1[0] + v2[0] + v3[0]) / 3
+        cY = (v1[1] + v2[1] + v3[1]) / 3
+        cZ = (v1[2] + v2[2] + v3[2]) / 3
+        
+        return [cX, cY, cZ, 1]
         
     def get_mesh_vertex(self):
         faces = []
+        centers = []
         for face in self.faces:
+            # self.faceCount += 1
             vertices = []
             for vertex in face:
                 vertices.append(self.mesh.vertices[vertex]) # extracts the vertex at the position in the obj file
-            faces.append(vertices)
-        return np.array(faces, dtype=np.float32)
+            center = self.center_of_face(vertices)
+            centers.append(center) # get the center of all vertices
+            faces.append(vertices) # get all the faces
+        return np.array(faces, dtype=np.float32), np.array(centers, dtype=np.float32)
 
     ###############################################
     # DESCRIPTION: Find a set of faces that exist within a given region defined by a line represented by point1 and point2
@@ -159,64 +183,54 @@ class Mesh(QWidget):
     # OUTPUT:
     #   - intersectFaces: a list of faces that have values inside the bounded box of (x1, y1), (x1, y2), (x2, y1), (x2, y2).
     #                     Will return None if no face intersects the area
-    ################################################
-    def faces_in_area(self, pt1, pt2, model):
+    ###############################################
+    def faces_in_area(self, x1, y1, x2, y2):
         # need to find points that are in between pts 1 and 2
         # pts will be in world spaces
 
+        start = time.time()
         # Check which is the minimum 
-        minU = np.min([pt1[0], pt2[0]])
-        maxU = np.max([pt1[0], pt2[0]])
-        minV = np.min([pt1[1], pt2[1]])
-        maxV = np.max([pt1[1], pt2[1]])
+        minX = np.min([x1, x2])
+        maxX = np.max([x1, x2])
+        minY = np.min([y1, y2])
+        maxY = np.max([y1, y2])
 
-        if maxU - minU < 0.1:
-            minU -= 0.1
-            maxU += 0.1
-        elif maxV - minV < 0.1:
-            minV -= 0.1
-            maxV += 0.1
+        if maxX - minX < 0.1:
+            minX-= 0.1
+            maxX += 0.1
+        elif maxX - minX < 0.1:
+            minX -= 0.1
+            maxX += 0.1
 
-        print(f"Bounding box between ({minV}, {minV}) and ({maxV}, {maxV})")   
+        # print(f"Bounded u,v area: ({minX}, {minY}), ({minX}, {maxY}), ({maxX}, {maxY}), ({maxX}, {minY})")  
 
-        intercepts = []
-        worldFaces = self.convertToWorldCoord(model, self.vertexFaces)
-        # uvdFaces = self.convertFacesToUVD(projection, view, model, self.vertexFaces)
-        # Need to loop through each vertexFace
-        for face in worldFaces:
-            faceIntercept = False
-            for worldVtx in face:                
-                # check if inside bounding box
-                if (worldVtx[0] >= minU) and (worldVtx[0] <= maxU) and (worldVtx[1] >= minV) and (worldVtx[1] <= maxV):
-                    faceIntercept = True
+        xRows = self.centerFaces[:, 0]
+        yRows = self.centerFaces[:, 1]
+
+        xBound = np.where(xRows >= minX, True, False) & np.where(xRows <= maxX, True, False)
+        yBound = np.where(yRows >= minY, True, False) & np.where(yRows <= maxY, True, False)
         
-            # check if the line is possibly inside a face as well:
-            # mainly check if within the bounding box of the face
-            # Need to check if one or both vertices are inside the 
+        inBound = xBound & yBound
+        intersect = self.vertexFaces[inBound]
+        
+        # find intersects in the same area
+        # for face in self.centerFaces:
+            # Look for values in bound
 
-            # see if the drawing point is inside another face's bounding box
-            triangleMinU = np.min([face[0][0], face[1][0], face[2][0]])
-            triangleMaxU = np.max([face[0][0], face[1][0], face[2][0]])
-            triangleMinV = np.min([face[0][1], face[1][1], face[2][1]])
-            triangleMaxV = np.max([face[0][1], face[1][1], face[2][1]])
+            # bound = self.in_bound(minX, minY, maxX, maxY, face)
+            # inside = self.in_face(x1, y1, x2, y2, face)
+           
+            # if bound or inside:
+            #     intersect.append(face)
+        
+        # print(f"Intersect with local vertices time: {time.time() - start}")
+        return np.array(intersect, dtype=np.float32)
 
-            pt1Inside = ((pt1[0] >= triangleMinU) and (pt1[0] <= triangleMaxU)) and ((pt1[1] >= triangleMinV) and (pt1[1] <= triangleMaxV))
-            pt2Inside = ((pt2[0] >= triangleMinV) and (pt2[0] <= triangleMaxV)) and ((pt2[1] >= triangleMinV) and (pt2[1] <= triangleMaxV))
+   
 
-            # as long as one point could be inside the triangle, then test
-            if pt1Inside or pt2Inside:
-                faceIntercept = True
-            
-            if faceIntercept:
-                intercepts.append(face) # save the world faces  
+   
 
-        if len(intercepts) == 0:
-            return None           
-
-        return np.array(intercepts, dtype=np.float32)
-
-
-    def intersect_faces(self, u1, v1, u2, v2, proj, view, model): 
+    def intersect_faces(self, u1, v1, u2, v2, projection, view, model): 
         # need to find the set of faces that are 
         #   A) within the bounded bowx given by (x1, y1) (x1, y2) (x2, y2) (x2, y1)
         #   b) faces that contain either the point (x1, y1) or (x2, y2)
@@ -234,60 +248,36 @@ class Mesh(QWidget):
         maxV = np.max([v1, v2])
 
         if maxU - minU <= delta:
-            print(f"Nearly vertical")
+            # print(f"Nearly vertical")
             minU -= delta
             maxU += delta
         
         if maxV - minV <= delta:
-            print("Nearly horizontal")
+            # print("Nearly horizontal")
             minV -= delta
             maxV += delta
         
-        print(f"Bounded u,v area: ({minU}, {minV}), ({minU}, {maxV}), ({maxU}, {maxV}), ({maxU}, {minV})")
+        # print(f"Bounded u,v area: ({minU}, {minV}), ({minU}, {maxV}), ({maxU}, {maxV}), ({maxU}, {minV})")
 
         # Convert faces to uvd coordinates
-        uvdFaces = self.convertFacesToUVD(proj, view, model, self.vertexFaces)
+        # self.clipFaces, vertexID = self.convertFacesToUVD(proj, view, model, self.vertexFaces)
+        centerClipFaces = self.convertFacesToUVD(projection, view, model, self.centerFaces)
+        # intersected = []
+        # vertices = []
+        # intersectCount = 0
 
-        intersected = []
-        vertices = []
-        intersectCount = 0
-        # Need to compare and see if any of the faces are in the same u, v, bounded region 
-        # zip together the faces
-        for count, face in enumerate(uvdFaces):
+        xRows = centerClipFaces[:, 0]
+        yRows = centerClipFaces[:, 1]
 
-            # convert to threads
-            bound = self.in_bound(minU, minV, maxU, maxV, face)
-            inside = self.in_face(u1, v1, u2, v2, face)
-            # t1 = Thread(target=self.in_bound, args=(minU, minV, maxV, face))
-            # t2 = Thread(target=self.in_face, args=(u1, v1, u2, v2, face))
-            if bound or inside:
-                # intersected.append(face)
-                vertices.append(count)
-                intersectCount += 1
+        xBound = np.where(xRows >= minU, True, False) & np.where(xRows <= maxU, True, False)
+        yBound = np.where(yRows >= minV, True, False) & np.where(yRows <= maxV, True, False)
 
-
-        # threads_list = []
-        # ti = 0
-        # for localFace, uvdFace in zip(self.vertexFaces, uvdFaces):
-        #     thread = Thread(target=self.doesIntersect, args=(minU, minV, maxU, maxV, u1, v1, u2, v2, uvdFace, localFace))
-        #     threads_list.append(thread) # keep adding threads to the list
-        #     threads_list[ti].start()
-        #     ti += 1 
-
-        # for thread in threads_list:
-        #     thread.join()   
-        # print("Intersect Face Count: ", intersectCount)
-        # print("Intersected face vertices:", vertices)
-        
-        if intersectCount > 0:
-            # return self.intersectFaces
-            for v in vertices:
-                intersected.append(self.vertexFaces[v])
-            print(f"Total time: {time.time() - start}")
-            return np.array(intersected, dtype=np.float32)
-        else:
-            print(f"Total time: {time.time() - start}")
+        inBound = xBound & yBound
+        if not np.any(inBound):
             return None
+        else:
+            return self.vertexFaces[inBound]
+        
 
         
 
@@ -306,6 +296,8 @@ class Mesh(QWidget):
         bound2 = (vertex2[0] >= minU and vertex2[0] <= maxU) and (vertex2[1] >= minV and vertex2[1] <= maxV)
         bound3 = (vertex3[0] >= minU and vertex3[0] <= maxU) and (vertex3[1] >= minV and vertex3[1] <= maxV)
         
+        # if bound1 or bound2 or bound3:
+        #     self.bound = True 
         return bound1 or bound2 or bound3
     
 
@@ -318,8 +310,13 @@ class Mesh(QWidget):
         maxFaceV = np.max([face[0][1], face[1][1], face[2][1]])  
 
         uv1Inside = (u1 >= minFaceU and u1 <= maxFaceU) and (v1 >= minFaceV and v1 <= maxFaceV) 
-        uv2Inside = (u2 >= minFaceU and u2 <= maxFaceU) and (v2 >= minFaceV and v2 <= maxFaceV) 
-        return uv1Inside or uv2Inside
+        uv2Inside = (u2 >= minFaceU and u2 <= maxFaceU) and (v2 >= minFaceV and v2 <= maxFaceV)
+        uv3Inside = (u2 >= minFaceU and u2 <= maxFaceU) and (v1 >= minFaceV and v1 <= maxFaceV)
+        uv4Inside = (u1 >= minFaceU and u1 <= maxFaceU) and (v2 >= minFaceV and v2 <= maxFaceV) 
+
+        # if uv1Inside or uv2Inside:
+        #     self.inside = True
+        return uv1Inside or uv2Inside or uv3Inside or uv4Inside
 
     
     def convertFaceToWorld(self, model, face):
@@ -332,20 +329,60 @@ class Mesh(QWidget):
         return np.array(worldFace, dtype=np.float32)
 
 
+    #############################################################
+    #  DESCRIPTION: Returns faces in uvd coordinates and determines which faces that are visible in the clip region i.e., 
+    #               u & v in [-1, 1] and d in [0, 1] based on the projection, view, and model matrices.
+    #
+    #  INPUT:
+    #       - projection: 4x4 numpy matrix representing the projection matrix from GLWidget
+    #       - view: 4x4 numpy matrix representing the view matrix from GLWidget
+    #       - model: 4x4 numpy matrix representing the model matrix from GLWidget
+    #
+    #  OUTPUT:
+    #       - faces: a numpy array of faces with values inside the clip region
+    ##############################################################
+
     def convertFacesToUVD(self, projection, view, model, faces):
-        uvdFaces = []
-        for face in faces:
-            f = []
-            for v in face:
-                # do the math to convert to world coordinates
-                coord = np.ones(4)
-                coord[:3] = v 
-                vertex = projection @ view @ model @ coord
-                vertex /= vertex[3]
-                # append to list
-                f.append(vertex[:3])        
-            uvdFaces.append(f)
-        return np.array(uvdFaces, dtype=np.float32) 
+
+        # print("Converting faces")
+        start = time.time()
+        self.faceCount = 0
+        # vertexVisible = []
+        # vertexID = []
+
+        clipFaces = projection @ view @ model @ np.transpose(faces)
+        clipFaces /= clipFaces[3] # divide by w
+
+        clipFaces = np.transpose(clipFaces)
+        # for id, face in enumerate(faces):
+        #     if id < 5:
+        #         print("Looping through faces")
+        #     f = []
+        #     vertexVisible = []
+        #     for v in face:
+        #         notVisible = False
+        #         # do the math to convert to world coordinates
+        #         coord = np.ones(4)
+        #         coord[:3] = v 
+        #         vertex = projection @ view @ model @ coord
+        #         vertex /= vertex[3]
+
+        #         # check to see if in the clip region
+        #         if np.any(vertex > 1) or np.any(vertex < -1) or vertex[2] < 0:
+        #             notVisible = True
+        #         vertexVisible.append(notVisible)
+        #         # append to list
+        #         f.append(vertex[:3])         
+        #     # uvdFaces.append(f)
+        #     # only append to the list if the vertex is visible
+        #     if not np.any(vertexVisible):
+        #         clipFaces.append(f)
+        #         vertexID.append(id)
+        #         self.faceCount += 1
+        
+        # print(f"End of conversion to UVD: {time.time() - start}")
+
+        return np.array(clipFaces, dtype=np.float32)
 
 
     def convertUVDtoWorld(self, projection, view, faces):
@@ -391,6 +428,13 @@ class Mesh(QWidget):
         gl.glRotate(degrees, rx, ry, rz)
 
 
+
+class Character:
+    def __init__(self, texID, size, bearing, advance):
+        self.texID = texID
+        self.size = size  # a tuple storing the size of the glyph
+        self.bearing = bearing # a tuple describing the bearing of the glyph
+        self.advance = advance
 
 
 class TestMeshOpenGL(QOpenGLWidget):
@@ -443,7 +487,11 @@ class TestMeshOpenGL(QOpenGLWidget):
         self.hdrVBO = None
         self.hdrProgram = None
 
-
+        self.characters = {}
+        self.textVAO = None
+        self.textVBO = None
+        self.textProgram = None
+        self.textVertices = np.zeros((6, 4), dtype=np.float32)
 
 
         self.SIMPLE_VERTEX_SHADER = """
@@ -496,60 +544,46 @@ class TestMeshOpenGL(QOpenGLWidget):
 
         """
 
-        self.CUBE_VERTEX_SHADER = """
+        self.TEXT_VERTEX_SHADER = """
         # version 330 core
-        //layout (location = 0) in vec2 aTexCoord;
-        layout (location = 2) in vec3 vertexPos; // location 2
+        layout (location = 0) in vec4 vertex;
+        out vec2 TexCoords;
 
         uniform mat4 projection;
-        uniform mat4 view;
-
-        out vec3 localPos;
 
         void main()
         {
-            
-            gl_Position = projection * view * vec4(vertexPos, 1.0);
-            localPos = aPos
-        }  
-        """
-
-        self.CUBE_FRAGMENT_SHADER = """
-        # version 330 core
-        in vec3 localPos;
-
-        //uniform sampler2D equirectangularMap;
-
-        const vec2 invAtan = vec2(0.15191, 0.3183);
-
-        vec2 SampleSphericalMap(vec3 v)
-        {
-            vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-            uv *= invAtan;
-            uv += 0.5;
-            return uv;
+            gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);
+            TexCoords = vertex.zw;
         }
+        """
+
+        self.TEXT_FRAGMENT_SHADER = """
+        # version 330 core
+        in vec2 TexCoords;
+        out vec4 color;
+
+        uniform sampler2D text;
 
         void main()
-        {   
-            vec2 uv = SampleSphericalMap(normalize(localPos));
-            vec3 color = texture(equirectangularMap, uv).rgb
-            FragColor = vec4(color, 1.0);
-        }        
-
+        {
+            vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);
+            color = vec4(1.0, 0.0, 0.0, 1.0) * sampled;
+        }
         """
+
         
 
     def calculatePos(self):
-        print(self.projection)
-        print(self.view)
+        # print(self.projection)
+        # print(self.view)
         for vertex in self.skyVertices:
             v = np.ones(4)
             v[:3] = vertex
 
             mvp = self.projection @ self.view @ np.transpose(vertex)
             mvp = mvp / mvp[3]
-            print(mvp)
+            # print(mvp)
 
     def initializeSkyBox(self):
         gl.glUseProgram(0)
@@ -731,13 +765,167 @@ class TestMeshOpenGL(QOpenGLWidget):
         gl.glTexParameteri(gl.GL_TEXTURE_CUBE_MAP, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
         
 
+
+    #########################################################
+    # DESCRIPTION: Initializing textures for loading text on the screen
+    # Code inspired by: https://learnopengl.com/In-Practice/Text-Rendering
+    ########################################################
+    def initializeText(self):
+        # Create a text program
+        gl.glUseProgram(0)
+        vertexShader = Shader("vertex", "text_shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "text_shader.frag").shader
+        # vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+        # gl.glShaderSource(vertexShader, 1, str(self.TEXT_VERTEX_SHADER), None)
+        # gl.glCompileShader(vertexShader)
+
+        # fragmentShader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+        # gl.glShaderSource(fragmentShader, 1, self.TEXT_FRAGMENT_SHADER, None)
+        # gl.glCompileShader(fragmentShader)
+
+        self.textProgram = gl.glCreateProgram()
+        gl.glAttachShader(self.textProgram, vertexShader)
+        gl.glAttachShader(self.textProgram, fragmentShader)
+        gl.glLinkProgram(self.textProgram)
+        gl.glUseProgram(self.textProgram)
+    
+        # ft = FT_Library()
+        # FT_Init_FreeType(byref(ft))
+
+        face = Face(r'C:/Windows/Fonts/arial.ttf', 0)
+        # face = FT_Face()
+        # FT_New_Face(ft, r'C:/Windows/Fonts/arial.ttf', 0, byref(face))
+        # FT_Set_Pixel_Sizes(face, 0, 48)
+        face.set_pixel_sizes(0, 48) # set the size of the font to 48 with dynamically growing widths based on height
+        # if FT_Load_Char(face, 'X', freetype.FT_LOAD_RENDER):
+        #     print("Failed to load glyph")
+        #     return
+        if face.load_char("X"):
+            print("Failed to load glyph")
+            return
+        
+        slot = face.glyph
+        gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1) 
+        # START LOOP TO INITIALIZE GLYPH TEXTURES
+        for c in range(128): # want to loop through the first 128 characters
+            # if FT_Load_Char(face, chr(c), freetype.FT_LOAD_RENDER):
+            #     print(f"Failed to load glyph {chr(c)}")
+            #     continue
+            if face.load_char(chr(c)): 
+                print(f"Failed to load glyph {chr(c)}")
+                continue
+        
+            # Create a texture for the glpyh
+            texture = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D,
+                0,
+                gl.GL_RED,                  # internal format
+                slot.bitmap.width,
+                slot.bitmap.rows,
+                0,
+                gl.GL_RED,                  # format options
+                gl.GL_UNSIGNED_BYTE,
+                slot.bitmap.buffer
+            )
+
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+            
+            char = Character(texture, (slot.bitmap.width, slot.bitmap.rows), (slot.bitmap_left, slot.bitmap_top), slot.advance.x)
+            self.characters[chr(c)] = char # store the character in a dictionary for easy access
+    
+        # FT_Done_Face(face)
+        # FT_Done_FreeType(ft)
+        # create and bind the vertex attribute array
+        self.textVAO = gl.glGenVertexArrays(1)
+        # bind the vertex buffer object
+        self.textVBO = gl.glGenBuffers(1)
+        gl.glBindVertexArray(self.textVAO)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.textVBO)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.textVertices.itemsize * 6 * 4, self.textVertices, gl.GL_DYNAMIC_DRAW) 
+        gl.glEnableVertexAttribArray(0) # set location = 0 in text vertex shader
+        gl.glVertexAttribPointer(0, 4, gl.GL_FLOAT, gl.GL_FALSE, 4 * self.textVertices.itemsize, ctypes.c_void_p(0))
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindVertexArray(0)
+
+
+
+    def renderText(self, text, x, y, scale, color):
+        # gl.glEnable(gl.GL_CULL_FACE)
+        gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+        gl.glUseProgram(self.textProgram) # activate the program
+        # allows us to map the text on screen using screen coordinates
+        # textProject = np.transpose(mt.create_orthogonal_projection_matrix(0.0, self.width, 0.0, self.height, 0.1, 10.0))
+        # print(textProject)
+        textProjLoc = gl.glGetUniformLocation(self.textProgram, "projection")
+        gl.glUniformMatrix4fv(textProjLoc, 1, gl.GL_TRUE, self.projection)
+
+        viewLoc = gl.glGetUniformLocation(self.textProgram, "view")
+        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view)
+
+        
+        model = np.transpose(mt.create_from_translation([0, 0, -5]))
+        modelLoc = gl.glGetUniformLocation(self.textProgram, "model")
+        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model)
+
+        # colorLoc = gl.glGetUniformLocation(self.textProgram, "color")
+        # gl.glUniform3fv(colorLoc, color[0], color[1], color[2])
+
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindVertexArray(self.textVAO)
+        
+        for char in text:
+            print(char)
+            # intChar = ord(char) # convert the character to a number
+            character = self.characters[char]
+
+            xpos = x + character.bearing[0] * scale # get the x value from the bearing
+            ypos = y - (character.size[1] - character.bearing[1]) * scale # get the y value from bearing and scale
+
+            w = character.size[0] * scale
+            h = character.size[1] * scale
+
+            self.textVertices = np.array([[xpos,     ypos + h, 0.0, 0.0],
+                                        [xpos,     ypos,     0.0, 1.0],
+                                        [xpos + w, ypos,     1.0, 1.0],
+                                        [xpos,     ypos + h, 0.0, 0.0],
+                                        [xpos + w, ypos,     1.0, 1.0],
+                                        [xpos + w, ypos + h, 1.0, 0.0]], dtype=np.float32)
+
+            # Bind the character's texture
+            gl.glBindTexture(gl.GL_TEXTURE_2D, character.texID)
+            # Update the buffer
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.textVBO)
+            gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.textVertices.nbytes, self.textVertices)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+            # gl.glNamedBufferSubData(self.textVBO, 0, self.textVertices.nbytes, self.textVertices)
+            # gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+            gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6) # number of rows for text
+            x += (character.advance >> 6) * scale
+        
+        gl.glBindVertexArray(0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        gl.glPopMatrix()
+        gl.glUseProgram(0)
+        # gl.glDisable(gl.GL_CULL_FACE)
+
     
 
     def initializeGL(self):
         print(self.getGlInfo())
         gl.glClearColor(1.0, 1.0, 1.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDisable(gl.GL_CULL_FACE)
+        gl.glEnable(gl.GL_BLEND) # For rendering text
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA) # For rendering text
+        # gl.glDisable(gl.GL_CULL_FACE)
+
+        self.initializeText()
         
         # # TREE SHADER
         # vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
@@ -808,7 +996,7 @@ class TestMeshOpenGL(QOpenGLWidget):
         # # gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(12)) # for location = 1
         # gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
 
-        self.initializeSkyBox()
+        # self.initializeSkyBox()
 
 
 
@@ -833,7 +1021,7 @@ class TestMeshOpenGL(QOpenGLWidget):
                            100.0)   # z far
         self.projection = np.array(gl.glGetDoublev(gl.GL_PROJECTION_MATRIX))
         self.projection = np.transpose(self.projection)
-        # print(self.projection)
+        print(self.projection)
 
         # self.projection = mt.create_perspective_projection_matrix(45.0, aspect, 0.1, 10.0)
         gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -850,7 +1038,11 @@ class TestMeshOpenGL(QOpenGLWidget):
         self.model = translation # @ x_rotation  # x-rotation only needed for some files
 
         # CALCULATE NEW VIEW (at our origin (0, 0, 0))
-        self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0)  
+        self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0) 
+
+        gl.glUseProgram(0)
+        color = [1.0, 0.0, 0.0]
+        self.renderText("Testing", 0.0, 0.0, 1.0, color) 
 
         # gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
         # gl.glUseProgram(self.program) 
@@ -869,7 +1061,7 @@ class TestMeshOpenGL(QOpenGLWidget):
         # gl.glBindVertexArray(0) # unbind the vao
         # gl.glPopMatrix()
 
-        self.drawSkyBox()
+        # self.drawSkyBox()
 
 
     # def paintGL(self):
@@ -971,8 +1163,81 @@ class Window(QMainWindow):
         # self.layout = QGridLayout(self.central_widget)
 
 
+
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = Window() # GLDemo()
     window.show()
     sys.exit(app.exec_())
+
+    # failY = [0.0, 1.1, 0.0, 1]
+    # failY2 = [0.0, -1.1, 0.0, 1]
+    # failX = [1.1, 0.0, 0.0, 1]
+    # failX2 = [-1.1, 0.0, 0.0, 1]
+    # failZ = [0.0, 0.0, 1.1, 1]
+    # failZ2 = [0.0, 0.0, -0.1, 1]
+    # passVal = [0.5, 0.5, 0.5, 1]
+    # passVal2 = [0.0, 0.0, 0.0, 1]
+    # passVal3 = [1.0, 1.0, 1.0, 1]
+    # passVal4 = [-1.0, -1.0, 1.0, 1]
+
+    # face1 = np.array([passVal, failX, failX2, passVal2, failY, failY2, passVal3, failZ, failZ2], dtype=np.float32)
+    # projection = np.array([[2.41421366, 0, 0, 0],
+    #                         [0, 2.41421366, 0, 0],
+    #                         [0, 0, -1.02020204, -0.2020202],
+    #                         [0, 0, -1, 0]], dtype=np.float32)
+    
+    # model = np.array([[1, 0, 0, -0.25],
+    #                 [0, 1, 0, -2],
+    #                 [0, 0, 1, -1.5],
+    #                 [0, 0, 0, 1]], dtype=np.float32)
+
+
+
+    # # print(faces.shape)
+    # xRows = face1[:, 0]
+    # yRows = face1[:, 1]
+    # zRows = face1[:, 2]
+
+
+    # yBound1 = np.where(yRows <= 1, True, False)
+    # yBound2 = np.where(yRows >= -1, True, False)
+    # zBound1 = np.where(yRows <= 1, True, False)
+    # zBound2 = np.where(yRows >= 0, True, False)
+
+
+    # xBound = np.where(xRows <= 1, True, False) & np.where(xRows >= -1, True, False)
+    # yBound = np.where(yRows <= 1, True, False) & np.where(yRows >= -1, True, False)
+    # zBound = np.where(zRows <= 1, True, False) & np.where(zRows >= 0.0, True, False)
+    
+    # # inBound = np.logical_and(zBound, np.logical_and(xBound, yBound, dtype=bool))
+    # inBound = xBound & yBound & zBound
+
+    # print(inBound)
+    # if np.any(inBound):
+    #     print("Face in bound")
+
+    # print(np.transpose(face1[inBound]))
+    # test = projection @ model @ np.transpose(face1[inBound])
+
+    # print(test)
+    # print(test / test[3])
+    # test = np.any(faces, axis = 2, where = faces < -1)
+    # test2 = np.any(faces, axis=2, where=faces > 1)
+
+    # for i, face in enumerate(faces):
+    #     for vertex in face:
+    #         if np.any(vertex > 1) or np.any(vertex < -1) or vertex[2] < 0:
+    #             print(f"vertex {vertex} not in clip range")
+    #         else:
+    #             print(f"Vertex {vertex} in clip range")
+
+    
+
+
+        
+
+   
+

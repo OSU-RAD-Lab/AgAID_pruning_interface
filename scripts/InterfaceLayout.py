@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
         #     tree_fname = '../tree_files/exemplarTree.obj'
         #     self.whole_tree_view = GLWidget(tree_fname)
 
-        self.whole_tree_view = Test() #GLDemo()
+        self.whole_tree_view = Test(wholeView=True) #GLDemo()
 
         self.whole_tree_view.setFixedSize(200, 150)
         self.layout.addWidget(self.whole_tree_view, 0, 1, 1, 1)  # Row 0, Column 1, Span 1 row and 1 column
