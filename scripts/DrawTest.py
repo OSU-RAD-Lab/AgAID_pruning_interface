@@ -378,18 +378,20 @@ class Test(QOpenGLWidget):
             h = character.size[1] * scale
 
             textVertices = np.array([[xpos,     ypos + h, 0.0, 0.0],
-                                        [xpos,     ypos,     0.0, 1.0],
-                                        [xpos + w, ypos,     1.0, 1.0],
-                                        [xpos,     ypos + h, 0.0, 0.0],
-                                        [xpos + w, ypos,     1.0, 1.0],
-                                        [xpos + w, ypos + h, 1.0, 0.0]], dtype=np.float32)
+                                    [xpos,     ypos,     0.0, 1.0],
+                                    [xpos + w, ypos,     1.0, 1.0],
+                                    
+                                    [xpos,     ypos + h, 0.0, 0.0],
+                                    [xpos + w, ypos,     1.0, 1.0],
+                                    [xpos + w, ypos + h, 1.0, 0.0]], dtype=np.float32)
 
             # Bind the character's texture
             gl.glBindTexture(gl.GL_TEXTURE_2D, character.texID)
             # Update the buffer
-            # gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.textVBO)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.textVBO)
             # print("Text VBO", self.textVBO)
-            gl.glNamedBufferSubData(self.textVBO, 0, textVertices.nbytes, textVertices)
+            # gl.glNamedBufferSubData(self.textVBO, 0, textVertices.nbytes, textVertices)
+            gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, textVertices.nbytes, textVertices)
             # gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
             gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6) # number of rows for text
             x += (character.advance >> 6) * scale
@@ -718,7 +720,10 @@ class Test(QOpenGLWidget):
             self.drawPruningLines()
 
         if not self.wholeView and self.displayLabels:
-            self.renderText("Testing", 500, 500, 5.0)
+            self.renderText("Tertiary Branch", 500, 500, 1.5)
+            # DIFFICULTY RENDERING MULTIPLE THINGS OF TEXT
+            self.renderText("Trunk", self.width/2, self.height, 1.5)
+            self.renderText("Secondary Branch", self.width, self.height/2, 1.5)
         
         # TO ADD CONCEPT TO DRAW BOUNDING BOX FOR WHOLE VIEW CAMERA
         # TO ADD CONCEPT FOR DRAWING HINTS/CORRECT PRUNING CUTS WHEN ASKED
@@ -1153,10 +1158,6 @@ class Test(QOpenGLWidget):
 
     def addLabels(self, checked=False):
         self.displayLabels = checked
-        # if checked:
-        #     self.displayLabel = checked
-        # else:
-        #     self.displayLabel = checked
         self.update()
 
     
