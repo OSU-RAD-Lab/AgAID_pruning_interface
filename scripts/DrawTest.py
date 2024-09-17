@@ -366,7 +366,6 @@ class Test(QOpenGLWidget):
 
         gl.glActiveTexture(gl.GL_TEXTURE0)
         gl.glBindVertexArray(self.textVAO)
-        
         for char in text:
             # intChar = ord(char) # convert the character to a number
             character = self.characters[char]
@@ -720,10 +719,11 @@ class Test(QOpenGLWidget):
             self.drawPruningLines()
 
         if not self.wholeView and self.displayLabels:
-            self.renderText("Tertiary Branch", 500, 500, 1.5)
-            # DIFFICULTY RENDERING MULTIPLE THINGS OF TEXT
-            self.renderText("Trunk", self.width/2, self.height, 1.5)
-            self.renderText("Secondary Branch", self.width, self.height/2, 1.5)
+
+            # Set locations based on screen position
+            self.renderText("Tertiary Branch", 500, 500, 1)
+            self.renderText("Trunk", 1000, 900, 1)
+            self.renderText("Secondary Branch", 2000, 700, 1)
         
         # TO ADD CONCEPT TO DRAW BOUNDING BOX FOR WHOLE VIEW CAMERA
         # TO ADD CONCEPT FOR DRAWING HINTS/CORRECT PRUNING CUTS WHEN ASKED
