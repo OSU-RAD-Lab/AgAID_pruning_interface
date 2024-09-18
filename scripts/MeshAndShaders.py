@@ -868,7 +868,6 @@ class TestMeshOpenGL(QOpenGLWidget):
 
         viewLoc = gl.glGetUniformLocation(self.textProgram, "view")
         gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view)
-
         
         model = np.transpose(mt.create_from_translation([0, 0, -5]))
         modelLoc = gl.glGetUniformLocation(self.textProgram, "model")

@@ -26,6 +26,7 @@ from PIL import Image
 import time
 import math
 from freetype import * # allows us to display text on the screen
+from JSONFileReader import *
 
 
 
@@ -49,34 +50,16 @@ class Label:
         self.world = world # matrix of where to put the object
 
 
-class PaintEvent(QWidget):
-    def __init__(self, text, x, y):
-        # QOpenGLWidget.__init__(self)
-        self.text = text
-        self.point = QPoint(x, y)
-    
-    def paintEvent(self, event):
-        paint = QPainter()
-        paint.begin(self)
-        paint.setPen(Qt.yellow)
-        paint.drawText(self.point, self.text)
-        paint.end()
-
 class Test(QOpenGLWidget):
     turnTableRotation = Signal(int)
     verticalRotation = Signal(int)
 
 
-    def __init__(self, parent=None, wholeView=False):
+    def __init__(self, parent=None, wholeView=False, fname=None, jsonData=None):
         QOpenGLWidget.__init__(self, parent)
 
-        # self.vertex = np.array([-0.5, -0.5, 0.0, 
-        #                  0.5, -0.5, 0.0,
-        #                  0.0, 0.5, 0.0], dtype=np.float32) # ctypes.c_float
-        
-        # self.vertices = np.array([[-0.5, -0.5, 0.0,],
-        #                           [0.5, -0.5, 0.0],
-        #                           [0.0, 0.5, 0.0]], dtype=np.float32)
+        self.jsonData = jsonData
+        self.fname = "../obj_files/" + str(fname)
         self.wholeView = wholeView
         self.turntable = 0
         self.vertical = 0
@@ -88,10 +71,8 @@ class Test(QOpenGLWidget):
         self.ZNEAR = 0.1
         self.ZFAR = 10.0
 
-        # self.mesh = Mesh("../obj_files/exemplarTree.obj")
-        # self.mesh = Mesh("../obj_files/testMonkey.obj")
-        self.mesh = Mesh("../obj_files/textureTree.obj")
-        # self.mesh = Mesh("../obj_files/skyBox.obj")
+        # Get the mesh and vertices for the mesh loaded in from json file
+        self.mesh = Mesh(self.fname)
         self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
         self.texture = None
         self.vao = None
@@ -99,7 +80,7 @@ class Test(QOpenGLWidget):
 
 
         # GETTING THE BACKGROUND SKY BOX
-        self.skyMesh = Mesh("../obj_files/skyBox.obj")
+        self.skyMesh = Mesh("../obj_files/skyBox.obj") # Always the same regardless of tree File
         self.skyVertices = np.array(self.skyMesh.vertices, dtype=np.float32)
         self.skyProgram = None
         self.skyTexture = None
@@ -152,12 +133,11 @@ class Test(QOpenGLWidget):
                                     [0.0, 0.0, 1.0, 1.0],
                                     [0.0, 0.0, 1.0, 0.0]], dtype=np.float32)
         
-
-                                # tx, ty, x, y, z
-        self.labelBox = np.array([1.0, 1.0, 1.0, 1.0, 0.0,
-                                  1.0, 0.0, 1.0, -1.0, 0.0,
-                                  0.0, 0.0, -1.0, -1.0, 0.0,
-                                  0.0, 1.0, -1.0, 1.0, 0.0], dtype=np.float32)
+        # Get more information from the json file
+        self.budLocation = np.array(self.jsonData["Features"]["Bud"], dtype=np.float32)
+        self.trunkLocation = np.array(self.jsonData["Features"]["Trunk"], dtype=np.float32)
+        self.secondaryLocation = np.array(self.jsonData["Features"]["Secondary"], dtype=np.float32)
+        self.tertiaryLocation = np.array(self.jsonData["Features"]["Tertiary"], dtype=np.float32)
         
 
     def normalizeAngle(self, angle):
@@ -350,7 +330,6 @@ class Test(QOpenGLWidget):
         gl.glVertexAttribPointer(0, 4, gl.GL_FLOAT, gl.GL_FALSE, 4 * self.textVertices.itemsize, ctypes.c_void_p(0))
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
-
 
 
     def renderText(self, text, x, y, scale):
@@ -1168,8 +1147,12 @@ class Test(QOpenGLWidget):
 class Window(QMainWindow):
 
     def __init__(self, parent=None):
-        # super(Window, self).__init__()
         QMainWindow.__init__(self, parent)
+        # Practice loading in data
+        fname = "textureTree.obj"
+        jsonData = JSONFile("objFileDescription.json", "o").data
+
+       
         # QtOpenGL.QMainWindow.__init__(self)
         # self.resize(1000, 1000)
         self.setGeometry(100, 100, 1000, 1000)
@@ -1183,13 +1166,10 @@ class Window(QMainWindow):
         # self.layout = QVBoxLayout(self.central_widget)
         self.hLayout = QHBoxLayout(self.central_widget)
         # self.central_widget.setLayout(self.layout)
-        self.setCentralWidget(self.central_widget)   
-
-
-    
+        self.setCentralWidget(self.central_widget)       
 
         # getting the main screen
-        self.glWidget = Test()
+        self.glWidget = Test(wholeView=False, fname=fname, jsonData=jsonData["Tree Files"][fname])
         # self.glWidget.setFixedSize(800, 800)
         # self.layout.addWidget(self.glWidget)
         self.layout.addWidget(self.glWidget, 0, 1, 3, 1) # r=0, c=1, rs = 3, cs = 1
@@ -1230,7 +1210,7 @@ class Window(QMainWindow):
 
         # self.hLayout.addWidget(self.vSlider)
         # self.hLayout.addLayout(self.layout)
-        self.viewGL = Test(wholeView=True)
+        self.viewGL = Test(wholeView=True, fname=fname, jsonData=jsonData["Tree Files"][fname])
         self.viewGL.setFixedSize(800, 700)
         self.layout.addWidget(self.viewGL, 0, 2, 1, 1) # 1, 2, 1, 1
         self.hSlider.valueChanged.connect(self.viewGL.setTurnTableRotation)

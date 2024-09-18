@@ -1,0 +1,39 @@
+{
+    "Tree Files":
+        {"textureTree.obj":
+            {
+               "Objective": "Pruning",
+                "Check": "Pruning",
+                "Features": 
+                {
+                    "Trunk": [0, 0, 0, 1],
+                    "Secondary": [0, 0, 0, 1],
+                    "Tertiary": [0, 0, 0, 1],
+                    "Bud": [0, 0, 0, 1]
+                } 
+            }
+        },
+
+    "Manipulation Files": [
+        {
+            "Vigor":
+            {
+                "Files": [
+                    {
+                        "Name": "branch1.obj",
+                        "Feature Description": "Weak"
+                    },
+                    {
+                        "Name": "branch2.obj",
+                        "Feature Description": "Strong"
+                    },
+                    {
+                        "Name": "branch3.obj",
+                        "Feature Description": "Too Vigorous"
+                    }
+                ]
+            }
+        }
+        
+    ]
+}
