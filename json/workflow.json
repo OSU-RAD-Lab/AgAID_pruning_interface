@@ -1,0 +1,22 @@
+{
+    "Spatial": [
+        {
+            "Module": "Interface Introduction", 
+            "Your Task": "Draw on the tree to prune back vigorous wood",
+            "Layout": "Standard",
+            "Object File Type": "Tree Files",
+            "File Directory": "",
+            "Object File": "exemplarTree.obj"
+        }
+    ],
+    "Rule": [
+        {
+            "Module": "Interface Introduction", 
+            "Your Task": "Draw on the tree to prune back vigorous wood",
+            "Layout": "Standard",
+            "Object File Type": "Tree Files",
+            "File Directory": "",
+            "Object File": "exemplarTree.obj"
+        }
+    ]
+}
