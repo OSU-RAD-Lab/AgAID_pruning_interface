@@ -102,6 +102,9 @@ class Test(QOpenGLWidget):
         self.camera_pos = [0, 0, 0]
         self.tree_color = [1.0, 1.0, 1.0, 1.0]
         self.triangle_color = [1.0, 0.0, 1.0, 0.0]
+        # self.triangle = np.array([-0.5, -0.5, 0.0,
+        #                           0.5, -0.5, 0.0, 
+        #                            0.0, 0.5, 0.0], dtype=np.float32)
 
         self.WHOLE_TREE_DEPTH = -5.0
         self.TREE_SECTION_DEPTH = -1.5
@@ -132,13 +135,17 @@ class Test(QOpenGLWidget):
                                     [0.0, 0.0, 0.0, 0.0],
                                     [0.0, 0.0, 1.0, 1.0],
                                     [0.0, 0.0, 1.0, 0.0]], dtype=np.float32)
+        self.labelLines = np.zeros(24) # 4 labels * 2 pts per label * 3 dimensions
+        self.labelVAO = None
+        self.labelVBO = None
+        self.labelProgram = None
         
         # Get more information from the json file
         self.budLocation = np.array(self.jsonData["Features"]["Bud"], dtype=np.float32)
         self.trunkLocation = np.array(self.jsonData["Features"]["Trunk"], dtype=np.float32)
-        self.secondaryLocation = np.array(self.jsonData["Features"]["Secondary"], dtype=np.float32)
-        self.tertiaryLocation = np.array(self.jsonData["Features"]["Tertiary"], dtype=np.float32)
-        
+        self.secondaryLocation = np.array(self.jsonData["Features"]["Secondary Branch"], dtype=np.float32)
+        self.tertiaryLocation = np.array(self.jsonData["Features"]["Tertiary Branch"], dtype=np.float32)
+
 
     def normalizeAngle(self, angle):
         while angle < 0:
@@ -317,11 +324,9 @@ class Test(QOpenGLWidget):
             char = Character(texture, (slot.bitmap.width, slot.bitmap.rows), (slot.bitmap_left, slot.bitmap_top), slot.advance.x)
             self.characters[chr(c)] = char # store the character in a dictionary for easy access
     
-        # FT_Done_Face(face)
-        # FT_Done_FreeType(ft)
-        # create and bind the vertex attribute array
+        
+        # create and bind the vertex attribute array for the text rendering later
         self.textVAO = gl.glGenVertexArrays(1)
-        # bind the vertex buffer object
         self.textVBO = gl.glGenBuffers(1)
         gl.glBindVertexArray(self.textVAO)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.textVBO)
@@ -330,6 +335,28 @@ class Test(QOpenGLWidget):
         gl.glVertexAttribPointer(0, 4, gl.GL_FLOAT, gl.GL_FALSE, 4 * self.textVertices.itemsize, ctypes.c_void_p(0))
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
+
+        # Bind vao and vbo for labels
+        gl.glUseProgram(0) 
+        # Create program, VAO and VBO for drawing the lines directly from the label to the object on the tree
+        vertexShader = Shader("vertex", "simple_shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "simple_shader.frag").shader
+        self.labelProgram = gl.glCreateProgram()
+        gl.glAttachShader(self.labelProgram, vertexShader)
+        gl.glAttachShader(self.labelProgram, fragmentShader)
+        gl.glLinkProgram(self.labelProgram)
+        gl.glUseProgram(self.labelProgram)
+        self.labelVAO = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(self.labelVAO)
+        self.labelVBO = gl.glGenBuffers(1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.labelVBO)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.labelLines.itemsize * 24, self.labelLines, gl.GL_DYNAMIC_DRAW) # 6 vertices at a time (2 end points)
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 3 * self.labelLines.itemsize, ctypes.c_void_p(0))
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
+
 
 
     def renderText(self, text, x, y, scale):
@@ -381,6 +408,56 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)
         gl.glDisable(gl.GL_CULL_FACE)
          
+
+
+
+    def drawLabels(self, screenPose):
+        # Loop through each label
+        # Need to convert x, y of screen positions to local space coordinates
+        gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+        for i, label in enumerate(self.jsonData["Features"]):
+            
+            x, y = screenPose[i]
+            start = 6*i
+            end = 6 * (i+1)
+            self.renderText(label, x, y, 1.0)
+
+            # find the position on the screen in local coordinates
+            u,v = self.convertXYtoUV(x, y)
+            print(f"UV Position for coordinates {x, y} is {self.convertUVDtoXYZ(u, v, 0)[:3]}")
+            self.labelLines[start:start+3] = self.convertUVDtoXYZ(u, v, 0)[:3] # want at the 0 position on the screen 
+            self.labelLines[end-3:end] = np.array(self.jsonData["Features"][label], dtype=np.float32) # locations stored in local space
+            # print(f"label {label} drawn line from {self.labelLines[start:end]}")
+
+        gl.glUseProgram(0)
+        gl.glUseProgram(self.labelProgram)
+
+        modelLoc = gl.glGetUniformLocation(self.labelProgram, "model")
+        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, self.model) # self.rotation
+
+        projLoc = gl.glGetUniformLocation(self.labelProgram, "projection")
+        gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection) # use the same projection values
+
+        viewLoc = gl.glGetUniformLocation(self.labelProgram, "view")
+        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) # use the same location view values
+
+        # BIND VAO AND TEXTURE
+        gl.glBindVertexArray(self.labelVAO)
+        # gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.skyTexture)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.labelVBO)
+        gl.glNamedBufferSubData(self.labelVBO, 0, self.labelLines.nbytes, self.labelLines)
+        # gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, lines.nbytes, lines)
+
+        gl.glDrawArrays(gl.GL_LINES, 0, int(self.labelLines.size)) 
+        # gl.glDrawElements(gl.GL_QUADS, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
+
+        gl.glUseProgram(0)
+        gl.glBindVertexArray(0) # unbind the vao
+        gl.glPopMatrix()
+
+
 
 
     def drawSkyBox(self):
@@ -698,11 +775,15 @@ class Test(QOpenGLWidget):
             self.drawPruningLines()
 
         if not self.wholeView and self.displayLabels:
-
+            screenPose = [(1000, 1500), # trunk
+                          (2000, 900), # secondary branch
+                          (250, 500), # Tertiary
+                          (250, 250)] # bud
+            self.drawLabels(screenPose)
             # Set locations based on screen position
-            self.renderText("Tertiary Branch", 500, 500, 1)
-            self.renderText("Trunk", 1000, 900, 1)
-            self.renderText("Secondary Branch", 2000, 700, 1)
+            # self.renderText("Tertiary Branch", 500, 500, 1)
+            # self.renderText("Trunk", 1000, 900, 1)
+            # self.renderText("Secondary Branch", 2000, 700, 1)
         
         # TO ADD CONCEPT TO DRAW BOUNDING BOX FOR WHOLE VIEW CAMERA
         # TO ADD CONCEPT FOR DRAWING HINTS/CORRECT PRUNING CUTS WHEN ASKED
@@ -735,6 +816,7 @@ class Test(QOpenGLWidget):
     def convertXYtoUV(self, x=0, y=0):
         u = ((2 * x) / self.width) - 1.0 
         v = 1.0 - ((2 * y) / self.height)
+        print(u, v)
         return u, v
 
 
@@ -754,7 +836,8 @@ class Test(QOpenGLWidget):
         # convert back to local space
         
         local_space = np.linalg.inv(self.model) @ world_space
-        local_space /= local_space[3] # convert back to local space
+        print(f"Local space: {local_space}")
+        local_space /= local_space[3] # convert back to local space by normalizing x,y,z by w
         # converts back to x, y, z
         return local_space # only want the first 3 points
 
@@ -806,16 +889,17 @@ class Test(QOpenGLWidget):
         # print("Ray direction (eye): ", eye)
         # print("Eye Space Ray: ", np.transpose(eye))
 
-        ray_eye = np.array([eye[0], eye[1], -1.0, 0.0])
+        ray_eye = np.array([eye[0], eye[1], -1.0, 0.0]) 
         
         # ray inverse of our current view 
         # current view is down the -z access
         ray = np.linalg.inv(self.view) @ ray_eye # convert to world view space
         # print("Ray (not normalized): ", np.transpose(ray))
         # print(f"World Ray (not normalized): {np.transpose(ray)}")
+
         ray = ray / np.linalg.norm(ray)
-        # print(f"World Ray (normalized): {np.transpose(ray)}\n") 
-        # print("Ray (normalized): ", np.transpose(ray))
+        # ray /= ray[3] # divide by the w component 
+        
         return ray
 
 
@@ -1170,7 +1254,7 @@ class Window(QMainWindow):
 
         # getting the main screen
         self.glWidget = Test(wholeView=False, fname=fname, jsonData=jsonData["Tree Files"][fname])
-        # self.glWidget.setFixedSize(800, 800)
+        # self.glWidget.setFixedSize(2500, 2000)
         # self.layout.addWidget(self.glWidget)
         self.layout.addWidget(self.glWidget, 0, 1, 3, 1) # r=0, c=1, rs = 3, cs = 1
 
