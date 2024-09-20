@@ -1,0 +1,125 @@
+# source: https://en.wikipedia.org/wiki/Catmull%E2%80%93Clark_subdivision_surface
+
+Dcc 	# center of the   considered ring
+Dcr 	# radius  of the  considered ring
+Dcd 	# rotation of the considered ring
+Dnc 	# center of the   next ring
+Dnr 	# radius  of the  next ring
+Dnd 	# rotation of the next ring
+Dpc 	# center of the   previous ring
+Dpr 	# radius  of the  previous ring
+Dpd 	# rotation of the previous ring
+
+theta	# applying subdivision surface for any theta
+
+# convert that ↑ into a useable for
+
+Rot = Rotation.from_euler_xyz(0,theta,0)	# a rotation representing turning by theta in the Y axis
+
+Pc = Dcc + <0,Dcr,0>.transform(Dcd * Rot) 	# original edge point on the edge of the ring
+Pn = Dnc + <0,Dnr,0>.transform(Dnd * Rot) 	# original edge point on the edge of the NEXT ring
+Pp = Dpc + <0,Dnr,0>.transform(Dpd * Rot) 	# original edge point on the edge of the NEXT ring
+
+Pc1 = Pc	# a point adjacent to Pc along ring
+Pc2 = Pc	# a second point adjacent to Pc along ring
+Pp1 = Pp	# a point adjacent to Pp along previous ring
+Pp2 = Pp	# a second point adjacent to Pp along previous ring
+Pn1 = Pn	# a point adjacent to Pn along next ring
+Pn2 = Pn	# a second point adjacent to Pn along next ring
+
+# given by the by Catmull-Clark algorithm
+
+Fcn1 = ( Pc + Pn + Pc1 + Pn1 ) / 4	# "face point" between current ring and next ring on one side
+Fcn2 = ( Pc + Pn + Pc2 + Pn2 ) / 4	# "face point" between current ring and next ring on other side
+Fpc1 = ( Pp + Pc + Pp1 + Pc1 ) / 4	# "face point" between previous ring and current ring on one side
+Fpc2 = ( Pp + Pc + Pp2 + Pc2 ) / 4	# "face point" between previous ring and current ring on other side
+
+Mcn = ( Pc  + Pn  ) / 2	# edge midpoint between Pc and Pn
+Mpc = ( Pp  + Pc  ) / 2	# edge midpoint between Pp and Pc
+Mc1 = ( Pc1 + Pc  ) / 2	# edge midpoint between Pc1 and Pc
+Mc2 = ( Pc  + Pc2 ) / 2	# edge midpoint between Pc and Pc2
+
+Ecn = ( Fcn1 + Fcn2 + Pc + Pn  ) / 4	# "edge point" between Pc and Pn
+Epc = ( Fpc1 + Fpc2 + Pp + Pc  ) / 4	# "edge point" between Pp and Pc
+Ec1 = ( Fcn1 + Fpc1 + Pc + Pc1 ) / 4	# "edge point" between Pc and Pc1
+Ec2 = ( Fcn2 + Fpc2 + Pc + Pc2 ) / 4	# "edge point" between Pc and Pc2
+
+F = ( Fcn1 + Fcn2 + Fpc1 + Fpc2 ) / 4	# average of the "face points"
+n = 4	# number of "face points" also is the number of "edge points"
+R = ( Mcn + Mpc + Mc1 + Mc2 ) / 4	# average of the edge midpoints
+P' = ( F + 2R + (n-3)Pc ) / n	# the new location for Pc
+
+# get results
+
+Pcn' = Ring containing all Fcn1, Ecn, Fcn2
+Pc'  = Ring containing all Ec1,  P',  Ec2
+Ppc' = Ring containing all Fpc1, Epc, Fpc2
+
+# apply arithmetic
+
+Fcn1 = Pc/2 + Pn/2
+Fcn2 = Pc/2 + Pn/2
+Fpc1 = Pp/2 + Pc/2
+Fpc2 = Pp/2 + Pc/2
+
+Mcn = Pc/2 + Pn/2
+Mpc = Pp/2 + Pc/2
+Mc1 = Pc
+Mc2 = Pc
+
+Ecn = Pc/2 + Pn/2
+Epc = Pp/2 + Pc/2
+Ec1 = Pn/8 + Pp/8 + Pc3/4
+Ec2 = Pn/8 + Pp/8 + Pc3/4
+
+F = Pn/4 + Pp/4 + Pc/2
+n = 4
+R = Pn/8 + Pp/8 + 3Pc/4
+P' = Pn/8 + Pp/8 + Pc3/4
+
+# get results
+
+Pcn' = Ring containing all Pc/2 + Pn/2
+Pc'  = Ring containing all Pn/8 + Pp/8 + Pc3/4
+Ppc' = Ring containing all Pp/2 + Pc/2
+
+# "integrate" around theta to get ring's center, radius, and direction
+
+# centers
+    # method: cause its all just linear averages, and the average of all points around a ring is the center, just do the centers instead
+Dcn'c = Dcc/2 + Dnc/2
+Dc'c  = Dcc3/4 + Dnc/8 + Dpc/8
+Dpc'c = Dpc/2 + Dcc/2
+
+#radii
+    # method, cause the radius is the same for all theta, just choose a theta then solve
+    assume theta = 0 # arbitrary choice
+    Rot = identity rotation
+    Dcn'r = ||Dcn'c-Pcn||
+    Dcn'r = ||(Dcc/2 + Dnc/2) - ((Dcc + <0,Dcr,0>.transform(Dcd))/2 + (Dnc + <0,Dnr,0>.transform(Dnd))/2)||
+    Dcn'r = ||Dcc/2 + Dnc/2 - Dcc/2 - <0,Dcr,0>.transform(Dcd)/2 - Dnc/2 - <0,Dnr,0>.transform(Dnd)/2||
+Dcn'r = ||<0,Dcr,0>.transform(Dcd) + <0,Dnr,0>.transform(Dnd)||/2
+
+    Dc'r  = ||Dc'c-Pc'||
+    Dc'r  = ||(Dcc3/4 + Dnc/8 + Dpc/8) - (Pn/8 + Pp/8 + Pc3/4)||
+    Dc'r  = ||6Dcc + Dnc + Dpc - Pn - Pp - 6Pc||/8
+    Dc'r  = ||6Dcc + Dnc + Dpc - (Dnc + <0,Dnr,0>.transform(Dnd * Rot)) - (Dpc + <0,Dnr,0>.transform(Dpd * Rot)) - 6(Dcc + <0,Dcr,0>.transform(Dcd * Rot))||/8
+    Dc'r  = ||6Dcc + Dnc + Dpc - Dnc - <0,Dnr,0>.transform(Dnd) - Dpc - <0,Dnr,0>.transform(Dpd) - 6Dcc - 6<0,Dcr,0>.transform(Dcd)||/8
+Dc'r  = ||<0,Dnr,0>.transform(Dnd) + <0,Dnr,0>.transform(Dpd) + 6<0,Dcr,0>.transform(Dcd)||/8
+
+    Dpc'r = ||Dpc'c-Ppc||
+Dcn'r = ||<0,Dpr,0>.transform(Dpd) + <0,Dcr,0>.transform(Dcd)||/2
+
+#direction
+    # method, get normal and get tangent, find binormal, you can make a matrix with that, convert that to quaternion
+    normal = (P'(theta=0) - D'c).normalize()
+    tangent = (P'(theta=0).cross(P'(theta=TAU/4))).normalize()
+    binormal = (tangent.cross(normal)).normalize()
+    matrix=<tangent,normal,binormal>
+    rotation=Rotation.from_matrix(matrix)
+
+#im tooooo lazy to write it all out for all of them
+
+
+
+
