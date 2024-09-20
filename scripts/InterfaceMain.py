@@ -31,4 +31,5 @@ if __name__ == '__main__':
     window = MainWindow(tree_fname="../tree_files/exemplarTree.obj")
     # window = TestWindow()
     window.showMaximized()
+    window.show()
     sys.exit(app.exec_())
