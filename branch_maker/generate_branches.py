@@ -6,7 +6,7 @@ import os
 if __name__ == '__main__':
     try: os.mkdir(f"output")
     except: pass
-    for z in range(20):
+    for z in range(2):
         try: os.mkdir(f"output/{z}")
         except: pass
         for x in range(20):

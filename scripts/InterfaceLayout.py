@@ -439,22 +439,37 @@ class MainWindow(QMainWindow):
         build_off.setCheckable(True)
         spatial.setCheckable(True)
         rule.setCheckable(True)
+        
+        if actualCourse.quizMode == QuizMode.AT_THE_END:
+            at_the_end.setChecked(True)
+            at_the_end.setDisabled(True)
+        if actualCourse.quizMode == QuizMode.BUILD_OFF:
+            build_off.setChecked(True)
+            build_off.setDisabled(True)
 
-        match actualCourse.quizMode:
-            case QuizMode.AT_THE_END:
-                at_the_end.setChecked(True)
-                at_the_end.setDisabled(True)
-            case QuizMode.BUILD_OFF:
-                build_off.setChecked(True)
-                build_off.setDisabled(True)
+        if actualCourse.moduleOrder == ModuleOrder.SPATIAL:
+            spatial.setChecked(True)
+            spatial.setDisabled(True)
+        if actualCourse.moduleOrder == ModuleOrder.RULE:
+            rule.setChecked(True)
+            rule.setDisabled(True)
 
-        match actualCourse.moduleOrder:
-            case ModuleOrder.SPATIAL:
-                spatial.setChecked(True)
-                spatial.setDisabled(True)
-            case ModuleOrder.RULE:
-                rule.setChecked(True)
-                rule.setDisabled(True)
+
+        # match actualCourse.quizMode:
+        #     case QuizMode.AT_THE_END:
+        #         at_the_end.setChecked(True)
+        #         at_the_end.setDisabled(True)
+        #     case QuizMode.BUILD_OFF:
+        #         build_off.setChecked(True)
+        #         build_off.setDisabled(True)
+
+        # match actualCourse.moduleOrder:
+        #     case ModuleOrder.SPATIAL:
+        #         spatial.setChecked(True)
+        #         spatial.setDisabled(True)
+        #     case ModuleOrder.RULE:
+        #         rule.setChecked(True)
+        #         rule.setDisabled(True)
 
         at_the_end.triggered.connect(self.switchToAtTheEnd)
         build_off.triggered.connect(self.switchToBuildOff)

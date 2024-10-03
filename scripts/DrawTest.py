@@ -53,20 +53,23 @@ class Label:
 class Test(QOpenGLWidget):
     turnTableRotation = Signal(int)
     verticalRotation = Signal(int)
+    manipulationIndex = Signal(int)
 
 
-    def __init__(self, parent=None, wholeView=False, fname=None, jsonData=None):
+    def __init__(self, parent=None, wholeView=False, fname=None, jsonData=None, manipulationJSON=False, manipulation="Test"):
         QOpenGLWidget.__init__(self, parent)
 
         self.jsonData = jsonData
-        self.fname = "../obj_files/" + str(fname)
-        self.wholeView = wholeView
+        self.manipulationJSON = manipulationJSON
+        self.fname = "../obj_files/" + str(fname) 
+        self.manipulation = manipulation
+        self.wholeView = wholeView # whether to show the whole view
         self.turntable = 0
         self.vertical = 0
+        self.index = 0
         self.rotation = mt.create_identity()        # Gets an identity matrix
         self.projection = mt.create_identity()      # Sets the projection perspective
         self.view = mt.create_identity()            # sets the camera location
-        self.projLoc = 0
 
         self.ZNEAR = 0.1
         self.ZFAR = 10.0
@@ -77,6 +80,14 @@ class Test(QOpenGLWidget):
         self.texture = None
         self.vao = None
         self.vbo = None 
+
+        # Manipulation files
+        self.meshes = [None] * 10 # fill in for meshes of the manipulations branches
+        self.branchProgram = None
+        self.VAOs = [None] * 10 # list of all VBOs
+        self.VBOs = [None] * 10 # list of associated VBOs
+        self.branchTexture = None
+
 
 
         # GETTING THE BACKGROUND SKY BOX
@@ -171,6 +182,12 @@ class Test(QOpenGLWidget):
             self.update()
     
 
+    def setManipulationIndex(self, index):
+        if index != self.index:
+            self.index = index
+            self.manipulationIndex.emit(index)
+            self.update()
+
     def getGlInfo(self):
         "Get opengl info"
         info = """
@@ -186,6 +203,137 @@ class Test(QOpenGLWidget):
             )
         return info 
     
+
+    def initializeManipulationFiles(self):
+        gl.glUseProgram(0)
+
+        # create the shader
+        vertexShader = Shader("vertex", "shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "shader.frag").shader
+
+        self.branchProgram = gl.glCreateProgram()
+        gl.glAttachShader(self.branchProgram, vertexShader)
+        gl.glAttachShader(self.branchProgram, fragmentShader)
+        gl.glLinkProgram(self.branchProgram)
+
+        # Need to loop through all the files
+        files = self.manipulationJSON[self.manipulation]["Files"]
+        for i in range(len(files)):
+            # get the file name
+            # load in the Mesh file
+
+            # create and bind VAOs and VBOs
+            self.VAOs[i] = gl.glGenVertexArrays(1)
+            gl.glBindVertexArray(self.VAOs[i])
+
+            self.VBOs[i] = gl.glGenBuffers(1)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.VBOs[i])
+            
+            # Load in the Mesh file and vertex
+            fname = "../obj_files/" + self.manipulation + "/" + str(files[i]["Name"])
+            self.meshes[i] = Mesh(fname)
+            vertices = np.array(self.meshes[i].vertices, dtype=np.float32)
+
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, vertices.nbytes, vertices, gl.GL_STATIC_DRAW) # gl.GL_STATIC_DRAW
+            # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
+
+            # SET THE ATTRIBUTE POINTERS SO IT KNOWS LCOATIONS FOR THE SHADER
+            stride = vertices.itemsize * 8 # times 8 given there are 8 vertices across texture coords, normals, and vertex positions before next set
+            # TEXTURE COORDINATES
+            gl.glEnableVertexAttribArray(0)
+            gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0)) 
+
+            # NORMAL VECTORS (normals)
+            gl.glEnableVertexAttribArray(1)  # SETTING THE NORMAL
+            # gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(0)) # for location = 0
+            gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(8)) # starts at position 2 with size 4 for float32 --> 2*4
+
+            # VERTEX POSITIONS (vertexPos)
+            gl.glEnableVertexAttribArray(2) # SETTING THE VERTEX POSITIONS
+            gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
+
+            # Reset the buffers 
+            gl.glBindVertexArray(0)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
+        self.branchTexture = gl.glGenTextures(1)
+        # print(f"texture ID {self.texture}")
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture) 
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT) # will repeat the image if any texture coordinates are outside [0, 1] range for x, y values
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST) # describing how to perform texture filtering (could use a MipMap)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+
+        # LOAD IN THE TEXTURE IMAGE AND READ IT IN TO OPENGL
+        # texImg = Image.open("../textures/bark.jpg")
+        texImg = Image.open("../textures/testTexture.png")
+        texData = texImg.convert("RGB").tobytes()
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 
+                        0,                      # mipmap setting (can change for manual setting)
+                        gl.GL_RGB,              # texture file storage format
+                        texImg.width,           # texture image width
+                        texImg.height,          # texture image height
+                        0,                      # 0 for legacy 
+                        gl.GL_RGB,              # format of the texture image
+                        gl.GL_UNSIGNED_BYTE,    # datatype of the texture image
+                        texData)                # data texture 
+        
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindVertexArray(0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        gl.glUseProgram(0)
+
+
+
+    def drawManipulationBranch(self):
+        # Index is the index of what file should be loaded
+        gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+
+        # Bind the texture and link the program
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture)
+        gl.glUseProgram(self.branchProgram) 
+
+        # TO DO: 
+        #   - modify model value based on the branch object 
+        hAngle = self.angle_to_radians(self.turntable)
+        vAngle = self.angle_to_radians(self.vertical)
+        rotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
+        if self.wholeView: # looking at the whole tree view
+            translation = np.transpose(mt.create_from_translation([0, 0, self.WHOLE_TREE_DEPTH])) # 0, -0, -5.883
+        else:
+            translation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, 0, self.TREE_SECTION_DEPTH]))
+        # scale = mt.create_from_scale([-4.344, 4.1425, -9.99])
+        scale = mt.create_from_scale([1, 1, 1])
+        model = mt.create_identity()
+        model = translation @ rotation @ scale
+        
+        # SET SHADER PROGRAM 
+        lightPosLoc = gl.glGetUniformLocation(self.program, "lightPos")
+        gl.glUniform3fv(lightPosLoc, 1, self.lightPos)
+        lightColorLoc = gl.glGetUniformLocation(self.program, "lightColor")
+        gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
+        modelLoc = gl.glGetUniformLocation(self.program, "model")
+        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+        projLoc = gl.glGetUniformLocation(self.program, "projection")
+        gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
+        viewLoc = gl.glGetUniformLocation(self.program, "view")
+        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
+
+       
+        gl.glBindVertexArray(self.VAOs[self.index])
+        vertices = np.array(self.meshes[self.index].vertices, dtype=np.float32)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(vertices.size / 3))
+        gl.glBindVertexArray(0) # unbind the vao
+        gl.glPopMatrix()
+        gl.glUseProgram(0)
+
+        
+        
+
+
+
 
 
     def initializeSkyBox(self):
@@ -247,15 +395,12 @@ class Test(QOpenGLWidget):
         # TEXTURE COORDINATES
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0)) 
-
         # NORMAL VECTORS (normals)
         gl.glEnableVertexAttribArray(1)  # SETTING THE NORMAL
-        # gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(0)) # for location = 0
         gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(8)) # starts at position 2 with size 4 for float32 --> 2*4
 
         # VERTEX POSITIONS (vertexPos)
         gl.glEnableVertexAttribArray(2) # SETTING THE VERTEX POSITIONS
-        # gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(12)) # for location = 1
         gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
 
 
@@ -665,6 +810,7 @@ class Test(QOpenGLWidget):
         # gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(12)) # for location = 1
         gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
 
+        self.initializeManipulationFiles()
 
         # INITIALIZE THE DRAWING PROGRAM
         self.initializeDrawing() # initialize the places for the drawing of values
@@ -769,6 +915,7 @@ class Test(QOpenGLWidget):
         gl.glBindVertexArray(0) # unbind the vao
         gl.glPopMatrix()
 
+        self.drawManipulationBranch()
 
         # WANT TO DRAW THE POINTS BASED ON WHAT SOMEONE WAS DRAWING
         if self.drawLines and not self.wholeView:
@@ -816,7 +963,7 @@ class Test(QOpenGLWidget):
     def convertXYtoUV(self, x=0, y=0):
         u = ((2 * x) / self.width) - 1.0 
         v = 1.0 - ((2 * y) / self.height)
-        print(u, v)
+        # print(u, v)
         return u, v
 
 
@@ -836,7 +983,7 @@ class Test(QOpenGLWidget):
         # convert back to local space
         
         local_space = np.linalg.inv(self.model) @ world_space
-        print(f"Local space: {local_space}")
+        # print(f"Local space: {local_space}")
         local_space /= local_space[3] # convert back to local space by normalizing x,y,z by w
         # converts back to x, y, z
         return local_space # only want the first 3 points
@@ -1058,8 +1205,8 @@ class Test(QOpenGLWidget):
         u1, v1 = self.convertXYtoUV(x=self.startPose.x(), y=self.startPose.y())
         u2, v2 = self.convertXYtoUV(x=self.lastPose.x(), y=self.lastPose.y())
 
-        print(f"Start ({self.startPose.x()}, {self.startPose.y()}), or ({u1}, {v1})")
-        print(f"End ({self.lastPose.x()}, {self.lastPose.y()}) or ({u2}, {v2})")
+        # print(f"Start ({self.startPose.x()}, {self.startPose.y()}), or ({u1}, {v1})")
+        # print(f"End ({self.lastPose.x()}, {self.lastPose.y()}) or ({u2}, {v2})")
         # returns intersect faces in local coordinates
         intersectFaces = self.mesh.intersect_faces(u1=u1, v1=v1, u2=u2, v2=v2, projection=self.projection, view=self.view, model=self.model)
         # intersectFaces = None
@@ -1077,16 +1224,16 @@ class Test(QOpenGLWidget):
                 self.drawLines = True
                 minZ = np.min(depth) 
                 maxZ = np.max(depth) + 0.05 # need to offset to get in the right spot
-                print(f"Local Zs: {minZ} & {maxZ}")
+                # print(f"Local Zs: {minZ} & {maxZ}")
 
 
                 # Check if the distance is too great between values as it shouldn't be larger than 0.15 at most
                 # print(maxZ - minZ)
                 if maxZ - minZ > 0.1:
                     center = (maxZ + minZ) / 2
-                    print(f"Center {center}")
+                    # print(f"Center {center}")
                     minZ = center - ((maxZ + minZ) / 5)
-                    print(f"MinZ {minZ} and MaxZ {maxZ}")
+                    # print(f"MinZ {minZ} and MaxZ {maxZ}")
                     maxZ = center + ((maxZ + minZ) / 5)
                     
 
@@ -1100,7 +1247,7 @@ class Test(QOpenGLWidget):
                 # UPDATE VBO TO INCORPORATE THE NEW VERTICES
                 gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
 
-        print(f"Total time for draw: {time.time() - start}\n")
+        # print(f"Total time for draw: {time.time() - start}\n")
         self.update()              
                              
 
@@ -1203,7 +1350,7 @@ class Test(QOpenGLWidget):
             start = (self.drawCount - 24) * 3
             end = self.drawCount * 3
 
-            print(f"Delete vertices from indices {start}:{end}")
+            # print(f"Delete vertices from indices {start}:{end}")
             # need to replace all the values from drawCount
             self.drawVertices[start:end] = np.zeros(end - start)
             self.drawCount -= 24  # becuase of the cube vertices count
@@ -1224,7 +1371,6 @@ class Test(QOpenGLWidget):
         self.update()
 
     
-    
 
 # QWidget 
 # QtOpenGL.QMainWindow 
@@ -1236,7 +1382,7 @@ class Window(QMainWindow):
         fname = "textureTree.obj"
         jsonData = JSONFile("objFileDescription.json", "o").data
 
-       
+        screen_width = 2       
         # QtOpenGL.QMainWindow.__init__(self)
         # self.resize(1000, 1000)
         self.setGeometry(100, 100, 1000, 1000)
@@ -1253,10 +1399,14 @@ class Window(QMainWindow):
         self.setCentralWidget(self.central_widget)       
 
         # getting the main screen
-        self.glWidget = Test(wholeView=False, fname=fname, jsonData=jsonData["Tree Files"][fname])
+        self.glWidget = Test(wholeView=False, 
+                             fname=fname, 
+                             jsonData=jsonData["Tree Files"][fname], 
+                             manipulationJSON=jsonData["Manipulation Files"],
+                             manipulation="TestManipulation")
         # self.glWidget.setFixedSize(2500, 2000)
         # self.layout.addWidget(self.glWidget)
-        self.layout.addWidget(self.glWidget, 0, 1, 3, 1) # r=0, c=1, rs = 3, cs = 1
+        self.layout.addWidget(self.glWidget, 0, 1, screen_width, 1) # r=0, c=1, rs = 3, cs = 1
 
         # UNDO BUTTON
         self.undoButton = QPushButton("Undo")
@@ -1280,29 +1430,64 @@ class Window(QMainWindow):
         self.layout.addLayout(self.hLayout, 0, 1, Qt.AlignTop | Qt.AlignLeft)
 
         # VERTICAL SLIDER
-        self.vSlider = self.createSlider(horizontal=False)
+        self.vSlider = self.createSlider(camera=True, horizontal=False)
         self.vSlider.valueChanged.connect(self.glWidget.setVerticalRotation)
         self.glWidget.verticalRotation.connect(self.vSlider.setValue)
         # self.layout.addWidget(self.vSlider)
-        self.layout.addWidget(self.vSlider, 0, 0, 3, 1) 
+        self.layout.addWidget(self.vSlider, 0, 0, screen_width, 1) # 0, 0, 3, 1
         
         # HORIZONTAL SLIDER
-        self.hSlider = self.createSlider(horizontal=True)
+        self.hSlider = self.createSlider(camera=True, horizontal=True)
         self.hSlider.valueChanged.connect(self.glWidget.setTurnTableRotation)
         self.glWidget.turnTableRotation.connect(self.hSlider.setValue)
-        self.layout.addWidget(self.hSlider, 3, 1, 1, 1) # 2 1 1 1
+        self.layout.addWidget(self.hSlider, screen_width, 1, 1, 1) # 3 1 1 1
+
+        ## MANIPULATION SECTION 
+        # IF THE MANIPULATION SCREEN IS NEEDED
+        self.manipulationFrame = QFrame(self.central_widget) # self.central_widget
+        self.manipulationFrame.setFrameShape(QFrame.Shape.Box)
+        self.manipulationFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(self.manipulationFrame, screen_width+1, 1, 1, 1) # span the screen width but start below the sliders
+
+        self.manipLayout = QVBoxLayout(self.manipulationFrame)
+        self.manipulation_label = QLabel("Manipulation Slider:")
+        self.manipulation_label.setStyleSheet("font-size: 50px;" "font:bold")
+        self.manipLayout.addWidget(self.manipulation_label)
+
+        self.manipulationSlider = self.createSlider(camera=False, horizontal=True)
+        self.manipulationSlider.valueChanged.connect(self.glWidget.setManipulationIndex)
+        self.glWidget.manipulationIndex.connect(self.manipulationSlider.setValue)
+        # self.hSlider.valueChanged.connect(self.glWidget.setTurnTableRotation)
+        # self.glWidget.turnTableRotation.connect(self.hSlider.setValue)
+        self.manipLayout.addWidget(self.manipulationSlider) # 3 1 1 1
+
+        # submit button
+        self.submitButton = QPushButton("Submit") # Make a blank button
+        self.submitButton.setStyleSheet("font-size: 50px;" "font:bold")
+        # self.submitButton.setCheckable(True)
+        self.submitButton.setFixedSize(300, 100)
+        self.manipLayout.addWidget(self.submitButton)
+        
+        
+
 
         # self.hLayout.addWidget(self.vSlider)
         # self.hLayout.addLayout(self.layout)
-        self.viewGL = Test(wholeView=True, fname=fname, jsonData=jsonData["Tree Files"][fname])
+        self.viewGL = Test(wholeView=True, 
+                           fname=fname, 
+                           jsonData=jsonData["Tree Files"][fname],
+                           manipulationJSON=jsonData["Manipulation Files"],
+                           manipulation="TestManipulation")
         self.viewGL.setFixedSize(800, 700)
         self.layout.addWidget(self.viewGL, 0, 2, 1, 1) # 1, 2, 1, 1
-        self.hSlider.valueChanged.connect(self.viewGL.setTurnTableRotation)
+        self.hSlider.valueChanged.connect(self.viewGL.setTurnTableRotation) # Connect the vertical and horizontal camera sliders to the view screen
         self.viewGL.turnTableRotation.connect(self.hSlider.setValue)
 
         self.vSlider.valueChanged.connect(self.viewGL.setVerticalRotation)
         self.viewGL.verticalRotation.connect(self.vSlider.setValue)
         
+
+        # YOUR TASK BOX
         # Create a QFrame for the directory and buttons column
         self.textFrame = QFrame(self.central_widget) # self.central_widget
         self.textFrame.setFrameShape(QFrame.Shape.Box)
@@ -1319,6 +1504,7 @@ class Window(QMainWindow):
         self.directory_layout.addWidget(self.directory_label)
 
         # Create a QLabel to display the task description
+        # QLabel should be filled in with json data
         self.task_label = QLabel("Draw on the tree section to prune back vigorous wood")
         self.task_label.setStyleSheet("font-size: 35px;")
         self.directory_layout.addWidget(self.task_label)
@@ -1326,7 +1512,7 @@ class Window(QMainWindow):
         self.progressFrame = QFrame(self.central_widget) # self.central_widget
         self.progressFrame.setFrameShape(QFrame.Shape.Box)
         self.progressFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.layout.addWidget(self.progressFrame, 2, 2, 1, 1)  # Row 1, Column 1, Span 1 row and 1 column
+        self.layout.addWidget(self.progressFrame, 2, 2, 2, 1)  # Row 1, Column 1, Span 1 row and 1 column
 
         self.progress_layout = QVBoxLayout(self.progressFrame)
         self.progress_label = QLabel("Your Progress:")
@@ -1335,18 +1521,25 @@ class Window(QMainWindow):
         self.progress_layout.addWidget(self.progress_label)
 
 
-    def createSlider(self, horizontal=True):
+
+    def createSlider(self, camera=True, horizontal=True):
         if horizontal:
             slider = QSlider(Qt.Horizontal)
         else:
             slider = QSlider(Qt.Vertical)
         # slider.setRange(0, 360) # 0 - 360*16
-        slider.setRange(-30, 30)
-        slider.setSingleStep(1) # 
-        # slider.setPageStep(10)
-        slider.setPageStep(5)
-        slider.setTickPosition(QSlider.TicksBelow)
-
+        if camera:
+            slider.setRange(-30, 30)
+            slider.setSingleStep(1) # 
+            # slider.setPageStep(10)
+            slider.setPageStep(5)
+            slider.setTickPosition(QSlider.TicksBelow)
+        else:
+            slider.setRange(0, 10)
+            slider.setSingleStep(1) # 
+            # slider.setPageStep(10)
+            slider.setPageStep(1)
+            slider.setTickPosition(QSlider.TicksBelow) 
         return slider
         
     def labelButtonClicked(self):

@@ -713,16 +713,16 @@ class RandomlyOrderedStringMultipleChoice(_QuizQuestion):
     
     # returns the tuple for viewing (as defined by _LearningContent (a _LearningComponent to redirect to and the content (a string in this example) to display))
     def view(self) -> Tuple[_LearningComponent, Content]:
-        match self.state:
-            case QuestionState.INCOMPLETE:
-                if self.showInputHint:
-                    return (self, Content(self.viewBasic() + f"\nYour answer must be an int between 1 and {len(self.options)}"))
-                else:
-                    return (self, Content(self.viewBasic()))
-            case QuestionState.CORRECT:
-                return (self, Content(f"Correct!\nThe answer was {self.correctIndex + 1}\n{self.viewBasic()}"))
-            case QuestionState.INCORRECT:
-                return (self, Content(f"Incorrect.\nYou guessed: {self.guess}\n But the answer was {self.correctIndex + 1}\n{self.viewBasic()}"))
+        # switch from match/case
+        if self.state == QuestionState.INCOMPLETE:
+            if self.showInputHint:
+                return (self, Content(self.viewBasic() + f"\nYour answer must be an int between 1 and {len(self.options)}"))
+            else:
+                return (self, Content(self.viewBasic()))
+        if self.state == QuestionState.CORRECT:
+            return (self, Content(f"Correct!\nThe answer was {self.correctIndex + 1}\n{self.viewBasic()}"))
+        if self.state == QuestionState.INCORRECT:
+            return (self, Content(f"Incorrect.\nYou guessed: {self.guess}\n But the answer was {self.correctIndex + 1}\n{self.viewBasic()}"))
     
     # implementation as described by _QuizQuestion
     # take answer as number input - validates it

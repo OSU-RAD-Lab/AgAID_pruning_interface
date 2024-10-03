@@ -14,8 +14,29 @@
             }
         },
 
-    "Manipulation Files": [
+    "Manipulation Files": 
         {
+            "TestManipulation":
+            {
+                "Files": [
+                    {
+                        "Name": "cylinder1.obj",
+                        "Feature Description": "Weak"
+                    },
+                    {
+                        "Name": "cylinder2.obj",
+                        "Feature Description": "Strong"
+                    },
+                    {
+                        "Name": "cylinder3.obj",
+                        "Feature Description": "Too Vigorous"
+                    },
+                    {
+                        "Name": "cylinder4.obj",
+                        "Feature Description": "Too Vigorous"
+                    }
+                ]
+            },            
             "Vigor":
             {
                 "Files": [
@@ -35,5 +56,4 @@
             }
         }
         
-    ]
 }
