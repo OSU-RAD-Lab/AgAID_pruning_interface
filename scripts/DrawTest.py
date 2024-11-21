@@ -7,10 +7,10 @@ os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
 
 from PySide2 import QtCore, QtGui, QtOpenGL
-from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget
+from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget, QComboBox
 from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint, QCoreApplication, QPoint
 from PySide2.QtOpenGL import QGLWidget, QGLContext
-from PySide2.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4, QSurfaceFormat, QPainter
+from PySide2.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4, QSurfaceFormat, QPainter, QFont
 from shiboken2 import VoidPtr
 from OpenGL.GL.shaders import compileShader, compileProgram
 
@@ -50,19 +50,51 @@ class Label:
         self.world = world # matrix of where to put the object
 
 
+class Shapes:
+    def __init__(self, shape="square"):
+        if shape == "square": # Square
+            self.vertices = np.array([-1, -1, 0,  
+                                    -1, 1, 0,
+                                    1, 1, 0,
+                                    1, -1, 0,
+                                    -1, -1, 0], dtype=np.float32)
+
+        if shape == "circle": # Circle
+            self.vertices = np.array([0, 1, 0,
+                                      0.5, 0.866, 0,
+                                      0.866, 0.5, 0,
+                                      1, 0, 0, 
+                                      0.866, -0.5, 0,
+                                      0.5, -0.866, 0,
+                                      0, -1, 0,
+                                      -0.5, -0.866, 0,
+                                      -0.866, -0.5, 0,
+                                      -1, 0, 0, 
+                                      -0.866, 0.5, 0, 
+                                      -0.5, 0.866, 0, 
+                                      0, 1, 0  
+                                    ], dtype=np.float32)
+            self.vertices *= 0.1 # make it even smaller
+
+
 class Test(QOpenGLWidget):
     turnTableRotation = Signal(int)
     verticalRotation = Signal(int)
     manipulationIndex = Signal(int)
 
 
-    def __init__(self, parent=None, wholeView=False, fname=None, jsonData=None, manipulationJSON=False, manipulation="Test"):
+    def __init__(self, parent=None, wholeView=False, meshDictionary=None, fname=None, jsonData=None, manipulation={}, screenType="normal"):
         QOpenGLWidget.__init__(self, parent)
 
         self.jsonData = jsonData
-        self.manipulationJSON = manipulationJSON
-        self.fname = "../obj_files/" + str(fname) 
+        self.toManipulate = False
+        self.toBin = True
         self.manipulation = manipulation
+        self.screenType = screenType
+        # self.toManipulate = manipulation["Display"] # Either True or False
+        # self.manipulationJSON = manipulation["JSON"] # the json data
+        self.fname = str(fname)
+        # self.manipulation = manipulation["Directory"]
         self.wholeView = wholeView # whether to show the whole view
         self.turntable = 0
         self.vertical = 0
@@ -73,25 +105,52 @@ class Test(QOpenGLWidget):
 
         self.ZNEAR = 0.1
         self.ZFAR = 10.0
+        
+        # UNIFORM VALUES FOR SHADERS
+        self.lightPos = [0, 5.0, 0] # -1, 5.0, -1
+        self.lightColor = [1.0, 1.0, 0] # 1.0, 0.87, 0.13
+        self.camera_pos = [0, 0, 0]
+        self.tree_color = [1.0, 1.0, 1.0, 1.0]
+        self.triangle_color = [1.0, 0.0, 1.0, 0.0]
 
+        self.WHOLE_TREE_DEPTH = -5.0
+        self.TREE_SECTION_DEPTH = -1.5
+        self.TREE_DY = -2
+        self.TREE_SECTION_DX = -0.25 # -0.25
+        self.TREE_SECTION_ASPECT = 1.5
+        
+        # dimensions of the screen
+        self.width = -1
+        self.height = -1
+
+        # self.loadNewMeshFiles(meshDictionary=meshDictionary)
         # Get the mesh and vertices for the mesh loaded in from json file
-        self.mesh = Mesh(self.fname)
+        # self.mesh = Mesh(self.fname)
+        self.mesh = meshDictionary["Tree"]
         self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
         self.texture = None
         self.vao = None
         self.vbo = None 
 
         # Manipulation files
-        self.meshes = [None] * 10 # fill in for meshes of the manipulations branches
+        # self.meshes = [None] * 10 # fill in for meshes of the manipulations branches
+        self.meshes = meshDictionary["Branches"]["Meshes"]
+        self.meshDescriptions = meshDictionary["Branches"]["Description"]
+        self.meshScales = meshDictionary["Branches"]["Scale"]
+        self.meshRotations = meshDictionary["Branches"]["Rotation"]
+        self.meshTranslations = meshDictionary["Branches"]["Translation"]
+        self.meshAnswer =  meshDictionary["Branches"]["Answer"]
         self.branchProgram = None
-        self.VAOs = [None] * 10 # list of all VBOs
-        self.VBOs = [None] * 10 # list of associated VBOs
+        self.VAOs = [None] * len(self.meshes) # list of all VBOs
+        self.VBOs = [None] * len(self.meshes) # list of associated VBOs
         self.branchTexture = None
-
+        self.currentFeature = None
+        self.correctFeature = False
 
 
         # GETTING THE BACKGROUND SKY BOX
-        self.skyMesh = Mesh("../obj_files/skyBox.obj") # Always the same regardless of tree File
+        # self.skyMesh = Mesh("../obj_files/skyBox.obj") # Always the same regardless of tree File
+        self.skyMesh = meshDictionary["SkyBox"]
         self.skyVertices = np.array(self.skyMesh.vertices, dtype=np.float32)
         self.skyProgram = None
         self.skyTexture = None
@@ -106,25 +165,12 @@ class Test(QOpenGLWidget):
                           "nz.png"] # back
         
         
+        # FOR DRAWING THE BOUNDING BOX IN THE WHOLE CAMERA VIEW
+        self.boundBoxProgram = None
+        self.boundBoxVAO = None
+        self.boundBoxVBO = None
+        self.boundBoxVertices = Shapes(shape="square").vertices
 
-        # UNIFORM VALUES FOR SHADERS
-        self.lightPos = [0, 5.0, 0] # -1, 5.0, -1
-        self.lightColor = [1.0, 1.0, 0] # 1.0, 0.87, 0.13
-        self.camera_pos = [0, 0, 0]
-        self.tree_color = [1.0, 1.0, 1.0, 1.0]
-        self.triangle_color = [1.0, 0.0, 1.0, 0.0]
-        # self.triangle = np.array([-0.5, -0.5, 0.0,
-        #                           0.5, -0.5, 0.0, 
-        #                            0.0, 0.5, 0.0], dtype=np.float32)
-
-        self.WHOLE_TREE_DEPTH = -5.0
-        self.TREE_SECTION_DEPTH = -1.5
-        self.TREE_DY = -2
-        self.TREE_SECTION_DX = -0.25 # -0.25
-        
-        # dimensions of the screen
-        self.width = -1
-        self.height = -1
 
         # DRAWING VALUES
         self.drawVAO = None
@@ -146,16 +192,14 @@ class Test(QOpenGLWidget):
                                     [0.0, 0.0, 0.0, 0.0],
                                     [0.0, 0.0, 1.0, 1.0],
                                     [0.0, 0.0, 1.0, 0.0]], dtype=np.float32)
-        self.labelLines = np.zeros(24) # 4 labels * 2 pts per label * 3 dimensions
+        
+        self.labelLines = np.zeros( 4 * 2 * 3 ) # 4 labels * 2 pts per label * 3 dimensions
         self.labelVAO = None
         self.labelVBO = None
         self.labelProgram = None
         
         # Get more information from the json file
-        self.budLocation = np.array(self.jsonData["Features"]["Bud"], dtype=np.float32)
-        self.trunkLocation = np.array(self.jsonData["Features"]["Trunk"], dtype=np.float32)
-        self.secondaryLocation = np.array(self.jsonData["Features"]["Secondary Branch"], dtype=np.float32)
-        self.tertiaryLocation = np.array(self.jsonData["Features"]["Tertiary Branch"], dtype=np.float32)
+        self.setFeatureLocations()
 
 
     def normalizeAngle(self, angle):
@@ -173,7 +217,7 @@ class Test(QOpenGLWidget):
             self.turnTableRotation.emit(angle)
             self.update()
 
-    
+
     def setVerticalRotation(self, angle):
         # angle = self.normalizeAngle(angle)
         if angle != self.vertical:
@@ -187,6 +231,68 @@ class Test(QOpenGLWidget):
             self.index = index
             self.manipulationIndex.emit(index)
             self.update()
+
+    def setToBinAndToManipulate(self, toManipulate=False, toBin=False):
+        self.toManipulate = toManipulate
+        self.toBin = toBin
+
+    def loadNewJSONFile(self, jsonData):
+        self.jsonData = jsonData
+        self.setFeatureLocations()
+
+    
+    def setFeatureLocations(self):
+        self.budLocation = np.array(self.jsonData["Features"]["Bud"], dtype=np.float32)
+        self.trunkLocation = np.array(self.jsonData["Features"]["Trunk"], dtype=np.float32)
+        self.secondaryLocation = np.array(self.jsonData["Features"]["Secondary Branch"], dtype=np.float32)
+        self.tertiaryLocation = np.array(self.jsonData["Features"]["Tertiary Branch"], dtype=np.float32)
+
+
+    def loadNewMeshFiles(self, meshDictionary):
+        if meshDictionary["Tree"] is not None:
+            self.mesh = meshDictionary["Tree"]
+            self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
+            self.texture = None
+            self.vao = None
+            self.vbo = None
+            self.initializeTreeMesh()
+        
+        if meshDictionary["Branches"] is not None:
+            # TO DO, Make the manipulation variable True
+            self.meshes = meshDictionary["Branches"]["Meshes"]
+            self.meshDescriptions = meshDictionary["Branches"]["Descriptions"]
+            self.meshAnswer = meshDictionary["Branches"]["Answer"]
+            self.branchProgram = None
+            self.VAOs = [None] * 10 # list of all VBOs
+            self.VBOs = [None] * 10 # list of associated VBOs
+            self.branchTexture = None
+            self.toManipulate = True
+            self.initializeManipulationFiles()
+
+        if meshDictionary["SkyBox"] is not None:
+            self.skyMesh = meshDictionary["SkyBox"]
+            self.skyVertices = np.array(self.skyMesh.vertices, dtype=np.float32)
+            self.skyProgram = None
+            self.skyTexture = None
+            self.skyVAO = None
+            self.skyVBO = None
+            self.initializeSkyBox()
+
+        self.update() # UPDATE THE SCREEN TO DRAW THE NEW FILES
+
+    
+    def getMeshRotation(self, rotations, cameraRotation):
+        # convert to radians
+        xRad = self.angle_to_radians(rotations[0])
+        yRad = self.angle_to_radians(rotations[1])
+        zRad = self.angle_to_radians(rotations[2])
+
+        return mt.create_from_x_rotation(xRad) @ mt.create_from_y_rotation(yRad) @ mt.create_from_z_rotation(zRad) @ cameraRotation
+        
+    def getMeshTranslation(self, translation, treeTranslation):
+        return np.transpose(mt.create_from_translation(translation)) @ treeTranslation
+        
+
 
     def getGlInfo(self):
         "Get opengl info"
@@ -206,82 +312,81 @@ class Test(QOpenGLWidget):
 
     def initializeManipulationFiles(self):
         gl.glUseProgram(0)
-
-        # create the shader
-        vertexShader = Shader("vertex", "shader.vert").shader # get out the shader value    
-        fragmentShader = Shader("fragment", "shader.frag").shader
-
-        self.branchProgram = gl.glCreateProgram()
-        gl.glAttachShader(self.branchProgram, vertexShader)
-        gl.glAttachShader(self.branchProgram, fragmentShader)
-        gl.glLinkProgram(self.branchProgram)
-
-        # Need to loop through all the files
-        files = self.manipulationJSON[self.manipulation]["Files"]
-        for i in range(len(files)):
-            # get the file name
-            # load in the Mesh file
-
-            # create and bind VAOs and VBOs
-            self.VAOs[i] = gl.glGenVertexArrays(1)
-            gl.glBindVertexArray(self.VAOs[i])
-
-            self.VBOs[i] = gl.glGenBuffers(1)
-            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.VBOs[i])
-            
-            # Load in the Mesh file and vertex
-            fname = "../obj_files/" + self.manipulation + "/" + str(files[i]["Name"])
-            self.meshes[i] = Mesh(fname)
-            vertices = np.array(self.meshes[i].vertices, dtype=np.float32)
-
-            gl.glBufferData(gl.GL_ARRAY_BUFFER, vertices.nbytes, vertices, gl.GL_STATIC_DRAW) # gl.GL_STATIC_DRAW
-            # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
-
-            # SET THE ATTRIBUTE POINTERS SO IT KNOWS LCOATIONS FOR THE SHADER
-            stride = vertices.itemsize * 8 # times 8 given there are 8 vertices across texture coords, normals, and vertex positions before next set
-            # TEXTURE COORDINATES
-            gl.glEnableVertexAttribArray(0)
-            gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0)) 
-
-            # NORMAL VECTORS (normals)
-            gl.glEnableVertexAttribArray(1)  # SETTING THE NORMAL
-            # gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(0)) # for location = 0
-            gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(8)) # starts at position 2 with size 4 for float32 --> 2*4
-
-            # VERTEX POSITIONS (vertexPos)
-            gl.glEnableVertexAttribArray(2) # SETTING THE VERTEX POSITIONS
-            gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
-
-            # Reset the buffers 
-            gl.glBindVertexArray(0)
-            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-
-        self.branchTexture = gl.glGenTextures(1)
-        # print(f"texture ID {self.texture}")
-        gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture) 
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT) # will repeat the image if any texture coordinates are outside [0, 1] range for x, y values
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST) # describing how to perform texture filtering (could use a MipMap)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-
-        # LOAD IN THE TEXTURE IMAGE AND READ IT IN TO OPENGL
-        # texImg = Image.open("../textures/bark.jpg")
-        texImg = Image.open("../textures/testTexture.png")
-        texData = texImg.convert("RGB").tobytes()
-        gl.glTexImage2D(gl.GL_TEXTURE_2D, 
-                        0,                      # mipmap setting (can change for manual setting)
-                        gl.GL_RGB,              # texture file storage format
-                        texImg.width,           # texture image width
-                        texImg.height,          # texture image height
-                        0,                      # 0 for legacy 
-                        gl.GL_RGB,              # format of the texture image
-                        gl.GL_UNSIGNED_BYTE,    # datatype of the texture image
-                        texData)                # data texture 
         
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-        gl.glBindVertexArray(0)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
-        gl.glUseProgram(0)
+        if len(self.meshes) > 0: # IF NONE, THEN NO NEED TO LOAD
+            # create the shader
+            vertexShader = Shader("vertex", "shader.vert").shader # get out the shader value    
+            fragmentShader = Shader("fragment", "shader.frag").shader
+
+            self.branchProgram = gl.glCreateProgram()
+            gl.glAttachShader(self.branchProgram, vertexShader)
+            gl.glAttachShader(self.branchProgram, fragmentShader)
+            gl.glLinkProgram(self.branchProgram)
+
+            # Need to loop through all the files
+            # files = self.manipulationJSON[self.manipulation]["Files"]
+            for i, mesh in enumerate(self.meshes): # len(files)
+
+                # create and bind VAOs and VBOs
+                self.VAOs[i] = gl.glGenVertexArrays(1)
+                gl.glBindVertexArray(self.VAOs[i])
+
+                self.VBOs[i] = gl.glGenBuffers(1)
+                gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.VBOs[i])
+                
+                # Load in the Mesh file and vertex
+                # fname = "../obj_files/" + self.manipulation + "/" + str(files[i]["Name"])
+                # self.meshes[i] = Mesh(fname)
+                vertices = np.array(mesh.vertices, dtype=np.float32) # self.meshes[i]
+
+                gl.glBufferData(gl.GL_ARRAY_BUFFER, vertices.nbytes, vertices, gl.GL_STATIC_DRAW) # gl.GL_STATIC_DRAW
+                # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
+
+                # SET THE ATTRIBUTE POINTERS SO IT KNOWS LCOATIONS FOR THE SHADER
+                stride = vertices.itemsize * 8 # times 8 given there are 8 vertices across texture coords, normals, and vertex positions before next set
+                # TEXTURE COORDINATES
+                gl.glEnableVertexAttribArray(0)
+                gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0)) 
+
+                # NORMAL VECTORS (normals)
+                gl.glEnableVertexAttribArray(1)  # SETTING THE NORMAL
+                # gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(0)) # for location = 0
+                gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(8)) # starts at position 2 with size 4 for float32 --> 2*4
+
+                # VERTEX POSITIONS (vertexPos)
+                gl.glEnableVertexAttribArray(2) # SETTING THE VERTEX POSITIONS
+                gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
+
+                # Reset the buffers 
+                gl.glBindVertexArray(0)
+                gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
+            self.branchTexture = gl.glGenTextures(1)
+            # print(f"texture ID {self.texture}")
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture) 
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT) # will repeat the image if any texture coordinates are outside [0, 1] range for x, y values
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST) # describing how to perform texture filtering (could use a MipMap)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+
+            # LOAD IN THE TEXTURE IMAGE AND READ IT IN TO OPENGL
+            # texImg = Image.open("../textures/bark.jpg")
+            texImg = Image.open("../textures/testTexture.png")
+            texData = texImg.convert("RGB").tobytes()
+            gl.glTexImage2D(gl.GL_TEXTURE_2D, 
+                            0,                      # mipmap setting (can change for manual setting)
+                            gl.GL_RGB,              # texture file storage format
+                            texImg.width,           # texture image width
+                            texImg.height,          # texture image height
+                            0,                      # 0 for legacy 
+                            gl.GL_RGB,              # format of the texture image
+                            gl.GL_UNSIGNED_BYTE,    # datatype of the texture image
+                            texData)                # data texture 
+            
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+            gl.glBindVertexArray(0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+            gl.glUseProgram(0)
 
 
 
@@ -291,49 +396,122 @@ class Test(QOpenGLWidget):
         gl.glLoadIdentity()
         gl.glPushMatrix()
 
-        # Bind the texture and link the program
-        gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture)
-        gl.glUseProgram(self.branchProgram) 
+        if len(self.meshes) > 0: # check I have values just in case
+            # Bind the texture and link the program
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture)
+            gl.glUseProgram(self.branchProgram) 
 
-        # TO DO: 
-        #   - modify model value based on the branch object 
-        hAngle = self.angle_to_radians(self.turntable)
-        vAngle = self.angle_to_radians(self.vertical)
-        rotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
-        if self.wholeView: # looking at the whole tree view
-            translation = np.transpose(mt.create_from_translation([0, 0, self.WHOLE_TREE_DEPTH])) # 0, -0, -5.883
-        else:
-            translation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, 0, self.TREE_SECTION_DEPTH]))
-        # scale = mt.create_from_scale([-4.344, 4.1425, -9.99])
-        scale = mt.create_from_scale([1, 1, 1])
-        model = mt.create_identity()
-        model = translation @ rotation @ scale
-        
-        # SET SHADER PROGRAM 
-        lightPosLoc = gl.glGetUniformLocation(self.program, "lightPos")
-        gl.glUniform3fv(lightPosLoc, 1, self.lightPos)
-        lightColorLoc = gl.glGetUniformLocation(self.program, "lightColor")
-        gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
-        modelLoc = gl.glGetUniformLocation(self.program, "model")
-        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
-        projLoc = gl.glGetUniformLocation(self.program, "projection")
-        gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
-        viewLoc = gl.glGetUniformLocation(self.program, "view")
-        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
+            # BIND VALUES THAT DON'T CHANGE WITH THE MANIPULATION
+            lightPosLoc = gl.glGetUniformLocation(self.program, "lightPos")
+            gl.glUniform3fv(lightPosLoc, 1, self.lightPos)
+            lightColorLoc = gl.glGetUniformLocation(self.program, "lightColor")
+            gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
+            projLoc = gl.glGetUniformLocation(self.program, "projection")
+            gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
+            viewLoc = gl.glGetUniformLocation(self.program, "view")
+            gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
 
-       
-        gl.glBindVertexArray(self.VAOs[self.index])
-        vertices = np.array(self.meshes[self.index].vertices, dtype=np.float32)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(vertices.size / 3))
-        gl.glBindVertexArray(0) # unbind the vao
+            hAngle = self.angle_to_radians(self.turntable)
+            vAngle = self.angle_to_radians(self.vertical)
+            # rotation
+            cameraRotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
+
+            if self.wholeView: # looking at the whole tree view
+                treeTranslation = np.transpose(mt.create_from_translation([0, 0, self.WHOLE_TREE_DEPTH]))
+            else:
+                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, 0, self.TREE_SECTION_DEPTH])) 
+
+            if self.index < len(self.meshes):
+                # MODIFY BRANCH OBJECTS BASED ON FILES READ IN 
+                
+                rotation = self.getMeshRotation(self.meshRotations[self.index], cameraRotation) 
+                translation = self.getMeshTranslation(self.meshTranslations[self.index], treeTranslation)
+                scale = mt.create_from_scale(self.meshScales[self.index]) # get the scale at that index [0.1, 0.1, 0.1]
+                
+                model = mt.create_identity()
+                model = translation @ rotation @ scale
+                
+                # SET SHADER PROGRAM 
+                modelLoc = gl.glGetUniformLocation(self.program, "model")
+                gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+           
+
+                gl.glBindVertexArray(self.VAOs[self.index])
+                vertices = np.array(self.meshes[self.index].vertices, dtype=np.float32)
+                gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(vertices.size / 3))
+                self.currentFeature = self.meshDescriptions[self.index]
+                # print(f"Current feature is {self.currentFeature}")
+
+                if self.currentFeature == self.meshAnswer:
+                    self.correctFeature = True
+                else:
+                    self.correctFeature = False
+                    
+
+                gl.glBindVertexArray(0) # unbind the vao
         gl.glPopMatrix()
+        gl.glUseProgram(0)   
+
+
+    def drawBinBranches(self):
+                # Index is the index of what file should be loaded
         gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
 
-        
-        
+        if len(self.meshes) > 0: # check I have values just in case
+            # Bind the texture and link the program
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture)
+            gl.glUseProgram(self.branchProgram) 
 
+            # BIND VALUES THAT DON'T CHANGE WITH THE MANIPULATION
+            lightPosLoc = gl.glGetUniformLocation(self.program, "lightPos")
+            gl.glUniform3fv(lightPosLoc, 1, self.lightPos)
+            lightColorLoc = gl.glGetUniformLocation(self.program, "lightColor")
+            gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
+            projLoc = gl.glGetUniformLocation(self.program, "projection")
+            gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
+            viewLoc = gl.glGetUniformLocation(self.program, "view")
+            gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
 
+            hAngle = self.angle_to_radians(self.turntable)
+            vAngle = self.angle_to_radians(self.vertical)
+            # rotation
+            cameraRotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
 
+            if self.wholeView: # looking at the whole tree view
+                treeTranslation = np.transpose(mt.create_from_translation([0, 0, self.WHOLE_TREE_DEPTH]))
+            else:
+                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, 0, self.TREE_SECTION_DEPTH])) 
+
+            for i in range(len(self.meshes)):
+                
+                rotation = self.getMeshRotation(self.meshRotations[i], cameraRotation) 
+                translation = self.getMeshTranslation(self.meshTranslations[i], treeTranslation)
+                scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
+                
+                model = mt.create_identity()
+                model = translation @ rotation @ scale
+                
+                # SET SHADER PROGRAM 
+                modelLoc = gl.glGetUniformLocation(self.program, "model")
+                gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+           
+                gl.glBindVertexArray(self.VAOs[i])
+                vertices = np.array(self.meshes[i].vertices, dtype=np.float32)
+                gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(vertices.size / 3))
+                self.currentFeature = self.meshDescriptions[i]
+                # print(f"Current feature is {self.currentFeature}")
+
+                if self.currentFeature == self.meshAnswer:
+                    self.correctFeature = True
+                else:
+                    self.correctFeature = False
+                    
+
+                gl.glBindVertexArray(0) # unbind the vao
+        gl.glPopMatrix()
+        gl.glUseProgram(0) 
 
 
     def initializeSkyBox(self):
@@ -562,19 +740,20 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)
         gl.glLoadIdentity()
         gl.glPushMatrix()
+
+
         for i, label in enumerate(self.jsonData["Features"]):
             
             x, y = screenPose[i]
-            start = 6*i
+            start = 6 * i
             end = 6 * (i+1)
-            self.renderText(label, x, y, 1.0)
-
+            self.renderText(text=label, x=x, y=y, scale=1.0)
+            
             # find the position on the screen in local coordinates
-            u,v = self.convertXYtoUV(x, y)
-            print(f"UV Position for coordinates {x, y} is {self.convertUVDtoXYZ(u, v, 0)[:3]}")
+            u,v = self.convertXYtoUV(x, y) 
             self.labelLines[start:start+3] = self.convertUVDtoXYZ(u, v, 0)[:3] # want at the 0 position on the screen 
             self.labelLines[end-3:end] = np.array(self.jsonData["Features"][label], dtype=np.float32) # locations stored in local space
-            # print(f"label {label} drawn line from {self.labelLines[start:end]}")
+        
 
         gl.glUseProgram(0)
         gl.glUseProgram(self.labelProgram)
@@ -662,6 +841,72 @@ class Test(QOpenGLWidget):
         gl.glPopMatrix()
 
 
+    def initializeBoundingBox(self):
+        gl.glUseProgram(0)
+
+        vertexShader = Shader("vertex", "simple_shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "simple_shader.frag").shader
+
+        self.boundBoxProgram = gl.glCreateProgram()
+        gl.glAttachShader(self.boundBoxProgram, vertexShader)
+        gl.glAttachShader(self.boundBoxProgram, fragmentShader)
+        gl.glLinkProgram(self.boundBoxProgram)
+        gl.glUseProgram(self.boundBoxProgram)
+
+        self.boundBoxVAO = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(self.boundBoxVAO)
+
+        self.boundBoxVBO = gl.glGenBuffers(1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.boundBoxVBO)
+
+        # Use the skyvertices vertex counts to draw the bounding box
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.boundBoxVertices.nbytes, self.boundBoxVertices, gl.GL_STATIC_DRAW)
+
+        stride = self.drawVertices.itemsize * 3
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0)) # coordinates start at bit 20 (5*4)
+
+
+    def drawBoundingBox(self):
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+        gl.glUseProgram(0)
+        
+        # aspectWidth = self.width / self.height
+        scaleRatio = (self.WHOLE_TREE_DEPTH - self.TREE_SECTION_DEPTH) / self.WHOLE_TREE_DEPTH
+        scale = mt.create_from_scale([self.TREE_SECTION_ASPECT * scaleRatio, scaleRatio, 1]) # aspect, 1, 1
+        
+        moveX = -1 * (self.WHOLE_TREE_DEPTH * (self.TREE_SECTION_DX / self.TREE_SECTION_DEPTH))  # Ratio to shift should be the same as x/z for tree section
+        translation = np.transpose(mt.create_from_translation([moveX, 0, self.WHOLE_TREE_DEPTH])) # -1*self.TREE_SECTION_DX, -1*self.TREE_DY
+        model = translation @ scale # for rotating the modelView only want to translate and scale but not rotate
+
+        gl.glUseProgram(self.boundBoxProgram)
+
+        modelLoc = gl.glGetUniformLocation(self.boundBoxProgram, "model")
+        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+        # print(f"Model:\n{model}")
+
+        viewLoc = gl.glGetUniformLocation(self.boundBoxProgram, "view")
+        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) # use the same location view values
+
+        projLoc = gl.glGetUniformLocation(self.boundBoxProgram, "projection")
+        gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection) # use the same projection values
+        # print(f"Projection:\n{self.projection}")
+
+
+        # BIND VAO AND TEXTURE
+        gl.glBindVertexArray(self.boundBoxVAO)
+        # TO FIX
+        gl.glLineWidth(2.0)
+        gl.glDrawArrays(gl.GL_LINE_STRIP, 0, int(self.boundBoxVertices.size / 3))  # draw the vertices of the skybox 
+        # gl.glDrawElements(gl.GL_QUADS, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
+
+        gl.glUseProgram(0)
+        gl.glBindVertexArray(0) # unbind the vao
+        gl.glPopMatrix()
+
+
+
 
     def initializeDrawing(self):
         gl.glUseProgram(0)
@@ -682,7 +927,7 @@ class Test(QOpenGLWidget):
         self.drawVBO = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.drawVBO)
 
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.drawVertices.nbytes, self.drawVertices, gl.GL_STATIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.drawVertices.nbytes, self.drawVertices, gl.GL_DYNAMIC_DRAW) # GL_STATIC_DRAW
 
         stride = self.drawVertices.itemsize * 3
 
@@ -728,22 +973,10 @@ class Test(QOpenGLWidget):
         gl.glPopMatrix()
         gl.glUseProgram(0)
 
-        
-        
 
-    def initializeGL(self):
-        print(self.getGlInfo())
-        # gl.glClearColor(0, 0.224, 0.435, 1)
-        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-        # gl.glClearColor(1.0, 1.0, 1.0, 1.0)
-        # gl.glClearColor(0.56, 0.835, 1.0, 1.0)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND) # for text and skybox
-        gl.glDisable(gl.GL_CULL_FACE)
-        # gl.glEnable(gl.GL_CULL_FACE)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        
+    def initializeTreeMesh(self):
         # TREE SHADER
+        # gl.glUseProgram(0)
         vertexShader = Shader("vertex", "shader.vert").shader # get out the shader value    
         fragmentShader = Shader("fragment", "shader.frag").shader
 
@@ -810,61 +1043,17 @@ class Test(QOpenGLWidget):
         # gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, self.vertices.itemsize * 6, ctypes.c_void_p(12)) # for location = 1
         gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
 
-        self.initializeManipulationFiles()
-
-        # INITIALIZE THE DRAWING PROGRAM
-        self.initializeDrawing() # initialize the places for the drawing of values
-
-        self.initializeText()
-        # self.initializeLabelBoxes()
-
-        self.initializeSkyBox() # initialize all the skybox data
-
-        
-    def resizeGL(self, width, height):
-        self.width = width 
-        self.height = height
-
-        # if not self.wholeView:
-        #     print(f"Dimensions: {self.width} x {self.height}")
-
-        side = min(width, height)
-        if side < 0:
-            return
-        
-        gl.glViewport(0, 0, width, height)
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        aspect = width / float(height)
-
-        # Set the perspective of the scene
-        GLU.gluPerspective(45.0,            # FOV in y direction
-                           aspect,          # FOV in x direction
-                           self.ZNEAR,      # z near
-                           self.ZFAR)       # z far
-        self.projection = np.array(gl.glGetDoublev(gl.GL_PROJECTION_MATRIX))
-        self.projection = np.transpose(self.projection)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        # self.update()
-
-    
-    def angle_to_radians(self, angle):
-        return angle * (np.pi / 180.0)
 
 
-
-    def paintGL(self):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
-        gl.glLoadIdentity()
-        gl.glPushMatrix()
-
+    def paintTree(self):
         # set the perspective
         # PUT THE OBJECT IN THE CORRECT POSITION ON THE SCREEN WITH 0, 0, 0 BEING THE CENTER OF THE TREE
         # Specifically putting the object at x = 0, 0, -5.883 --> u = 0, v = 0, d = 0.5
         # Based on calculations from the projection matrix with fovy = 45, aspect = (646/616), near = 0.1, far = 10.0
         # rotate and translate the model to the correct position
         # Deal with the rotation of the object
+        gl.glUseProgram(0)
+
         hAngle = self.angle_to_radians(self.turntable)
         vAngle = self.angle_to_radians(self.vertical)
 
@@ -913,12 +1102,95 @@ class Test(QOpenGLWidget):
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vertices.size / 3)) 
 
         gl.glBindVertexArray(0) # unbind the vao
-        gl.glPopMatrix()
+        gl.glPopMatrix() 
 
-        self.drawManipulationBranch()
+        gl.glUseProgram(0)
+
+       
+
+    def initializeGL(self):
+        # print(self.getGlInfo())
+        # gl.glClearColor(0, 0.224, 0.435, 1)
+        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+        # gl.glClearColor(1.0, 1.0, 1.0, 1.0)
+        # gl.glClearColor(0.56, 0.835, 1.0, 1.0)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND) # for text and skybox
+        gl.glDisable(gl.GL_CULL_FACE)
+        # gl.glEnable(gl.GL_CULL_FACE)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+         
+        self.initializeTreeMesh()
+
+        self.initializeManipulationFiles() # Also for the binning values
+
+        self.initializeDrawing() # initialize the places for the drawing of values
+
+        self.initializeText()
+        # self.initializeLabelBoxes()
+        if self.wholeView:
+            self.initializeBoundingBox()
+
+        self.initializeSkyBox() # initialize all the skybox data
+
+        
+    def resizeGL(self, width, height):
+        self.width = width 
+        self.height = height # int(width // self.TREE_SECTION_ASPECT) # have a set aspect ratio
+
+        # if not self.wholeView:
+        #     print(f"Dimensions: {self.width} x {self.height}")
+
+        side = min(width, height)
+        if side < 0:
+            return
+        
+        # gl.glViewport(0, 0, width, height)
+        gl.glViewport(0, 0, self.width, self.height)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        # aspect = width / float(height)
+        aspect = 0 
+        if not self.wholeView:
+            aspect = self.TREE_SECTION_ASPECT
+        else:
+            aspect = self.width / self.height
+
+        # Set the perspective of the scene
+        GLU.gluPerspective(45.0,            # FOV in y direction
+                           aspect,          # FOV in x direction
+                           self.ZNEAR,      # z near
+                           self.ZFAR)       # z far
+        self.projection = np.array(gl.glGetDoublev(gl.GL_PROJECTION_MATRIX))
+        self.projection = np.transpose(self.projection)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        # self.update()
+
+    
+    def angle_to_radians(self, angle):
+        return angle * (np.pi / 180.0)
+
+
+
+    def paintGL(self):
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+
+        self.paintTree()
+
+        if self.wholeView:
+            self.drawBoundingBox() 
+
+        if self.toManipulate and not self.wholeView:
+            self.drawManipulationBranch()
+
+        if self.toBin and not self.wholeView:
+            self.drawBinBranches()
 
         # WANT TO DRAW THE POINTS BASED ON WHAT SOMEONE WAS DRAWING
-        if self.drawLines and not self.wholeView:
+        if self.drawLines and not self.wholeView and self.screenType == "normal":
             self.drawPruningLines()
 
         if not self.wholeView and self.displayLabels:
@@ -927,24 +1199,11 @@ class Test(QOpenGLWidget):
                           (250, 500), # Tertiary
                           (250, 250)] # bud
             self.drawLabels(screenPose)
-            # Set locations based on screen position
-            # self.renderText("Tertiary Branch", 500, 500, 1)
-            # self.renderText("Trunk", 1000, 900, 1)
-            # self.renderText("Secondary Branch", 2000, 700, 1)
-        
-        # TO ADD CONCEPT TO DRAW BOUNDING BOX FOR WHOLE VIEW CAMERA
-        # TO ADD CONCEPT FOR DRAWING HINTS/CORRECT PRUNING CUTS WHEN ASKED
-
+            
         # DRAW THE BACKGROUND SKYBOX
         gl.glUseProgram(0)
         self.drawSkyBox()
         gl.glUseProgram(0) 
-
-        # if not self.wholeView:
-        #     labelPaint = QPainter(self)
-        #     labelPaint.setPen(Qt.red)
-        #     labelPaint.drawText(QPoint(500, 500), "Testing")
-        #     labelPaint.end()
 
     
 
@@ -957,6 +1216,8 @@ class Test(QOpenGLWidget):
         self.lastPose = QPoint(event.pos())
         if abs(self.lastPose.x() - self.startPose.x()) > 5 and abs(self.lastPose.y() - self.startPose.y()) > 5:
             self.rayDraw()
+        else:
+            print("Drawing Circle")
         # _ = self.rayDirection(self.lastPose.x(), self.lastPose.y())
     
 
@@ -1194,9 +1455,7 @@ class Test(QOpenGLWidget):
 
     def rayDraw(self):
         # Use the first and last pose to get the midpoint
-        start = time.time()
         
-
         # checking the midpoint value
         # midPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
         # dir = self.rayDirection(x=midPt[0], y=midPt[1])[:3]
@@ -1370,6 +1629,9 @@ class Test(QOpenGLWidget):
         self.displayLabels = checked
         self.update()
 
+    def setManipulationIndex(self, index=0):
+        self.index = index
+        self.update()
     
 
 # QWidget 
@@ -1379,106 +1641,153 @@ class Window(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         # Practice loading in data
-        fname = "textureTree.obj"
-        jsonData = JSONFile("objFileDescription.json", "o").data
+        self.fname = "textureTree.obj"
+        self.jsonData = JSONFile("objFileDescription.json", "o").data
 
-        screen_width = 2       
         # QtOpenGL.QMainWindow.__init__(self)
         # self.resize(1000, 1000)
         self.setGeometry(100, 100, 1000, 1000)
         self.setWindowTitle("TEST Window")
 
-        self.central_widget = QWidget() # GLWidget()
-
-        self.layout = QGridLayout(self.central_widget)
-        # self.layout.setRowStretch(0, 40)
-
-        # self.layout = QVBoxLayout(self.central_widget)
-        self.hLayout = QHBoxLayout(self.central_widget)
-        # self.central_widget.setLayout(self.layout)
-        self.setCentralWidget(self.central_widget)       
-
+        self.index = 0
+        self.correctFeature = False
+             
+        
+        self.screen_width = 3    # How many rows to cover
         # getting the main screen
-        self.glWidget = Test(wholeView=False, 
-                             fname=fname, 
-                             jsonData=jsonData["Tree Files"][fname], 
-                             manipulationJSON=jsonData["Manipulation Files"],
-                             manipulation="TestManipulation")
-        # self.glWidget.setFixedSize(2500, 2000)
-        # self.layout.addWidget(self.glWidget)
-        self.layout.addWidget(self.glWidget, 0, 1, screen_width, 1) # r=0, c=1, rs = 3, cs = 1
+        self.manipulation = {
+            "Display": False,
+            "JSON": self.jsonData["Manipulation Files"],
+            "Directory": "manipulation"
+        }
 
-        # UNDO BUTTON
-        self.undoButton = QPushButton("Undo")
-        self.undoButton.setStyleSheet("font-size: 50px;" "font:bold")
-        self.undoButton.setFixedSize(300, 100)
-        # self.undoButton.setGeometry(200, 200, 150, 100)
-        self.undoButton.clicked.connect(self.glWidget.undoDraw)
-        # self.layout.addWidget(self.undoButton)
-        self.hLayout.addWidget(self.undoButton)
-        # self.layout.addWidget(self.undoButton, 0, 1, 1, 1)
+        self.binValues = ["SELECT", "Don't Prune", "Prune Back", "Prune Completely"] #
+        self.binAnswers = ["SELECT", "SELECT", "SELECT"]
+        self.binIndices = [0, 0, 0]
 
-        self.labelButton = QPushButton("Labels On") # Make a blank button
-        self.labelButton.setStyleSheet("font-size: 50px;" "font:bold")
-        self.labelButton.setCheckable(True)
-        self.labelButton.setFixedSize(300, 100)
-        self.labelButton.clicked.connect(self.labelButtonClicked)
-        # self.undoButton.clicked.connect(self.glWidget.undoDraw)
+        self.screenType = "bin" # Options: bin, submit, manipulation, normal 
         
-        self.hLayout.addWidget(self.labelButton)
-        # self.layout.addWidget(self.labelButton, 0, 1, 1, 1)
-        self.layout.addLayout(self.hLayout, 0, 1, Qt.AlignTop | Qt.AlignLeft)
+        self.previousScreen = self.screenType
+        self.toManipulate = True
+        self.submitScreen = False
+        self.nextScreenManipualte = False
+        self.skyBoxMesh = None # skybox is the same for every window
 
-        # VERTICAL SLIDER
-        self.vSlider = self.createSlider(camera=True, horizontal=False)
-        self.vSlider.valueChanged.connect(self.glWidget.setVerticalRotation)
-        self.glWidget.verticalRotation.connect(self.vSlider.setValue)
-        # self.layout.addWidget(self.vSlider)
-        self.layout.addWidget(self.vSlider, 0, 0, screen_width, 1) # 0, 0, 3, 1
-        
-        # HORIZONTAL SLIDER
-        self.hSlider = self.createSlider(camera=True, horizontal=True)
-        self.hSlider.valueChanged.connect(self.glWidget.setTurnTableRotation)
-        self.glWidget.turnTableRotation.connect(self.hSlider.setValue)
-        self.layout.addWidget(self.hSlider, screen_width, 1, 1, 1) # 3 1 1 1
+        self.manipulationDir = "vigor_bins"
+        # Initial meshes to load
+        self.meshDictionary = self.load_mesh_files(treeFile="textureTree.obj", branchFiles=self.jsonData["Manipulation Files"], manipDirectory=self.manipulationDir, skyBoxFile="skyBox.obj")
 
-        ## MANIPULATION SECTION 
-        # IF THE MANIPULATION SCREEN IS NEEDED
-        self.manipulationFrame = QFrame(self.central_widget) # self.central_widget
-        self.manipulationFrame.setFrameShape(QFrame.Shape.Box)
-        self.manipulationFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.layout.addWidget(self.manipulationFrame, screen_width+1, 1, 1, 1) # span the screen width but start below the sliders
+        self.skyBoxMesh = self.meshDictionary["SkyBox"]
 
-        self.manipLayout = QVBoxLayout(self.manipulationFrame)
-        self.manipulation_label = QLabel("Manipulation Slider:")
-        self.manipulation_label.setStyleSheet("font-size: 50px;" "font:bold")
-        self.manipLayout.addWidget(self.manipulation_label)
-
-        self.manipulationSlider = self.createSlider(camera=False, horizontal=True)
-        self.manipulationSlider.valueChanged.connect(self.glWidget.setManipulationIndex)
-        self.glWidget.manipulationIndex.connect(self.manipulationSlider.setValue)
-        # self.hSlider.valueChanged.connect(self.glWidget.setTurnTableRotation)
-        # self.glWidget.turnTableRotation.connect(self.hSlider.setValue)
-        self.manipLayout.addWidget(self.manipulationSlider) # 3 1 1 1
-
-        # submit button
-        self.submitButton = QPushButton("Submit") # Make a blank button
-        self.submitButton.setStyleSheet("font-size: 50px;" "font:bold")
-        # self.submitButton.setCheckable(True)
-        self.submitButton.setFixedSize(300, 100)
-        self.manipLayout.addWidget(self.submitButton)
-        
+        self.loadScreen()   # LOAD THE SCREEN 
         
 
+    def loadScreen(self):
+        # RESET THE WIDGET
+        print("LOADING SCREEN")
+        self.central_widget = QWidget() # GLWidget()
+        self.layout = QGridLayout(self.central_widget)
+        self.hLayout = QHBoxLayout(self.central_widget)
+        self.setCentralWidget(self.central_widget) 
 
-        # self.hLayout.addWidget(self.vSlider)
-        # self.hLayout.addLayout(self.layout)
+        # LOAD LEFT AND RIGHT SIDE OF SCREEN
+        self.leftSideScreen()
+        self.rightSideScreen()
+
+
+    # Loading the mesh files for each value
+    # INPUT:
+    #   - treeFile: String of file name for the tree obj file
+    #   - branchFiles: list of dictionaries containing file name and information about the branches
+    #   - manipDirectory: The corresponding manipulation directory for the branchFiles
+    #   - skyBoxFile: String of file name for skybox obj file
+    #
+    # OUTPUT:
+    #   - Mesh files for tree, branches, and skybox if file is loaded in
+
+    def load_mesh_files(self, treeFile = None, branchFiles = None, manipDirectory = None, skyBoxFile = None):
+        directory = "../obj_files/"
+        treeMesh = None
+        skyBoxMesh = None
+        branchMeshes = []
+        scales = []
+        rotations = []
+        translations = []
+        featureDescription = []
+        
+        branches = {
+            "Meshes": branchMeshes, 
+            "Description": featureDescription, 
+            "Scale": scales,
+            "Rotation": rotations,
+            "Translation": translations,
+            "Answer": ""
+        }
+
+        if treeFile is not None:
+            fname = directory + treeFile
+            treeMesh = Mesh(fname)
+        
+        if branchFiles is not None:
+            for branch in branchFiles[manipDirectory]["Files"]:
+                fname = directory + manipDirectory + "/"+ str(branch["File Name"]) # object name
+                featureDescription.append(branch["Feature Description"])
+                branchMeshes.append(Mesh(fname))
+
+                # change the values of the scale or translation
+                scales.append(branch["Scale"])
+                rotations.append(branch["Rotate"])
+                translations.append(branch["Translate"])
+            # Populate the mesh
+            branches["Meshes"] = branchMeshes
+            branches["Scale"] = scales
+            branches["Rotation"] = rotations
+            branches["Translation"] = translations
+            branches["Description"] = featureDescription
+            branches["Answer"] = branchFiles[manipDirectory]["Answer"] # looking if the correct answer
+        
+        if skyBoxFile is not None:
+            fname = directory + skyBoxFile
+            skyBoxMesh = Mesh(fname)
+        
+        meshDictionary = {
+            "Tree": treeMesh,
+            "SkyBox": skyBoxMesh,
+            "Branches": branches
+        }
+
+        return meshDictionary
+    
+
+    # LEFT HAND SIDE DEPENDENT ON WHAT TYPE OF SCREEN WE NEED TO SEE
+    def leftSideScreen(self):
+        # SET THE SCREEN SIZE BASED ON IF A MANIPULATION TASK OR NOT
+        if self.screenType == "manipulation":
+            self.manipulationScreen()
+
+        elif self.screenType == "submit":
+            self.submitButtonScreen()
+        
+        elif self.screenType == "bin":
+            self.binScreen()
+        else:
+            self.loadTreeSectionScreen()
+
+
+    ########################################################################
+    # LOAD WHAT IS ON THE RIGHT HAND SIDE OF THE SCREEN (Does not change by screen)
+    # This includes:
+    #   - whole tree view
+    #   - Your task bask
+    #   - Progress Bar
+    #######################################################################
+    def rightSideScreen(self):
         self.viewGL = Test(wholeView=True, 
-                           fname=fname, 
-                           jsonData=jsonData["Tree Files"][fname],
-                           manipulationJSON=jsonData["Manipulation Files"],
-                           manipulation="TestManipulation")
-        self.viewGL.setFixedSize(800, 700)
+                           fname=self.fname, 
+                           meshDictionary=self.meshDictionary,
+                           jsonData=self.jsonData["Tree Files"][self.fname],
+                           manipulation=self.manipulation)
+        self.viewGL.setFixedSize(900, 700)
         self.layout.addWidget(self.viewGL, 0, 2, 1, 1) # 1, 2, 1, 1
         self.hSlider.valueChanged.connect(self.viewGL.setTurnTableRotation) # Connect the vertical and horizontal camera sliders to the view screen
         self.viewGL.turnTableRotation.connect(self.hSlider.setValue)
@@ -1505,7 +1814,7 @@ class Window(QMainWindow):
 
         # Create a QLabel to display the task description
         # QLabel should be filled in with json data
-        self.task_label = QLabel("Draw on the tree section to prune back vigorous wood")
+        self.task_label = QLabel("Manipulate the slider until the branch is too vigorous\n and needs to be removed entirely")
         self.task_label.setStyleSheet("font-size: 35px;")
         self.directory_layout.addWidget(self.task_label)
     
@@ -1541,7 +1850,285 @@ class Window(QMainWindow):
             slider.setPageStep(1)
             slider.setTickPosition(QSlider.TicksBelow) 
         return slider
+
+    ########################################################################
+    # LOAD THE TREE SECTION ON THE LEFT HAND SIDE OF THE SCREEN
+    # This includes:
+    #   - undo button
+    #   - labels button
+    #   - submit button (if not in submit screen or manipulation screen)
+    #   - sliders to control the camera
+    #######################################################################
+    def loadTreeSectionScreen(self):
+      
+        self.glWidgetTree = Test(wholeView=False, 
+                                fname=self.fname,
+                                meshDictionary=self.meshDictionary, 
+                                jsonData=self.jsonData["Tree Files"][self.fname],  # NEEd to change eventually
+                                manipulation=self.manipulation,
+                                screenType=self.screenType)
         
+        # set the index if it is empty to current index
+        # only would draw for manipulation screen
+        self.glWidgetTree.setManipulationIndex(self.index) 
+        
+        if self.screenType == "normal":
+            self.screen_width = 3
+            self.glWidgetTree.setToBinAndToManipulate() # default to False
+        
+        elif self.screenType == "bin":
+            self.screen_width = 2
+            self.glWidgetTree.setToBinAndToManipulate(toBin=True)
+        
+        elif self.screenType == "manipulation":
+            self.screen_width = 2
+            self.glWidgetTree.setToBinAndToManipulate(toManipulate=True)
+        
+
+        else: # submit should use previous manipulation value
+            self.screen_width = 2
+        
+        # self.glWidget.setFixedSize(2820, 1850) # can I find the aspect
+        # self.layout.addWidget(self.glWidget)
+        self.layout.addWidget(self.glWidgetTree, 0, 1, self.screen_width, 1) # r=0, c=1, rs = 3, cs = 1
+
+        # UNDO BUTTON
+        self.undoButton = QPushButton("Undo")
+        self.undoButton.setStyleSheet("font-size: 50px;" "font:bold")
+        self.undoButton.setFixedSize(300, 100)
+        self.undoButton.clicked.connect(self.glWidgetTree.undoDraw)
+        self.hLayout.addWidget(self.undoButton)
+        
+        # LABEL BUTTON
+        self.labelButton = QPushButton("Labels On") # Make a blank button
+        self.labelButton.setStyleSheet("font-size: 50px;" "font:bold")
+        self.labelButton.setCheckable(True)
+        self.labelButton.setFixedSize(300, 100)
+        self.labelButton.clicked.connect(self.labelButtonClicked)
+        self.hLayout.addWidget(self.labelButton)
+
+        # SUBMIT BUTTON
+        if self.screenType == "normal": # should only show when both are false
+            self.submitButton = QPushButton("Submit") # Make a blank button
+            self.submitButton.setStyleSheet("font-size: 50px;" "font:bold")
+            self.submitButton.clicked.connect(self.submitButtonClicked) # TO CONNECT THE BUTTON WITH SCREEN
+            self.submitButton.setFixedSize(300, 100)
+            self.hLayout.addWidget(self.submitButton)
+
+        
+        # self.layout.addWidget(self.labelButton, 0, 1, 1, 1)
+        self.layout.addLayout(self.hLayout, 0, 1, Qt.AlignTop | Qt.AlignLeft)
+
+        # VERTICAL SLIDER
+        self.vSlider = self.createSlider(camera=True, horizontal=False)
+        self.vSlider.valueChanged.connect(self.glWidgetTree.setVerticalRotation)
+        self.glWidgetTree.verticalRotation.connect(self.vSlider.setValue)
+        # self.layout.addWidget(self.vSlider)
+        self.layout.addWidget(self.vSlider, 0, 0, self.screen_width, 1) # 0, 0, 3, 1
+        
+        # HORIZONTAL SLIDER
+        self.hSlider = self.createSlider(camera=True, horizontal=True)
+        self.hSlider.valueChanged.connect(self.glWidgetTree.setTurnTableRotation)
+        self.glWidgetTree.turnTableRotation.connect(self.hSlider.setValue)
+        self.layout.addWidget(self.hSlider, self.screen_width, 1, 1, 1) # 3 1 1 1
+
+
+    
+    def manipulationScreen(self):
+        
+        self.loadTreeSectionScreen() # LOAD THE TREE SECTION
+
+        self.manipulationFrame = QFrame(self.central_widget) # self.central_widget
+        self.manipulationFrame.setFrameShape(QFrame.Shape.Box)
+        self.manipulationFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(self.manipulationFrame, self.screen_width+1, 1, 1, 1) # span the screen width but start below the sliders
+
+        self.manipLayout = QVBoxLayout(self.manipulationFrame)
+
+        # TO CHANGE THE NAME OF THE SLIDER BASED ON WHAT WE ARE MANIPULATING
+        self.manipulation_label = QLabel("Manipulation Slider:") 
+        self.manipulation_label.setStyleSheet("font-size: 50px;" "font:bold")
+        self.manipLayout.addWidget(self.manipulation_label)
+
+        self.manipulationSlider = self.createSlider(camera=False, horizontal=True)
+        self.manipulationSlider.valueChanged.connect(self.glWidgetTree.setManipulationIndex)
+
+        # WHICH SLIDER TO USE WILL CHANGE!
+        self.glWidgetTree.manipulationIndex.connect(self.manipulationSlider.setValue)
+        self.manipLayout.addWidget(self.manipulationSlider) # 3 1 1 1
+
+        # submit button
+        self.submitButton = QPushButton("Submit") # Make a blank button
+        self.submitButton.setStyleSheet("font-size: 50px;" "font:bold")
+        self.submitButton.clicked.connect(self.submitButtonClicked)
+        # self.submitButton.setCheckable(True)
+        self.submitButton.setFixedSize(300, 100)
+        self.manipLayout.addWidget(self.submitButton)
+
+    
+    
+    def submitButtonScreen(self):
+        
+        self.submitScreen = False # RESET THE SCREEN TO FALSE SO IT LOADS A DIFFERENT SCREEN UPON RELOAD
+        self.loadTreeSectionScreen() # LOAD THE TREE SECTION
+        # self.glWidgetTree.index = self.index
+        
+        # NEED TO RELOAD THE SCREEN TO DISPLAY THE TEXT ON THE BOTTOM!
+        self.submitFrame = QFrame(self.central_widget) # self.central_widget
+        self.submitFrame.setFrameShape(QFrame.Shape.Box)
+        self.submitFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(self.submitFrame, self.screen_width+1, 1, 1, 1) # span the screen width but start below the sliders
+
+
+        # getting the answer
+        text = ""
+        self.submitLayout = QVBoxLayout(self.submitFrame)
+        self.submit_label = QLabel(text)
+        if self.glWidgetTree.toManipulate:
+            if self.correctFeature:
+                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"]
+                self.submitButton = QPushButton("Next") 
+                self.submitButton.clicked.connect(self.nextPageButtonClicked)
+            else:
+                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
+                self.submitButton = QPushButton("Retry") 
+                self.submitButton.clicked.connect(self.retryButtonClicked)
+        
+        elif self.glWidgetTree.toBin: # CHECK THE BIN ANSWERS
+            correct = self.jsonData["Manipulation Files"][self.manipulationDir]["Answer"]
+            if self.compareBinAnswers(correct, self.binAnswers):
+                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"]
+                self.submitButton = QPushButton("Next") 
+                self.submitButton.clicked.connect(self.nextPageButtonClicked)
+            else:
+                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
+                self.submitButton = QPushButton("Retry") 
+                self.submitButton.clicked.connect(self.retryButtonClicked)
+
+
+        self.submit_label = QLabel(text) # Want to change the text to say "Vigor
+        self.submit_label.setStyleSheet("font-size: 50px;" "font:bold")
+       
+        self.submitButton.setStyleSheet("font-size: 50px;" "font:bold")
+        self.submitButton.setFixedSize(300, 100)
+    
+        self.submitLayout.addWidget(self.submit_label)
+        self.submitLayout.addWidget(self.submitButton)
+ 
+    
+
+    def binScreen(self):
+        self.loadTreeSectionScreen()
+
+        # self.binFrame
+        self.binFrame = QFrame(self.central_widget) # self.central_widget
+        self.binFrame.setFrameShape(QFrame.Shape.Box)
+        self.binFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(self.binFrame, self.screen_width+1, 1, 1, 1) # Where on the screen we add
+        self.binLayout = QGridLayout(self.binFrame)
+        
+        # Setting the font
+        font = QFont()
+        font.setPointSize(font.pointSize()+2)
+        # Need to add a QLayout
+        # Want the branch name on top of the combo box option 
+        self.binLabel = QLabel("Branch 1")
+        self.binLabel.setStyleSheet("font-size: 50px;" "font:bold")
+        self.binLayout.addWidget(self.binLabel, 1, 1, Qt.AlignBottom | Qt.AlignCenter) # where in the small table we add
+        
+        self.dropDown = QComboBox()
+        self.dropDown.setFixedSize(500, 100)
+        self.dropDown.setFont(font)
+        self.dropDown.addItems(self.binValues)
+        self.dropDown.setCurrentIndex(self.binIndices[0])
+        self.dropDown.activated.connect(self.dropDownTextSelected)
+        self.binLayout.addWidget(self.dropDown, 2, 1, Qt.AlignTop | Qt.AlignCenter)
+
+        # Second dropdown box
+        self.binLabel2 = QLabel("Branch 2")
+        self.binLabel2.setStyleSheet("font-size: 50px;" "font:bold")
+        self.binLayout.addWidget(self.binLabel2, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
+        
+        self.dropDown2 = QComboBox()
+        self.dropDown2.setFixedSize(500, 100)
+        self.dropDown2.setFont(font)
+        self.dropDown2.addItems(self.binValues)
+        self.dropDown2.setCurrentIndex(self.binIndices[1])
+        self.dropDown2.activated.connect(self.dropDownTextSelected)
+        self.binLayout.addWidget(self.dropDown2, 2, 2, Qt.AlignTop | Qt.AlignCenter)
+
+        # 3rd drop down
+        self.binLabel3 = QLabel("Branch 3")
+        self.binLabel3.setStyleSheet("font-size: 50px;" "font:bold")
+        self.binLayout.addWidget(self.binLabel3, 1, 3, Qt.AlignBottom | Qt.AlignCenter)
+        
+        self.dropDown3 = QComboBox()
+        self.dropDown3.setFixedSize(500, 100)
+        self.dropDown3.setFont(font)
+        self.dropDown3.addItems(self.binValues)
+        self.dropDown3.setCurrentIndex(self.binIndices[2]) # SET THE VALUE TO PREVIOUS RESULTS
+        self.dropDown3.activated.connect(self.dropDownTextSelected)
+        self.binLayout.addWidget(self.dropDown3, 2, 3, Qt.AlignTop | Qt.AlignCenter)
+       
+        self.dropDownTextSelected("") # grab the current text in the dropdown menus
+
+        self.submitButton = QPushButton("Submit") # Make a blank button
+        self.submitButton.setStyleSheet("font-size: 50px;" "font:bold")
+        self.submitButton.clicked.connect(self.submitButtonClicked)
+        self.submitButton.setFixedSize(300, 100)
+        self.binLayout.addWidget(self.submitButton, 3, 1)
+    
+    
+    def dropDownTextSelected(self, _):
+        self.binAnswers[0] = self.dropDown.currentText()
+        self.binIndices[0] = self.dropDown.currentIndex()
+
+        self.binAnswers[1] = self.dropDown2.currentText()
+        self.binIndices[1] = self.dropDown2.currentIndex()
+
+        self.binAnswers[2] = self.dropDown3.currentText()
+        self.binIndices[2] = self.dropDown3.currentIndex()
+
+        print(f"Different text selected: {self.binAnswers}")
+    
+    def setDropDownValues(self):
+        self.dropDown.setCurrentIndex(self.binIndices[0])
+        self.dropDown2.setCurrentIndex(self.binIndices[1])
+        self.dropDown3.setCurrentIndex(self.binIndices[2])
+    
+
+    def submitButtonClicked(self):
+        print("SUBMIT BUTTON SELECTED")
+        if self.screenType == "manipulation" or self.screenType == "bin":
+            self.previousScreen = self.screenType
+            self.correctFeature = self.glWidgetTree.correctFeature
+            self.index = self.glWidgetTree.index
+
+        self.screenType = "submit"
+        self.loadScreen() 
+
+    
+    def retryButtonClicked(self):
+        print(f"RETRY BUTTON SELECTED {self.previousScreen}")
+        self.screenType = self.previousScreen
+        self.loadScreen()
+
+    # Need to load the next immediate screen
+    def nextPageButtonClicked(self):
+        print("NEXT BUTTON SELECTED")
+        self.screenType = "normal" # NEED TO CHANGE BASED ON WHAT THE JSON FILE SAYS PAGE SHOULD BE
+        self.glWidgetTree.toManipulate = False
+        self.index = 0 # set index to 0
+        self.loadScreen()
+
+    
+    def compareBinAnswers(self, answers, values):
+        for answer, value in zip(answers, values):
+            if answer != value:
+                return False 
+        return True
+    
+
     def labelButtonClicked(self):
         checked = True
         if self.labelButton.isChecked():
@@ -1550,8 +2137,9 @@ class Window(QMainWindow):
         else:
             self.labelButton.setText("Labels On")
             checked = False
-        self.glWidget.addLabels(checked) # activate the label check
+        self.glWidgetTree.addLabels(checked) # activate the label check
         
+
 
 if __name__ == '__main__':
 

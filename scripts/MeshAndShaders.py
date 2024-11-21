@@ -92,13 +92,13 @@ class Mesh(QWidget):
         self.clipFaces = []
         self.centerFaces = None
         # Load and set the vertices
+        
         self.load_mesh(self.load_obj)
         self.vertexFaces, self.centerFaces = self.get_mesh_vertex() # all vertices grouped by their faces
         # print(self.vertexFaces.size)
-
         # self.normals, self.vertexPos, self.vertexFaces = self.split_vertices()
         # self.set_vertices()
-
+    
     def load_mesh(self, fname = None):
         if fname is None:
             self.load_obj = self.init_obj
@@ -111,6 +111,8 @@ class Mesh(QWidget):
         # print(self.mesh_list[0].materials[0].vertices[:10])
         self.vertices = self.mesh_list[0].materials[0].vertices # gets the vertices in [nx, ny, nz, x, y, z] format
         self.count = len(self.mesh.vertices)
+
+
 
     def split_vertices(self):
         # print(self.vertices.size)
@@ -414,8 +416,7 @@ class Mesh(QWidget):
             worldFaces.append(f)
         
         return np.array(worldFaces, dtype=np.float32)
-    
-             
+                 
 
 
     def set_translate(self, x, y, z):
@@ -435,6 +436,7 @@ class Character:
         self.size = size  # a tuple storing the size of the glyph
         self.bearing = bearing # a tuple describing the bearing of the glyph
         self.advance = advance
+
 
 
 class TestMeshOpenGL(QOpenGLWidget):
@@ -572,7 +574,6 @@ class TestMeshOpenGL(QOpenGLWidget):
         }
         """
 
-        
 
     def calculatePos(self):
         # print(self.projection)
@@ -1040,87 +1041,8 @@ class TestMeshOpenGL(QOpenGLWidget):
         self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0) 
 
         gl.glUseProgram(0)
-        color = [1.0, 0.0, 0.0]
-        self.renderText("Testing", 0.0, 0.0, 1.0, color) 
-
-        # gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
-        # gl.glUseProgram(self.program) 
-        # gl.glBindVertexArray(self.vao)
-
-        # modelLoc = gl.glGetUniformLocation(self.program, "model")
-        # gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, self.model) # self.rotation
-
-        # projLoc = gl.glGetUniformLocation(self.program, "projection")
-        # gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
-
-        # viewLoc = gl.glGetUniformLocation(self.program, "view")
-        # gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view)
-
-        # gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vertices.size / 3)) # int(self.vertices.size / 3)
-        # gl.glBindVertexArray(0) # unbind the vao
-        # gl.glPopMatrix()
-
-        # self.drawSkyBox()
-
-
-    # def paintGL(self):
-    #     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-    #     gl.glDisable(gl.GL_DEPTH_TEST)
-    #     gl.glDisable(gl.GL_CULL_FACE)
-
-    #     gl.glLoadIdentity()
-    #     gl.glPushMatrix()
-
-    #     gl.glUseProgram(0)
-
-    #     # set last row and column to 0 so it doesn't affect translations but only rotations
-    #     model = mt.create_identity()
-    #     # model = mt.create_from_scale([41.421, 41.421, -100])
-    #     model = mt.create_from_scale([0, 0, -5.3888])
-
-    #     self.view = mt.create_identity()
-    #     # view[:,3] = np.zeros(4)
-    #     # view[3, :] = np.zeros(4)
-    #     # view = np.zeros((4, 4))
-    #     # view[:-1, :-1] = mt.create_identity()[:-1, :-1]
-
-    #     # projection = np.transpose(mt.create_perspective_projection_matrix(45.0, self.width / float(self.height), 0.1, 100.0))
-
-    #     # set the depth function to equal
-    #     # oldDepthFunc = gl.glGetIntegerv(gl.GL_DEPTH_FUNC)
-    #     gl.glDepthFunc(gl.GL_LEQUAL)
-    #     gl.glDepthMask(gl.GL_FALSE)
-
-    #     gl.glUseProgram(self.skyProgram)
-    #     gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.skyTexture)
-    #     gl.glBindVertexArray(self.skyVAO)
-
-    #     modelLoc = gl.glGetUniformLocation(self.skyProgram, "model")
-    #     gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
-
-    #     projLoc = gl.glGetUniformLocation(self.skyProgram, "projection")
-    #     gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection) # use the same projection values
-    #     # print(np.transpose(mt.create_perspective_projection_matrix(45.0, self.width / float(self.height), 0.1, 10.0)))
-
-    #     viewLoc = gl.glGetUniformLocation(self.skyProgram, "view")
-    #     gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) # use the same location view values
-
-    #     # self.calculatePos()
-
-
-    #     # gl.glDrawArrays(gl.GL_LINES, 0, int(self.skyVertices.size))
-    #     gl.glDrawElements(gl.GL_QUADS, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
-    #     # gl.glDrawElements(gl.GL_POINTS, 0, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
-
-    #     gl.glBindVertexArray(0) # unbind the vao
-    #     gl.glPopMatrix()
-
-    #     gl.glDepthFunc(gl.GL_LESS)
-    #     # gl.glDepthFunc(oldDepthFunc) # set back to default value
-    #     gl.glDepthMask(gl.GL_TRUE)
-    #     gl.glUseProgram(0)
-    #     gl.glEnable(gl.GL_DEPTH_TEST)
-    #     gl.glEnable(gl.GL_CULL_FACE)
+        # color = [1.0, 0.0, 0.0]
+        
 
 
     def getGlInfo(self):
@@ -1166,10 +1088,14 @@ class Window(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = Window() # GLDemo()
-    window.show()
-    sys.exit(app.exec_())
+    # app = QApplication(sys.argv)
+    # window = Window() # GLDemo()
+    # window.show()
+    # sys.exit(app.exec_())
+
+    circle = Mesh("../obj_files/circle.obj", circle=True)
+    # print(vertices)
+
 
     # failY = [0.0, 1.1, 0.0, 1]
     # failY2 = [0.0, -1.1, 0.0, 1]
