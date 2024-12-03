@@ -119,6 +119,10 @@ class Test(QOpenGLWidget):
         self.TREE_SECTION_DX = -0.25 # -0.25
         self.TREE_SECTION_ASPECT = 1.5
         
+        # can use to scale
+        self.MAX_WIDTH = 2820
+        self.MAX_HEIGHT = 1275 # to change
+        
         # dimensions of the screen
         self.width = -1
         self.height = -1
@@ -292,6 +296,30 @@ class Test(QOpenGLWidget):
     def getMeshTranslation(self, translation, treeTranslation):
         return np.transpose(mt.create_from_translation(translation)) @ treeTranslation
         
+
+    def calculateLabelPlacement(self, position, translation, rotation, scale):
+        """
+        position: x, y, z coordinate read in from json file
+        translation: 4x4 translation matrix
+        rotation: 4x4 rotation matrix
+        scale: 4x4 scale matrix
+        @return x,y screen coordinate
+        """
+        # need to use the conversion between uv to screen
+        label = np.ones(4)
+        label[:3] = position
+        # need to multiply by scale and rotation
+        model = translation @ rotation @ scale
+        mvp = self.projection @ self.view @ model
+        label_pos = mvp @ np.transpose(label)
+        label_pos /= label_pos[3] # normalize the value
+
+        x, y = self.convertUVtoScreenCoords(label_pos[0], label_pos[1])
+        return x, y
+
+
+
+                  
 
 
     def getGlInfo(self):
@@ -484,6 +512,7 @@ class Test(QOpenGLWidget):
             else:
                 treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, 0, self.TREE_SECTION_DEPTH])) 
 
+            
             for i in range(len(self.meshes)):
                 
                 rotation = self.getMeshRotation(self.meshRotations[i], cameraRotation) 
@@ -491,25 +520,35 @@ class Test(QOpenGLWidget):
                 scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
                 
                 model = mt.create_identity()
-                model = translation @ rotation @ scale
+                # Need the branch to stay on the tree and then rotate with it
+                model = translation @ rotation @ scale # translation @ rotation @ scale
                 
                 # SET SHADER PROGRAM 
                 modelLoc = gl.glGetUniformLocation(self.program, "model")
                 gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+
            
                 gl.glBindVertexArray(self.VAOs[i])
                 vertices = np.array(self.meshes[i].vertices, dtype=np.float32)
                 gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(vertices.size / 3))
                 self.currentFeature = self.meshDescriptions[i]
-                # print(f"Current feature is {self.currentFeature}")
-
-                if self.currentFeature == self.meshAnswer:
-                    self.correctFeature = True
-                else:
-                    self.correctFeature = False
-                    
+                # print(f"Current feature is {self.currentFeature}")                    
 
                 gl.glBindVertexArray(0) # unbind the vao
+            
+            # ADD LABELS:
+            binLabelLocs = [(1100, 500), (1600, 500), (2000, 500)]
+            for i in range(len(self.meshes)):
+                branch_label = f"Branch {i+1}"
+                x, y = binLabelLocs[i]
+                scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
+                # x, y = self.calculateLabelPlacement(position=self.meshTranslations[i],     # how much we needed to move the object by
+                #                                     translation=treeTranslation,           # where in the tree
+                #                                     rotation=cameraRotation,               # just where is the camera location
+                #                                     scale=scale)              # how much to scale the branch by
+                self.renderText(branch_label, x, y, 1.0)
+
+
         gl.glPopMatrix()
         gl.glUseProgram(0) 
 
@@ -740,7 +779,6 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)
         gl.glLoadIdentity()
         gl.glPushMatrix()
-
 
         for i, label in enumerate(self.jsonData["Features"]):
             
@@ -1137,7 +1175,7 @@ class Test(QOpenGLWidget):
     def resizeGL(self, width, height):
         self.width = width 
         self.height = height # int(width // self.TREE_SECTION_ASPECT) # have a set aspect ratio
-
+        print(f"WIDTH {self.width} x HEIGHT {self.height}")
         # if not self.wholeView:
         #     print(f"Dimensions: {self.width} x {self.height}")
 
@@ -1228,6 +1266,12 @@ class Test(QOpenGLWidget):
         return u, v
 
 
+    def convertUVtoScreenCoords(self, u=0, v=0):
+        x = ((u + 1) * self.width) / 2
+        y = ((1.0 - v) * self.height) / 2
+        return x, y
+
+    
     def convertUVDtoXYZ(self, u=0, v=0, d=0):
         clip_space = np.array([u, v, d, 1]) # the equivalent of doing x'/w, y'/w, z'/w, w/w
         # print(f"Clip space: ", clip_space)

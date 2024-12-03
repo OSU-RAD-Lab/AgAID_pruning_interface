@@ -34,14 +34,14 @@
                         "File Name": "cylinder3.obj",
                         "Feature Description": "Prune Back",
                         "Scale": [0.1, 0.1, 0.1],
-                        "Translate": [0.25, 0, 0],
+                        "Translate": [0.45, 0, 0],
                         "Rotate": [0, 0, 0]
                     },
                     {
                         "File Name": "cylinder2.obj",
                         "Feature Description": "Prune Completely",
                         "Scale": [0.1, 0.1, 0.1],
-                        "Translate": [0.4, 0, 0],
+                        "Translate": [0.7, 0, 0],
                         "Rotate": [0, 0, 0]
                     }
                 ] 
