@@ -904,7 +904,7 @@ class Test(QOpenGLWidget):
         gl.glLoadIdentity()
         gl.glPushMatrix()
         
-        print(f"Width: {self.width} x Height: {self.height}")
+        # print(f"Width: {self.width} x Height: {self.height}")
 
         print(self.projection @ self.view @ self.model)
         for i, label in enumerate(self.jsonData["Features"]):
@@ -921,30 +921,28 @@ class Test(QOpenGLWidget):
 
             # find the position on the screen in local coordinates
             u,v = self.convertXYtoUV(x, y) 
-            
             mvp = self.projection @ self.view @ self.model
             inv_mvp = np.linalg.inv(mvp)
 
             xyz_w = inv_mvp @ np.transpose([u, v, 0, 1])
             xyz_w /= xyz_w[3] # normalize by the w term 
-
             print(f"Label {label}: {xyz_w}")
-
-            # print(f"label {label} start point: {self.convertUVDtoXYZ(u, v, 0)[:3]}") # want at the 0 position on the screen
-
+            
             self.labelLines[start:start+3] = xyz_w[:3] # self.convertUVDtoXYZ(u, v, 0)[:3] # want at the 0 position on the screen
 
-
             # convert the point from label features back from 
-
             # Convert from Blender coordinate system (+x right, +y into screen, +z up) to OpenGL coordinate system (+x right, +y up, +z out of screen)
             # -90 degree rotation around the x axis
-            endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][2], -1 * self.jsonData["Features"][label][1]] # +y --> -z 
+            endPt = [self.jsonData["Features"][label][0] + self.TREE_SECTION_DX, self.jsonData["Features"][label][2] + self.TREE_DY, -1 * self.jsonData["Features"][label][1]] # +y --> -z 
+            print(f"end point: {endPt}")
+            
+            test = [endPt[0], endPt[1], endPt[2], 1]
+            uvd = mvp @ np.transpose(test)
+            uvd /= uvd[3]
+            print(uvd, "\n")
 
             # endPt = mt.create_from_x_rotation(-np.pi / 2) @ np.transpose(endPt)
-
             # endPt = [openX, openY, openZ]
-            print(f"end point: {endPt}\n")
             self.labelLines[end-3:end] = np.array(endPt[:3], dtype=np.float32) # locations stored in local space
 
 
@@ -972,7 +970,6 @@ class Test(QOpenGLWidget):
 
         gl.glDrawArrays(gl.GL_LINES, 0, int(self.labelLines.size)) 
         
-
         gl.glUseProgram(0)
         gl.glBindVertexArray(0) # unbind the vao
         gl.glPopMatrix()
@@ -1151,11 +1148,9 @@ class Test(QOpenGLWidget):
             y = self.meshTranslations[self.index][1] - self.TREE_DY # 0.18
             z = self.meshTranslations[self.index][2] # 0 same z value
             
-
             color = [1, 0, 0]
 
             # Need to change the position of the pruning cut depending on the rotation
-
             # If x rotated 90 degrees --> z direction 
             # If rotation in the z direction --> x direction 
             xRad = self.angle_to_radians(self.meshRotations[self.index][0])
@@ -1164,22 +1159,34 @@ class Test(QOpenGLWidget):
             branchRotation = mt.create_from_x_rotation(xRad) @ mt.create_from_y_rotation(yRad) @ mt.create_from_z_rotation(zRad) 
 
 
-
+            BRANCH = 0.15 # how much you need to translate branches to sit on the secondary branch next to the trunk
 
             if self.pruneDescription[self.index] == "Heading Cut":
                 # translate = self.meshTranslations[self.index]
-                cut_pos = [0, 0.175 - self.meshTranslations[self.index][1], 0, 1] 
+                        
+                # adjust for where the heading cut is based on the location of the secondary branch
+                # How much to translate in the y direction
+                if xRad == 0:
+                    dy = (0.175 - self.meshTranslations[self.index][1] + (BRANCH - self.meshTranslations[self.index][1])) # *math.sin(xRad)
+                else:
+                    dy = (0.175 - self.meshTranslations[self.index][1] - (BRANCH - self.meshTranslations[self.index][1])*math.sin(xRad))
+
+                cut_pos = [0, dy, 0, 1] 
                 dx, dy, dz, _ = branchRotation @ np.transpose(cut_pos)
 
                 # need it to be the same y direction 
                 # dy += 0.2 - self.meshTranslations[self.index][1] # correct translation to sit at 0.2
-
                 # dy -= 0.18 # CAN CHANGE THE VALUE
                 # cutTranslation = np.transpose(mt.create_from_translation([-0.1, 0.18, 0])) # translate to a certain distance away from the branch
             else:
                 # translate = self.meshTranslations[self.index]
                 # dy += 0.1 - self.meshTranslations[self.index][1] # correct translation to sit at 0.1
                 # dy -= 0.1 # 0.1
+                # if xRad == 0:
+                #     dy = (0.08 - self.meshTranslations[self.index][1] + (BRANCH - self.meshTranslations[self.index][1])) # *math.sin(xRad)
+                # else:
+                #     dy = (0.08 - self.meshTranslations[self.index][1] - (BRANCH - self.meshTranslations[self.index][1])*math.sin(xRad))
+
                 cut_pos = [0, 0.08 - self.meshTranslations[self.index][1], 0, 1]
                 color = [0, 1, 0]
                 dx, dy, dz, _ = branchRotation @ np.transpose(cut_pos)
@@ -1318,11 +1325,9 @@ class Test(QOpenGLWidget):
                     y = self.meshTranslations[i][1] - self.TREE_DY # 0.18
                     z = self.meshTranslations[i][2] # 0 same z value
                     
-
                     color = [1, 0, 0]
 
                     # Need to change the position of the pruning cut depending on the rotation
-
                     # If x rotated 90 degrees --> z direction 
                     # If rotation in the z direction --> x direction 
                     xRad = self.angle_to_radians(self.meshRotations[i][0])
@@ -2344,22 +2349,19 @@ class Window(QMainWindow):
         # SET THE SCREEN SIZE BASED ON IF A MANIPULATION TASK OR NOT
         if self.screenType == "manipulation":
             self.manipulationScreen()
-            # self.viewGL.setScreenProperties(screenType=self.screenType, toManipulate=True)
-
-        # elif self.screenType == "submit":
-        #     self.submitButtonScreen()
 
         elif self.screenType == "rule":
             self.ruleScreen()
         
         elif self.screenType == "bin":
             self.binScreen()
-            # self.viewGL.setScreenProperties(screenType=self.screenType, toManipulate=False, toBin=True)
 
         elif self.screenType == "scale":
             self.scaleScreen()
-            # self.viewGL.setScreenProperties(screenType=self.screenType, toManipulate=True, toPrune=True)
-        
+            
+        elif self.screenType == "term_cuts":
+            self.termCutsScreen()
+
         else:
             self.loadTreeSectionScreen()
             # self.viewGL.setScreenProperties(screenType=self.screenType)
@@ -2451,7 +2453,7 @@ class Window(QMainWindow):
         # TARDIS BLUE 003B6F
         # Chunk width = 120px 
         # "QProgressBar::chunk {background-color: #4F9153; width: 120px; margin: 0.5px;}"
-        self.progressBar.setStyleSheet("QProgressBar {width: 20px; text-align: center;}\n"
+        self.progressBar.setStyleSheet("QProgressBar {width: 35px; text-align: center;}\n"
                                        "QProgressBar::chunk {background-color: #4F9153; margin: 0.5px;}") 
         #{border: 2px solid #2196F3; border-radius: 5px; background-color: #E0E0E0;}
         # background-color: #4F9153; 
@@ -2461,6 +2463,10 @@ class Window(QMainWindow):
         self.nextButton.setStyleSheet("QPushButton {font-size: 50px;" "font:bold}\n"
                                       "QPushButton::pressed {background-color: #4F9153;}") # 
         self.nextButton.clicked.connect(self.nextPageButtonClicked)
+        if self.screenType == "end_section":
+            self.nextButton.setEnabled(True)
+        else:
+            self.nextButton.setEnabled(False)
         self.nextButton.setFixedSize(300, 100)
         self.nextButton.setCheckable(True)
 
@@ -2469,8 +2475,6 @@ class Window(QMainWindow):
         self.progress_layout.addWidget(self.nextLabel)
         self.progress_layout.addWidget(self.nextButton)
         
-
-
 
     def createSlider(self, camera=True, horizontal=True, endRange=0):
         if horizontal:
@@ -2521,12 +2525,17 @@ class Window(QMainWindow):
         # # Check if user has moved anything here
         if not self.interacted:
             self.interacted = True
+            self.nextButton.setEnabled(True)
 
     
     def hCameraSliderClicked(self):
         self.hSlider.setStyleSheet("QSlider::handle:horizontal {background-color: green; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
 
     def hCameraSliderReleased(self):
+        self.interacted = True
+        if self.screenType == "normal":
+            self.isCorrect = True
+            self.nextButton.setEnabled(True)
         self.hSlider.setStyleSheet("QSlider::handle:horizontal {background-color: blue; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
 
 
@@ -2534,23 +2543,34 @@ class Window(QMainWindow):
         self.vSlider.setStyleSheet("QSlider::handle:vertical {background-color: green; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
  
     def vCameraSliderReleased(self):
+        self.interacted = True
+        if self.screenType == "normal":
+            self.isCorrect = True
+            self.nextButton.setEnabled(True)
         self.vSlider.setStyleSheet("QSlider::handle:vertical {background-color: blue; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
 
     def branchScaleSliderClicked(self):
+        self.interacted = True
         self.scaleSlider.setStyleSheet("QSlider::handle:horizontal {background-color: green; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
 
     def branchScaleSliderReleased(self):
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
         self.scaleSlider.setStyleSheet("QSlider::handle:horizontal {background-color: black; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
 
     def branchManipSliderClicked(self):
+        self.interacted = True
         self.manipulationSlider.setStyleSheet("QSlider::handle:horizontal {background-color: green; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
 
     def branchManipSliderReleased(self):
+        self.interacted = True
         self.manipulationSlider.setStyleSheet("QSlider::handle:horizontal {background-color: black; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
 
     
     def setManipulationSlider(self, value):
         self.index = value
+        # self.nextButton.setEnabled(True)
         self.manipulationSlider.setValue(value) # set the slider value
     
     ########################################################################
@@ -2575,12 +2595,19 @@ class Window(QMainWindow):
         self.glWidgetTree.setManipulationIndex(self.index) 
         
         if self.screenType == "normal":
+            # self.isCorrect = True
             self.screen_width = 3
             self.glWidgetTree.setScreenProperties(screenType=self.screenType) # default to False
             self.toManipulate = False
             self.toBin = False
             self.toPrune = False
         
+        elif self.screenType == "end_section":
+            self.isCorrect = True
+            self.interacted = True
+            self.screen_width = 3
+            self.glWidgetTree.setScreenProperties(screenType="normal") # same as normal
+
         elif self.screenType == "bin":
             self.screen_width = 2
             self.glWidgetTree.setScreenProperties(screenType=self.screenType, toBin=True) # MIGHT TRY AND CHANGE
@@ -2608,6 +2635,14 @@ class Window(QMainWindow):
             self.toManipulate = False
             self.toBin = True 
             self.toPrune = False # TO CHANGE
+            self.toPruneBin = True
+        
+        elif self.screenType == "term_cuts":
+            self.screen_width = 2
+            self.glWidgetTree.setScreenProperties(screenType=self.screenType, toManipulate=True, toPrune=True)
+            self.toManipulate = True
+            self.toBin = False 
+            self.toPrune = True # TO CHANGE
             self.toPruneBin = True
 
         else: # submit should use previous manipulation value
@@ -2683,7 +2718,6 @@ class Window(QMainWindow):
         self.manipulationLabel.setStyleSheet("font-size: 50px;" "font:bold")
         self.manipLayout.addWidget(self.manipulationLabel, 0, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
-
         # MANIPULATION SLIDER
         sliderLength = len(self.meshDictionary["Branches"]["Description"]) - 1 # END RANGE IS INCLUSIVE
         self.manipulationSlider = self.createSlider(camera=False, horizontal=True, endRange=sliderLength)
@@ -2727,21 +2761,25 @@ class Window(QMainWindow):
                 # print("IS THE CORRECT FEATURE")
                 text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"] + " Click 'Next' to continue."
                 self.isCorrect = True
+                self.nextButton.setEnabled(True)
                 # self.submitButton = QPushButton("Next") 
                 # self.submitButton.clicked.connect(self.nextPageButtonClicked)
             else:
                 # print("NOT THE CORRECT FEATURE")
                 text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
+                self.nextButton.setEnabled(False)
                 
         elif self.screenType == "bin": # CHECK THE BIN ANSWERS
             correct = self.jsonData["Manipulation Files"][self.manipulationDir]["Answer"]
             if self.compareBinAnswers(correct, self.binAnswers):
                 text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"] + " Click 'Next' to continue."
                 self.isCorrect = True
+                self.nextButton.setEnabled(True)
                 # self.submitButton = QPushButton("Next") 
                 # self.submitButton.clicked.connect(self.nextPageButtonClicked)
             else:
                 text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
+                self.nextButton.setEnabled(False)
         return text
 
 
@@ -2762,6 +2800,8 @@ class Window(QMainWindow):
     def pruneButtonClicked(self):
 
         self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
         if self.branch1PruneButton.isChecked():
             self.branch1PruneButton.setText("Don't Prune")
             self.branch1PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
@@ -2777,6 +2817,8 @@ class Window(QMainWindow):
 
     def pruneButtonClicked2(self):
         self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
         if self.branch2PruneButton.isChecked():
             self.branch2PruneButton.setText("Don't Prune")
             self.branch2PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
@@ -2792,6 +2834,8 @@ class Window(QMainWindow):
     
     def pruneButtonClicked3(self):
         self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
         if self.branch3PruneButton.isChecked():
             self.branch3PruneButton.setText("Don't Prune")
             self.branch3PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
@@ -2841,7 +2885,6 @@ class Window(QMainWindow):
         self.branch2Label.setStyleSheet("font-size: 45px;" "font:bold")
         self.ruleLayout.addWidget(self.branch2Label, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
-        self.branch2PruneButton = QPushButton()
         self.branch2PruneButton = QPushButton("Prune") 
         self.branch2PruneButton.setCheckable(True)
         self.branch2PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
@@ -2855,7 +2898,6 @@ class Window(QMainWindow):
         self.branch3Label.setStyleSheet("font-size: 45px;" "font:bold")
         self.ruleLayout.addWidget(self.branch3Label, 1, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
-        self.branch3PruneButton = QPushButton()
         self.branch3PruneButton = QPushButton("Prune") 
         self.branch3PruneButton.setCheckable(True)
         self.branch3PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
@@ -2865,70 +2907,66 @@ class Window(QMainWindow):
         self.ruleLayout.addWidget(self.branch3PruneButton, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
     
-    def submitButtonScreen(self):  
-        self.submitScreen = False # RESET THE SCREEN TO FALSE SO IT LOADS A DIFFERENT SCREEN UPON RELOAD
-        self.loadTreeSectionScreen() # LOAD THE TREE SECTION
-        # self.glWidgetTree.index = self.index
-        
-        # NEED TO RELOAD THE SCREEN TO DISPLAY THE TEXT ON THE BOTTOM!
-        self.submitFrame = QFrame(self.central_widget) # self.central_widget
-        self.submitFrame.setFrameShape(QFrame.Shape.Box)
-        self.submitFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.submitFrame.setFixedHeight(500)
-        self.layout.addWidget(self.submitFrame, self.screen_width+1, 1, 1, 1) # span the screen width but start below the sliders
-
-
-        # getting the answer
-        text = ""
-        self.submitLayout = QVBoxLayout(self.submitFrame)
-        self.submit_label = QLabel(text)
-        self.isCorrect = False
-
-        if self.previousScreen == "manipulation": # self.glWidgetTree.toManipulate
-            if self.correctFeature:
-                # print("IS THE CORRECT FEATURE")
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"] + " Click 'Next' to continue."
-                self.isCorrect = True
-                # self.submitButton = QPushButton("Next") 
-                # self.submitButton.clicked.connect(self.nextPageButtonClicked)
-            else:
-                # print("NOT THE CORRECT FEATURE")
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
-                
-        
-        elif self.previousScreen == "bin": # CHECK THE BIN ANSWERS
-            correct = self.jsonData["Manipulation Files"][self.manipulationDir]["Answer"]
-            if self.compareBinAnswers(correct, self.binAnswers):
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"] + " Click 'Next' to continue."
-                self.isCorrect = True
-                # self.submitButton = QPushButton("Next") 
-                # self.submitButton.clicked.connect(self.nextPageButtonClicked)
-            else:
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
     
+    def headingButtonClicked(self):
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+        self.cutLabel.setText("A Heading Cut leaves part of the branch on the secondary branch but removes the end")
+        self.cutLabel.setStyleSheet("font-size: 45px;")
+        self.glWidgetTree.setManipulationIndex(index=1)
+        
 
-        self.submit_label = QLabel(text) # Want to change the text to say "Vigor
-        self.submit_label.setStyleSheet("font-size: 50px;" "font:bold")    
-        self.submitLayout.addWidget(self.submit_label)
 
-        if not self.isCorrect:
-            self.retryButton = QPushButton("Retry") 
-            self.retryButton.clicked.connect(self.retryButtonClicked)
-            self.retryButton.setStyleSheet("QPushButton {font-size: 50px;" "font:bold}\n"
-                                           "QPushButton::pressed {background-color: #4F9153;}") # 
-            self.retryButton.setFixedSize(300, 100)
-            self.retryButton.setCheckable(True)
-            self.submitLayout.addWidget(self.retryButton) # adds the retry button
-        else:
-            print("CORRECT ANSWER SEEN")
-            # self.nextButton = QPushButton("Next") # Make a blank button
-            # self.nextButton.setStyleSheet("QPushButton {font-size: 50px;" "font:bold}\n"
-            #                               "QPushButton::pressed {background-color: #4F9153;}")
-            # self.nextButton.clicked.connect(self.nextPageButtonClicked)
-            # self.nextButton.setFixedSize(300, 100)
-            # self.progress_layout.addWidget(self.nextButton) # Makes the Next Button Visible on the screen
+    def thinningButtonClicked(self):
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+        self.cutLabel.setText("A Thinning Cut removes the branch completely from the secondary branch")
+        self.cutLabel.setStyleSheet("font-size: 45px;")
+        self.glWidgetTree.setManipulationIndex(index=2)
+    
+    def termCutsScreen(self):
+        self.loadTreeSectionScreen()
 
- 
+        self.cutFrame = QFrame(self.central_widget)
+        self.cutFrame.setFrameShape(QFrame.Shape.Box)
+        self.cutFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.cutFrame.setFixedHeight(500)
+        self.layout.addWidget(self.cutFrame, self.screen_width+1, 1, 1, 1)
+        self.cutLayout = QGridLayout(self.cutFrame)
+
+        # Label explaining the type of cuts
+        self.descriptionLabel = QLabel("Pruning Cut Description:")
+        self.descriptionLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.cutLayout.addWidget(self.descriptionLabel, 0, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.cutLabel = QLabel("")
+        self.cutLabel.setStyleSheet("font-size: 45px;")
+        self.cutLayout.addWidget(self.cutLabel, 0, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
+
+        
+        self.headingButton = QPushButton("Heading Cut") 
+        self.headingButton.setCheckable(True)
+        self.headingButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                         "QPushButton::pressed {background-color: #4F9153;}")
+        self.headingButton.setFixedSize(300, 100)
+        self.headingButton.clicked.connect(self.headingButtonClicked)
+        self.cutLayout.addWidget(self.headingButton, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.thinningButton = QPushButton("Thinning Cut") 
+        self.thinningButton.setCheckable(True)
+        self.thinningButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                         "QPushButton::pressed {background-color: #4F9153;}")
+        self.thinningButton.setFixedSize(300, 100)
+        self.thinningButton.clicked.connect(self.thinningButtonClicked)
+        self.cutLayout.addWidget(self.thinningButton, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        
+
+
     
     def scaleScreen(self):
         self.loadTreeSectionScreen()
@@ -2959,7 +2997,6 @@ class Window(QMainWindow):
         self.scaleSliderLabel = QLabel("Branch Manipulation Slider:")
         self.scaleSliderLabel.setStyleSheet("font-size: 50px;" "font:bold")
         self.scaleLayout.addWidget(self.scaleSliderLabel, 0, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
-
 
         sliderLength = len(self.meshDictionary["Branches"]["Description"]) - 1 
         self.scaleSlider = self.createSlider(camera=False, horizontal=True, endRange=sliderLength)
@@ -3066,6 +3103,7 @@ class Window(QMainWindow):
 
     
     def dropDownTextSelected(self, _):
+        self.interacted = True
         self.binAnswers[0] = self.dropDown.currentText()
         self.binIndices[0] = self.dropDown.currentIndex()
 
@@ -3114,7 +3152,9 @@ class Window(QMainWindow):
         # if self.nextButton.isChecked():
         #     self.nextLabel.setText("Loading Next Page")
         # Should only click if a) interacted with the screen, b) screenType is normal or c) answer is Correct
-        if  self.screenType == "normal" or (self.interacted and self.screenType == "scale")  or (self.isCorrect and self.screenType == "manipulation") or (self.isCorrect and self.screenType == "bin"):
+        
+        # if self.screenType == "normal" or (self.interacted and self.screenType == "scale")  or (self.isCorrect and self.screenType == "manipulation") or (self.isCorrect and self.screenType == "bin"):
+        if self.interacted and self.isCorrect:    
             # self.nextLabel.setText("Loading Next Page")
             self.pageIndex += 1 # increment the page by 1
 
@@ -3123,6 +3163,8 @@ class Window(QMainWindow):
 
             if self.interacted:
                 self.interacted = False
+            
+            self.nextButton.setEnabled(False)
 
             # Change the tree file (if needed)
             treeFile = self.curTree
@@ -3148,6 +3190,8 @@ class Window(QMainWindow):
         else:
             text = "Cannot continue until 'Your Task' is completed"
             self.nextLabel.setText(text)
+            self.nextLabel.setStyleSheet("font-size: 25px;")
+            
 
 
     
@@ -3163,6 +3207,11 @@ class Window(QMainWindow):
     def labelButtonClicked(self):
         checked = True
         self.interacted = True
+        self.nextButton.setEnabled(True)
+        
+        if self.screenType == "normal":
+            self.isCorrect = True
+
         if self.labelButton.isChecked():
             self.labelButton.setText("Labels Off")
             checked = True 

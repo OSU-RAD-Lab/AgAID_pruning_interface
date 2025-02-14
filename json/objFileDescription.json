@@ -7,7 +7,7 @@
                 "Check": "Pruning",
                 "Features": 
                 {
-                    "Trunk": [0.0, 0, 2.146], 
+                    "Trunk": [0.0, 0.0, 2.146], 
                     "Secondary Branch": [-0.5038, 0.004, 1.963],
                     "Tertiary Branch": [0.4273, 0.07807, 1.922],
                     "Bud": [0.1512, 0.02245, 1.994]
@@ -19,6 +19,38 @@
 
     "Manipulation Files":
         {
+            "type_of_cuts":
+            {
+                "Answer":["Don't Prune", "Heading Cut", "Thinning Cut"],
+                "Correct": "",
+                "Incorrect": "",
+                "Files":[
+                    {
+                        "File Name": "cylinder3.obj",
+                        "Feature Description": "Strong",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.0125, 0.1, 0.0125],
+                        "Translate": [0.15, 0.16, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder3.obj",
+                        "Feature Description": "Strong",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [0.0125, 0.1, 0.0125],
+                        "Translate": [0.15, 0.16, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder3.obj",
+                        "Feature Description": "Strong",
+                        "Pruning Description": "Thinning Cut",
+                        "Scale": [0.0125, 0.1, 0.0125],
+                        "Translate": [0.15, 0.16, 0],
+                        "Rotate": [5, 0, 0]
+                    }
+                ] 
+            },
 
             "vigor_bins":
             {
