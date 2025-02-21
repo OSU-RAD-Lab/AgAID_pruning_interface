@@ -76,7 +76,7 @@
                     },
                     {
                         "File Name": "cylinder2.obj",
-                        "Feature Description": "Too Vigorous",
+                        "Feature Description": "Vigorous",
                         "Pruning Description": "Thinning Cut",
                         "Scale": [0.0165, 0.25, 0.0165],
                         "Translate": [0.7, 0.17, 0.05],
@@ -84,11 +84,128 @@
                     }
                 ] 
             },
+
+            "tree_terms":
+            {
+                "Answer": "Vigorous",
+                "Correct": "Correct! The branch has the right Vigor Level.",
+                "Incorrect": "Incorrect. The branch does not have the correct Vigor Level. Try again.",  
+                "Start_Index": 0,
+                "Files": [
+                    {
+                        "File Name": "termTrunk.obj",
+                        "Feature Description": "Trunk",
+                        "Pruning Description": "",
+                        "Scale": [1.001, 1.001, 1.001],
+                        "Translate": [0, -2, 0],
+                        "Rotate": [0, 0, 0]
+                    },
+                    {
+                        "File Name": "secondaryBranch.obj",
+                        "Feature Description": "Secondary Branch",
+                        "Pruning Description": "",
+                        "Scale": [1.001, 1.001, 1.001],
+                        "Translate": [5, -2.001, 0],
+                        "Rotate": [0, 0, 0]
+                    },
+                    {
+                        "File Name": "tertiaryBranches.obj",
+                        "Feature Description": "Tertiary Branch",
+                        "Pruning Description": "",
+                        "Scale": [1.002, 1.002, 1.002],
+                        "Translate": [0, -2.001, 0],
+                        "Rotate": [0, 0, 0]
+                    }
+                ]
+            },
             
+            
+            "vigor_terms":
+            {
+                "Answer": "Vigorous",
+                "Correct": "Correct! The branch has the right Vigor Level.",
+                "Incorrect": "Incorrect. The branch does not have the correct Vigor Level. Try again.",  
+                "Start_Index": 0,
+                "Files": [
+                    {
+                        "File Name": "cylinder4.obj",
+                        "Feature Description": "Weak",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.01, 0.04, 0.01],
+                        "Translate": [0.15, 0.11, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder4.obj",
+                        "Feature Description": "Weak",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.011, 0.055, 0.011],
+                        "Translate": [0.35, 0.09, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder4.obj",
+                        "Feature Description": "Weak",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [0.012, 0.075, 0.012],
+                        "Translate": [0.6, 0.045, 0.05],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder3.obj",
+                        "Feature Description": "Strong",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [0.0125, 0.1, 0.0125],
+                        "Translate": [0.15, 0.17, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder3.obj",
+                        "Feature Description": "Strong",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [0.0135, 0.14, 0.0135],
+                        "Translate": [0.35, 0.18, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder3.obj",
+                        "Feature Description": "Strong",
+                        "Pruning Description": "Thinning Cut",
+                        "Scale": [0.0145, 0.18, 0.0145],
+                        "Translate": [0.6, 0.15, 0.05],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder2.obj",
+                        "Feature Description": "Vigorous",
+                        "Pruning Description": "Thinning Cut",
+                        "Scale": [0.0148, 0.25, 0.0148],
+                        "Translate": [0.15, 0.315, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder2.obj",
+                        "Feature Description": "Vigorous",
+                        "Pruning Description": "Thinning Cut",
+                        "Scale": [0.0165, 0.25, 0.0165],
+                        "Translate": [0.35, 0.275, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "cylinder1.obj",
+                        "Feature Description": "Vigorous",
+                        "Pruning Description": "Thinning Cut",
+                        "Scale": [0.015, 0.35, 0.015],
+                        "Translate": [0.6, 0.31, 0.05],
+                        "Rotate": [5, 0, 0]
+                    }
+                ]
+            },
+
 
             "vigor":
             {
-                "Answer": "Too Vigorous",
+                "Answer": "Vigorous",
                 "Correct": "Correct! The branch has the right Vigor Level.",
                 "Incorrect": "Incorrect. The branch does not have the correct Vigor Level. Try again.",  
                 "Start_Index": 0,
@@ -143,7 +260,7 @@
                     },
                     {
                         "File Name": "cylinder2.obj",
-                        "Feature Description": "Too Vigorous",
+                        "Feature Description": "Vigorous",
                         "Pruning Description": "Thinning Cut",
                         "Scale": [0.0148, 0.25, 0.0148],
                         "Translate": [0.15, 0.325, 0],
@@ -151,7 +268,7 @@
                     },
                     {
                         "File Name": "cylinder1.obj",
-                        "Feature Description": "Too Vigorous",
+                        "Feature Description": "Vigorous",
                         "Pruning Description": "Thinning Cut",
                         "Scale": [0.015, 0.35, 0.015],
                         "Translate": [0.15, 0.42, 0],
@@ -184,7 +301,7 @@
                     },
                     {
                         "File Name": "cylinder2.obj",
-                        "Feature Description": "Too Vigorous",
+                        "Feature Description": "Vigorous",
                         "Pruning Description": "Heading Cut",
                         "Scale": [0.0165, 0.25, 0.0165],
                         "Translate": [0.6, 0.21, 0.05],

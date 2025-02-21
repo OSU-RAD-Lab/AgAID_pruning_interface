@@ -91,6 +91,10 @@ class Test(QOpenGLWidget):
         self.toManipulate = False
         self.toBin = False
         self.toPruneBin = False
+        self.toPrune = False
+        self.toBinFeatures = False
+        self.termDraw = False
+
         self.manipulation = manipulation
         self.screenType = screenType
         # self.toManipulate = manipulation["Display"] # Either True or False
@@ -157,6 +161,8 @@ class Test(QOpenGLWidget):
         self.currentFeature = None
         self.correctFeature = False
 
+        self.wantedFeature = None
+
         self.pruneBranches = ["Don't Prune"] * len(self.meshes) # Do I want the prune to be visible? 
 
 
@@ -201,11 +207,9 @@ class Test(QOpenGLWidget):
                                     -1.000000, 1.000000, -1.000000,
                                     1.000000, 1.000000, -1.000000,
                                     1.000000, -1.000000, -1.000000], dtype=np.float32) # making a cube
-
         self.pruneVAO = None
         self.pruneVBO = None
         self.pruneProgram = None
-        self.toPrune = True
 
 
         # FOR DRAWING THE BOUNDING BOX IN THE WHOLE CAMERA VIEW
@@ -213,6 +217,10 @@ class Test(QOpenGLWidget):
         self.boundBoxVAO = None
         self.boundBoxVBO = None
         self.boundBoxVertices = Shapes(shape="square").vertices
+
+
+        self.drawTerms = [False] * len(self.meshes) # Array of what term to highlight/draw
+        
 
 
         # DRAWING VALUES
@@ -275,18 +283,20 @@ class Test(QOpenGLWidget):
             self.manipulationIndex.emit(index)
             self.update()
 
-    def setScreenProperties(self, screenType, toManipulate=False, toBin=False, toPrune=False, toPruneBin=False):
+    def setScreenProperties(self, screenType, toManipulate=False, toBin=False, toBinFeatures=False, toPrune=False, toPruneBin=False, drawLines=False, termDraw=False):
         self.toManipulate = toManipulate
         self.toBin = toBin
+        self.toBinFeatures = toBinFeatures
         self.toPrune = toPrune
         self.toPruneBin = toPruneBin
+        self.drawLines = drawLines
+        self.termDraw = termDraw
         self.screenType = screenType
 
     def loadNewJSONFile(self, jsonData):
         self.jsonData = jsonData
         self.setFeatureLocations()
 
-    
     def setFeatureLocations(self):
         self.budLocation = np.array(self.jsonData["Features"]["Bud"], dtype=np.float32)
         self.trunkLocation = np.array(self.jsonData["Features"]["Trunk"], dtype=np.float32)
@@ -570,8 +580,84 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)   
 
 
+    
+
+    def drawTermSections(self):
+        gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+
+        highlightColor = [255/255, 105/255, 180/255] 
+        if self.termDraw and len(self.meshes) > 0: # check I have values just in case
+            # Bind the texture and link the program
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture)
+            gl.glUseProgram(self.branchProgram) 
+
+            # BIND VALUES THAT DON'T CHANGE WITH THE MANIPULATION
+            lightPosLoc = gl.glGetUniformLocation(self.program, "lightPos")
+            gl.glUniform3fv(lightPosLoc, 1, self.lightPos)
+            lightColorLoc = gl.glGetUniformLocation(self.program, "lightColor")
+            gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
+
+            projLoc = gl.glGetUniformLocation(self.program, "projection")
+            gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
+            viewLoc = gl.glGetUniformLocation(self.program, "view")
+            gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
+
+            treeColorLoc = gl.glGetUniformLocation(self.program, "color")
+            gl.glUniform3fv(treeColorLoc, 1, highlightColor)
+
+            hAngle = self.angle_to_radians(self.turntable)
+            vAngle = self.angle_to_radians(self.vertical)
+            # rotation
+            cameraRotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
+
+            if self.wholeView: # looking at the whole tree view
+                treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+            else:
+                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH])) 
+
+            
+            for i in range(len(self.meshes)):
+                
+                # rotation = self.getMeshRotation(self.meshRotations[i], cameraRotation) 
+                # translation = self.getMeshTranslation(self.meshTranslations[i], treeTranslation)
+                dx = self.meshTranslations[i][0]
+                dy = self.meshTranslations[i][1] - self.TREE_DY# Need to compensate for the move up. We don't want the branch translated that far. 
+                dz = self.meshTranslations[i][2]
+                
+                branchTranslation = np.transpose(mt.create_from_translation([dx, dy, dz]))
+                # # negBranchTranslation = np.transpose(mt.create_from_translation(-1 * np.array(self.meshTranslations[self.index])))
+                xRad = self.angle_to_radians(self.meshRotations[i][0])
+                yRad = self.angle_to_radians(self.meshRotations[i][1])
+                zRad = self.angle_to_radians(self.meshRotations[i][2])
+                branchRotation = mt.create_from_x_rotation(xRad) @ mt.create_from_y_rotation(yRad) @ mt.create_from_z_rotation(zRad) 
+
+                scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
+                
+                model = mt.create_identity()
+                # Need the branch to stay on the tree and then rotate with it
+                # model = translation @ rotation @ scale # translation @ rotation @ scale
+                model = treeTranslation @ cameraRotation @ branchTranslation @ branchRotation @ scale
+                # SET SHADER PROGRAM 
+                modelLoc = gl.glGetUniformLocation(self.program, "model")
+                gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+           
+                gl.glBindVertexArray(self.VAOs[i])
+                vertices = np.array(self.meshes[i].vertices, dtype=np.float32)
+
+                if self.drawTerms[i]:
+                    gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(vertices.size / 3))                 
+
+                gl.glBindVertexArray(0) # unbind the vao
+
+        gl.glPopMatrix()
+        gl.glUseProgram(0)
+
+
+
+
     def drawBinBranches(self):
-                # Index is the index of what file should be loaded
         gl.glUseProgram(0)
         gl.glLoadIdentity()
         gl.glPushMatrix()
@@ -815,7 +901,7 @@ class Test(QOpenGLWidget):
         gl.glBindVertexArray(self.labelVAO)
         self.labelVBO = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.labelVBO)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.labelLines.itemsize * 24, self.labelLines, gl.GL_DYNAMIC_DRAW) # 6 vertices at a time (2 end points)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.labelLines.nbytes, self.labelLines, gl.GL_DYNAMIC_DRAW) # 6 vertices at a time (2 end points)
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 3 * self.labelLines.itemsize, ctypes.c_void_p(0))
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
@@ -904,46 +990,114 @@ class Test(QOpenGLWidget):
         gl.glLoadIdentity()
         gl.glPushMatrix()
         
-        # print(f"Width: {self.width} x Height: {self.height}")
-
+        self.labelLines = np.zeros( 4 * 2 * 3 ) # 4 labels * 2 pts per label * 3 dimensions
+        print(f"{self.wholeView} -- Width: {self.width} x Height: {self.height}")
         print(self.projection @ self.view @ self.model)
-        for i, label in enumerate(self.jsonData["Features"]):
+
+       
+        print(f"Label Trunk: {screenPose[0]}")
+        x, y = screenPose[0]
+        start = 6 * 0
+        end = 6 * (0+1)
+        self.renderText(text="Trunk", x=x, y=y, scale=1.0, color=[1, 1, 0])
+
+        # projection on the screen
+        # textProject = np.transpose(mt.create_orthogonal_projection_matrix(0.0, self.width, 0.0, self.height, self.ZNEAR, self.ZFAR))
+        # print(textProject)
+        # text uses a different projection to 
+
+        # find the position on the screen in local coordinates
+        # u,v = self.convertXYtoUV(x, y)  # IS IT GETTING THE FULL WIDTH X HEIGHT for the 
+        # print(f"[{u}, {v}, d=0]")
+        mvp = self.projection @ self.view @ self.model
+        inv_mvp = np.linalg.inv(mvp)
+
+        xyz_w = inv_mvp @ np.transpose([0.1, 0, 0.1, 1])
+        xyz_w /= xyz_w[3] # normalize by the w term 
+        # xyz_w[0] -= self.TREE_SECTION_DX
+        # xyz_w[1] -= self.TREE_DY
+        print(f"uvd=[0, 0, 0, 1]: {xyz_w}")
+        
+        self.labelLines[start:start+3] = xyz_w[:3] # self.convertUVDtoXYZ(u, v, 0)[:3] # want at the 0 position on the screen
+        print(self.labelLines)
+        # convert the point from label features back from 
+        # Convert from Blender coordinate system (+x right, +y into screen, +z up) to OpenGL coordinate system (+x right, +y up, +z out of screen)
+        # -90 degree rotation around the x axis
+        
+        # endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][2], -1 * self.jsonData["Features"][label][1]] # +y --> -z 
+        # endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][1], self.jsonData["Features"][label][2]] # +y --> -z 
+        # print(f"end point: {endPt}")
+
+        xyz_w = inv_mvp @ np.transpose([-0.1, 0, 0.1, 1])
+        xyz_w /= xyz_w[3] # normalize by the w term 
+        # xyz_w[0] -= self.TREE_SECTION_DX
+        # xyz_w[1] -= self.TREE_DY
+        print(f"uvd=[0, 0, 1, 1] conversion: {xyz_w}")
+        
+        # test = [endPt[0], endPt[1], endPt[2], 1]
+        # uvd = mvp @ np.transpose(test)
+        # uvd /= uvd[3]
+        # print(uvd, "\n")
+
+        test = [xyz_w[0], xyz_w[1], xyz_w[2], 1]
+        uvd = mvp @ np.transpose(test)
+        uvd /= uvd[3]
+        print(uvd, "\n")
+
+        # endPt = mt.create_from_x_rotation(-np.pi / 2) @ np.transpose(endPt)
+        # endPt = [openX, openY, openZ]
+        self.labelLines[end-3:end] = np.array(xyz_w[:3], dtype=np.float32) # locations stored in local space
+
+        print(self.labelLines)
+        # for i, label in enumerate(self.jsonData["Features"]):
+        #     print(f"Label {label}: {screenPose[i]}")
+        #     x, y = screenPose[i]
+        #     start = 6 * i
+        #     end = 6 * (i+1)
+        #     self.renderText(text=label, x=x, y=y, scale=1.0, color=[1, 1, 0])
+
+        #     # projection on the screen
+        #     # textProject = np.transpose(mt.create_orthogonal_projection_matrix(0.0, self.width, 0.0, self.height, self.ZNEAR, self.ZFAR))
+        #     # print(textProject)
+        #     # text uses a different projection to 
+
+        #     # find the position on the screen in local coordinates
+        #     u,v = self.convertXYtoUV(x, y)  # IS IT GETTING THE FULL WIDTH X HEIGHT for the 
+        #     print(f"[{u}, {v}, d=0]")
+        #     mvp = self.projection @ self.view @ self.model
+        #     inv_mvp = np.linalg.inv(mvp)
+
+        #     xyz_w = inv_mvp @ np.transpose([u, v, 0, 1])
+        #     xyz_w /= xyz_w[3] # normalize by the w term 
+        #     print(f"Label {label}: {xyz_w}")
             
-            x, y = screenPose[i]
-            start = 6 * i
-            end = 6 * (i+1)
-            self.renderText(text=label, x=x, y=y, scale=1.0, color=[1, 1, 0])
+        #     self.labelLines[start:start+3] = xyz_w[:3] # self.convertUVDtoXYZ(u, v, 0)[:3] # want at the 0 position on the screen
 
-            # projection on the screen
-            # textProject = np.transpose(mt.create_orthogonal_projection_matrix(0.0, self.width, 0.0, self.height, self.ZNEAR, self.ZFAR))
-            # print(textProject)
-            # text uses a different projection to 
-
-            # find the position on the screen in local coordinates
-            u,v = self.convertXYtoUV(x, y) 
-            mvp = self.projection @ self.view @ self.model
-            inv_mvp = np.linalg.inv(mvp)
-
-            xyz_w = inv_mvp @ np.transpose([u, v, 0, 1])
-            xyz_w /= xyz_w[3] # normalize by the w term 
-            print(f"Label {label}: {xyz_w}")
+        #     # convert the point from label features back from 
+        #     # Convert from Blender coordinate system (+x right, +y into screen, +z up) to OpenGL coordinate system (+x right, +y up, +z out of screen)
+        #     # -90 degree rotation around the x axis
             
-            self.labelLines[start:start+3] = xyz_w[:3] # self.convertUVDtoXYZ(u, v, 0)[:3] # want at the 0 position on the screen
+        #     # endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][2], -1 * self.jsonData["Features"][label][1]] # +y --> -z 
+        #     # endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][1], self.jsonData["Features"][label][2]] # +y --> -z 
+        #     # print(f"end point: {endPt}")
 
-            # convert the point from label features back from 
-            # Convert from Blender coordinate system (+x right, +y into screen, +z up) to OpenGL coordinate system (+x right, +y up, +z out of screen)
-            # -90 degree rotation around the x axis
-            endPt = [self.jsonData["Features"][label][0] + self.TREE_SECTION_DX, self.jsonData["Features"][label][2] + self.TREE_DY, -1 * self.jsonData["Features"][label][1]] # +y --> -z 
-            print(f"end point: {endPt}")
+        #     xyz_w = inv_mvp @ np.transpose([0, 0, 0, 1])
+        #     xyz_w /= xyz_w[3] # normalize by the w term 
+        #     print(f"uvd=[0, 0, 0, 1] conversion: {xyz_w}")
             
-            test = [endPt[0], endPt[1], endPt[2], 1]
-            uvd = mvp @ np.transpose(test)
-            uvd /= uvd[3]
-            print(uvd, "\n")
+        #     # test = [endPt[0], endPt[1], endPt[2], 1]
+        #     # uvd = mvp @ np.transpose(test)
+        #     # uvd /= uvd[3]
+        #     # print(uvd, "\n")
 
-            # endPt = mt.create_from_x_rotation(-np.pi / 2) @ np.transpose(endPt)
-            # endPt = [openX, openY, openZ]
-            self.labelLines[end-3:end] = np.array(endPt[:3], dtype=np.float32) # locations stored in local space
+        #     test = [xyz_w[0], xyz_w[1], xyz_w[2], 1]
+        #     uvd = mvp @ np.transpose(test)
+        #     uvd /= uvd[3]
+        #     print(uvd, "\n")
+
+        #     # endPt = mt.create_from_x_rotation(-np.pi / 2) @ np.transpose(endPt)
+        #     # endPt = [openX, openY, openZ]
+        #     self.labelLines[end-3:end] = np.array(xyz_w[:3], dtype=np.float32) # locations stored in local space
 
 
         gl.glUseProgram(0)
@@ -1249,6 +1403,102 @@ class Test(QOpenGLWidget):
         gl.glBindVertexArray(0) # unbind the vao
         gl.glPopMatrix()
         gl.glUseProgram(0)
+
+
+
+    # DESCRIPTION: Draw branches as "bins" that have a specific feature.
+    #   - connected to the vigor terminology interface interaction
+    def drawBinFeatures(self):
+                        
+        gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+
+        # print("Inside Bin Features")
+        drawing = False
+        if len(self.meshes) > 0: # check I have values just in case
+            # Bind the texture and link the program
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture)
+            gl.glUseProgram(self.branchProgram) 
+
+            # BIND VALUES THAT DON'T CHANGE WITH THE MANIPULATION
+            lightPosLoc = gl.glGetUniformLocation(self.program, "lightPos")
+            gl.glUniform3fv(lightPosLoc, 1, self.lightPos)
+            lightColorLoc = gl.glGetUniformLocation(self.program, "lightColor")
+            gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
+            treeColorLoc = gl.glGetUniformLocation(self.program, "color")
+            gl.glUniform3fv(treeColorLoc, 1, self.tree_color_dark)
+
+            projLoc = gl.glGetUniformLocation(self.program, "projection")
+            gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
+            viewLoc = gl.glGetUniformLocation(self.program, "view")
+            gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
+
+            hAngle = self.angle_to_radians(self.turntable)
+            vAngle = self.angle_to_radians(self.vertical)
+            # rotation
+            cameraRotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
+
+            if self.wholeView: # looking at the whole tree view
+                treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+            else:
+                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH])) 
+
+            
+            for i in range(len(self.meshes)):
+                
+                # rotation = self.getMeshRotation(self.meshRotations[i], cameraRotation) 
+                # translation = self.getMeshTranslation(self.meshTranslations[i], treeTranslation)
+                dx = self.meshTranslations[i][0]
+                dy = self.meshTranslations[i][1] - self.TREE_DY # Need to compensate for the move up. We don't want the branch translated that far. 
+                dz = self.meshTranslations[i][2]
+                
+                branchTranslation = np.transpose(mt.create_from_translation([dx, dy, dz]))
+                # # negBranchTranslation = np.transpose(mt.create_from_translation(-1 * np.array(self.meshTranslations[self.index])))
+                xRad = self.angle_to_radians(self.meshRotations[i][0])
+                yRad = self.angle_to_radians(self.meshRotations[i][1])
+                zRad = self.angle_to_radians(self.meshRotations[i][2])
+                branchRotation = mt.create_from_x_rotation(xRad) @ mt.create_from_y_rotation(yRad) @ mt.create_from_z_rotation(zRad) 
+
+                scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
+                
+                model = mt.create_identity()
+                # Need the branch to stay on the tree and then rotate with it
+                model = treeTranslation @ cameraRotation @ branchTranslation @ branchRotation @ scale
+                # SET SHADER PROGRAM 
+                modelLoc = gl.glGetUniformLocation(self.program, "model")
+                gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
+
+                # print(f"wanted feature: {self.wantedFeature}")
+                if self.wantedFeature == self.meshDescriptions[i]:
+                    # print(f"Drawing Bin with feature: {self.meshDescriptions[i]}\n")
+                    gl.glBindVertexArray(self.VAOs[i])
+                    vertices = np.array(self.meshes[i].vertices, dtype=np.float32)
+                    gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(vertices.size / 3))
+                    self.currentFeature = self.meshDescriptions[i]                    
+
+                    gl.glBindVertexArray(0) # unbind the vao
+                    # ADD LABELS
+                    drawing = True
+                    
+                
+                gl.glBindVertexArray(0) # unbind the vao
+            # END FOR
+            if drawing:
+                binLabelLocs = [(1100, 650), (1450, 600), (1800, 550)]
+                for i in range(3):
+                    branch_label = f"{self.wantedFeature} Branch {i+1}"
+                    x, y = binLabelLocs[i]
+                    scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
+                    self.renderText(branch_label, x, y, 1.0)
+        # END IF
+
+        gl.glPopMatrix()
+        gl.glUseProgram(0)
+
+
+
+
 
 
 
@@ -1611,6 +1861,11 @@ class Test(QOpenGLWidget):
 
         gl.glUseProgram(0)
 
+        if self.screenType == "draw_tutorial":
+            self.renderText("A", x=600, y=550, scale=1, color=[1, 1, 0])
+            self.renderText("B", x=900, y=500, scale=1, color=[1, 1, 0])
+
+
        
 
     def initializeGL(self):
@@ -1651,7 +1906,6 @@ class Test(QOpenGLWidget):
     def resizeGL(self, width, height):
         self.width = width 
         self.height = height # int(width // self.TREE_SECTION_ASPECT) # have a set aspect ratio
-        # print(f"WIDTH {self.width} x HEIGHT {self.height}")
         # if not self.wholeView:
         #     print(f"Dimensions: {self.width} x {self.height}")
 
@@ -1691,36 +1945,41 @@ class Test(QOpenGLWidget):
 
         gl.glLoadIdentity()
         gl.glPushMatrix()
-
         gl.glUseProgram(0)
+
+        #Paint the skybox regardless of the view
         self.drawSkyBox()
         gl.glUseProgram(0) 
 
-        self.paintTree()  # Paint the tree regardless of the process
+        # Paint the tree regardless of the view
+        self.paintTree()  
 
         
         if self.wholeView:
             self.drawBoundingBox()
             
-
         if self.toManipulate: #  and not self.wholeView
             self.drawManipulationBranch()
 
         if self.toBin: #  and not self.wholeView
             self.drawBinBranches()
         
+        if self.toBinFeatures:
+            self.drawBinFeatures()
 
         if self.toPruneBin and not self.wholeView:
             self.drawBinPruningLines()
 
+        if self.termDraw:
+            self.drawTermSections()
 
         if self.toPrune and not self.wholeView: # Draw the pruning lines on top of the tree
             self.drawScalePruningLines()
 
-
         # WANT TO DRAW THE POINTS BASED ON WHAT SOMEONE WAS DRAWING
-        if self.drawLines and not self.wholeView and self.screenType == "normal":
+        if self.drawLines and not self.wholeView:
             self.drawPruningLines()
+
 
         if not self.wholeView and self.displayLabels:
             screenPose = [(950, 300), # trunk
@@ -1729,11 +1988,6 @@ class Test(QOpenGLWidget):
                           (2000, 1000)] # bud TO CHANGE (250, 250)
             self.drawLabels(screenPose)
             
-        # DRAW THE BACKGROUND SKYBOX
-        # gl.glUseProgram(0)
-        # self.drawSkyBox()
-        # gl.glUseProgram(0) 
-
     
 
     # MOUSE ACTION EVENTS WITH GLWIDGET SCREEN
@@ -1747,10 +2001,11 @@ class Test(QOpenGLWidget):
             self.rayDraw()
         else:
             print("Drawing Circle")
-        # _ = self.rayDirection(self.lastPose.x(), self.lastPose.y())
+        _ = self.rayDirection(self.lastPose.x(), self.lastPose.y())
     
 
     def convertXYtoUV(self, x=0, y=0):
+        print(f"convertXYtoUV -- Width: {self.width} x Height: {self.height}")
         u = ((2 * x) / self.width) - 1.0 
         v = 1.0 - ((2 * y) / self.height)
         # print(u, v)
@@ -2017,7 +2272,9 @@ class Test(QOpenGLWidget):
                 # Depth given in world space
 
                 # TURN THE DRAWLINES TO TRUE SO IT DRAWS ON SCREEN
-                # self.drawLines = True
+                if self.screenType == "draw_tutorial" or self.screenType == "prune":
+                    self.drawLines = True
+                
                 minZ = np.min(depth) 
                 maxZ = np.max(depth) + 0.05 # need to offset to get in the right spot
                 # print(f"Local Zs: {minZ} & {maxZ}")
@@ -2035,7 +2292,7 @@ class Test(QOpenGLWidget):
 
                 # See the distance:
                 drawPts = self.determine_draw_plane(self.startPose, self.lastPose, u1, v1, minZ, u2, v2, maxZ)
-                print(drawPts)
+                # print(drawPts)
                 # Need to calculate difference in u1 v1 and u2 v2 for adding a description 
                 # self.addDrawVertices(drawPt1, drawPt2, drawPt3, drawPt4)
                 self.addDrawVertices(drawPts)
@@ -2166,16 +2423,27 @@ class Test(QOpenGLWidget):
         self.displayLabels = checked
         self.update()
 
+
     def setManipulationIndex(self, index=0):
         self.index = index
         self.update()
 
-    
+
+    # Takes an array of branches cutTypes for each branch
     def toPruneBranches(self, branchesToPrune):
-        # Takes an array of branches cutTypes for each branch
         self.pruneBranches = branchesToPrune
         self.update()
     
+    def toDrawTerms(self, termsToDraw):
+        self.drawTerms = termsToDraw
+        self.update()
+
+    # Sets the wanted feature for branches to display on the screen
+    def setWantedFeature(self, feature):
+        self.wantedFeature = feature
+        self.update() # Update the screen to draw the feature
+
+
 
 # QWidget 
 # QtOpenGL.QMainWindow 
@@ -2237,6 +2505,8 @@ class Window(QMainWindow):
         self.nextScreenManipualte = False
         self.skyBoxMesh = None # skybox is the same for every window
         self.interacted = False
+
+        self.drawTerms = [False] * 3
 
         
         
@@ -2352,6 +2622,9 @@ class Window(QMainWindow):
 
         elif self.screenType == "rule":
             self.ruleScreen()
+
+        elif self.screenType == "tree_terms":
+            self.treeTermScreen()
         
         elif self.screenType == "bin":
             self.binScreen()
@@ -2361,6 +2634,9 @@ class Window(QMainWindow):
             
         elif self.screenType == "term_cuts":
             self.termCutsScreen()
+
+        elif self.screenType == "bin_features":
+            self.binFeaturesScreen()
 
         else:
             self.loadTreeSectionScreen()
@@ -2601,6 +2877,16 @@ class Window(QMainWindow):
             self.toManipulate = False
             self.toBin = False
             self.toPrune = False
+
+        elif self.screenType == "draw_tutorial":
+            self.screen_width = 3
+            self.glWidgetTree.setScreenProperties(screenType=self.screenType, drawLines=True)
+            self.drawLines = True
+        
+        elif self.screenType == "tree_terms":
+            self.screen_width = 2
+            self.glWidgetTree.setScreenProperties(screenType=self.screenType, termDraw=True)
+            self.termDraw = True
         
         elif self.screenType == "end_section":
             self.isCorrect = True
@@ -2614,6 +2900,13 @@ class Window(QMainWindow):
             self.toManipulate = False
             self.toBin = True
             self.toPrune = False
+
+        elif self.screenType == "bin_features":
+            self.screen_width = 2
+            self.glWidgetTree.setScreenProperties(screenType=self.screenType, toBinFeatures=True) # MIGHT TRY AND CHANGE
+            self.toBinFeatures = True
+            self.toPrune = False
+            self.toManipulate = False
         
         elif self.screenType == "manipulation":
             self.screen_width = 2
@@ -2669,12 +2962,15 @@ class Window(QMainWindow):
         #     self.submitButton.setFixedSize(300, 100)
         #     self.hLayout.addWidget(self.submitButton)
 
-            # # UNDO BUTTON
-            # self.undoButton = QPushButton("Undo")
-            # self.undoButton.setStyleSheet("font-size: 50px;" "font:bold")
-            # self.undoButton.setFixedSize(300, 100)
-            # self.undoButton.clicked.connect(self.glWidgetTree.undoDraw)
-            # self.hLayout.addWidget(self.undoButton)
+            # UNDO BUTTON
+        if self.screenType == "draw_tutorial" or self.screenType == "prune":
+            self.undoButton = QPushButton("Undo")
+            self.undoButton.setStyleSheet("font-size: 50px;" "font:bold")
+            self.undoButton.setFixedSize(300, 100)
+            self.undoButton.clicked.connect(self.glWidgetTree.undoDraw)
+            self.undoButton.clicked.connect(self.undoClicked)
+            self.hLayout.addWidget(self.undoButton)
+            
 
         
         # self.layout.addWidget(self.labelButton, 0, 1, 1, 1)
@@ -2697,6 +2993,12 @@ class Window(QMainWindow):
         self.glWidgetTree.turnTableRotation.connect(self.hSlider.setValue)
         self.layout.addWidget(self.hSlider, self.screen_width, 1, 1, 1) # 3 1 1 1
 
+
+    def undoClicked(self):
+        self.interacted = True
+        if self.screenType == "draw_tutorial":
+            self.isCorrect = True
+            self.nextButton.setEnabled(True)
 
     
     def manipulationScreen(self):
@@ -2906,26 +3208,168 @@ class Window(QMainWindow):
         self.branch3PruneButton.clicked.connect(self.pruneButtonClicked3)
         self.ruleLayout.addWidget(self.branch3PruneButton, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
-    
-    
-    def headingButtonClicked(self):
-        self.interacted = True
-        self.isCorrect = True
-        self.nextButton.setEnabled(True)
-        self.cutLabel.setText("A Heading Cut leaves part of the branch on the secondary branch but removes the end")
-        self.cutLabel.setStyleSheet("font-size: 45px;")
-        self.glWidgetTree.setManipulationIndex(index=1)
+
+
+    """
+        TREE TERMINOLOGY SCREEN AND HELPER FUNCTIONS
+    """
+    def treeTermScreen(self):
+        self.loadTreeSectionScreen()
         
+        # Set the screen frame
+        self.treeTermFrame = QFrame(self.central_widget) # self.central_widget
+        self.treeTermFrame.setFrameShape(QFrame.Shape.Box)
+        self.treeTermFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.treeTermFrame.setFixedHeight(500)
+        self.layout.addWidget(self.treeTermFrame, self.screen_width+1, 1, 1, 1) # Where on the screen we add
+        self.treeTermLayout = QGridLayout(self.treeTermFrame)
+
+        self.termLabel = QLabel("Tree Terminology")
+        self.termLabel.setStyleSheet("font-size: 50px;" "font:bold")
+        self.treeTermLayout.addWidget(self.termLabel, 0, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        self.descriptionLabel = QLabel("")
+        self.descriptionLabel.setStyleSheet("font-size: 50px;")
+        self.treeTermLayout.addWidget(self.descriptionLabel, 0, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
+
+        # make the 3 labels and buttons for the individual branches that should be pruned when clicked
+        self.trunkLabel = QLabel("Trunk")
+        self.trunkLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.treeTermLayout.addWidget(self.trunkLabel, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        
+        self.trunkButton = QPushButton("Show")
+        self.trunkButton.setCheckable(True)
+        self.trunkButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                              "QPushButton::pressed {background-color: #4F9153;}")
+        self.trunkButton.setFixedSize(300, 100)
+        self.trunkButton.clicked.connect(self.trunkButtonClicked)
+        self.treeTermLayout.addWidget(self.trunkButton, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        # BRANCH 2
+        self.secondaryLabel = QLabel("Secondary Branch")
+        self.secondaryLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.treeTermLayout.addWidget(self.secondaryLabel, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        self.secondaryButton = QPushButton("Show") 
+        self.secondaryButton.setCheckable(True)
+        self.secondaryButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                              "QPushButton::pressed {background-color: #4F9153;}")
+        self.secondaryButton.setFixedSize(300, 100)
+        self.secondaryButton.clicked.connect(self.secondaryButtonClicked)
+        self.treeTermLayout.addWidget(self.secondaryButton, 2, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        # BRANCH 3
+        self.tertiaryLabel = QLabel("Tertiary Branch")
+        self.tertiaryLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.treeTermLayout.addWidget(self.tertiaryLabel, 1, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        self.tertiaryButton = QPushButton("Show") 
+        self.tertiaryButton.setCheckable(True)
+        self.tertiaryButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                              "QPushButton::pressed {background-color: #4F9153;}")
+        self.tertiaryButton.setFixedSize(300, 100)
+        self.tertiaryButton.clicked.connect(self.tertiaryButtonClicked)
+        self.treeTermLayout.addWidget(self.tertiaryButton, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
 
-    def thinningButtonClicked(self):
+    def trunkButtonClicked(self):
         self.interacted = True
         self.isCorrect = True
         self.nextButton.setEnabled(True)
-        self.cutLabel.setText("A Thinning Cut removes the branch completely from the secondary branch")
-        self.cutLabel.setStyleSheet("font-size: 45px;")
-        self.glWidgetTree.setManipulationIndex(index=2)
+        if self.trunkButton.isChecked():
+            self.descriptionLabel.setText("Trunk, primary branch, or leader is the main structure that connects to the roots")
+            self.descriptionLabel.setStyleSheet("font-size: 50px;")
+
+            self.trunkButton.setText("Hide")
+            self.trunkButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                            "QPushButton::pressed {background-color: #4F9153;}")
+            self.drawTerms[0] = True
+            # Don't highlight anything else until the branches are clicked
+            # self.trunkButton.setEnabled(False)
+            self.secondaryButton.setEnabled(False)
+            self.tertiaryButton.setEnabled(False)
+            # TO DO: Call function in GLWidget to prune the branch
+
+        else:
+            self.descriptionLabel.setText("")
+            self.trunkButton.setText("Show")
+            self.drawTerms[0] = False
+
+            # self.trunkButton.setEnabled(True)
+            self.secondaryButton.setEnabled(True)
+            self.tertiaryButton.setEnabled(True)
+        
+        self.glWidgetTree.toDrawTerms(self.drawTerms)
     
+
+    def secondaryButtonClicked(self):
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+        if self.secondaryButton.isChecked():
+            self.descriptionLabel.setText("Secondary Branches are wired down support branches growing out from the trunk")
+            self.descriptionLabel.setStyleSheet("font-size: 50px;")
+            self.secondaryButton.setText("Hide")
+            self.secondaryButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                            "QPushButton::pressed {background-color: #4F9153;}")
+            self.drawTerms[1] = True
+            # Don't highlight anything else until the branches are clicked
+            self.trunkButton.setEnabled(False)
+            # self.secondaryButton.setEnabled(False)
+            self.tertiaryButton.setEnabled(False)
+            # TO DO: Call function in GLWidget to prune the branch
+
+        else:
+            self.descriptionLabel.setText("")
+            self.secondaryButton.setText("Show")
+            self.drawTerms[1] = False
+
+            self.trunkButton.setEnabled(True)
+            # self.secondaryButton.setEnabled(True)
+            self.tertiaryButton.setEnabled(True)
+        
+        self.glWidgetTree.toDrawTerms(self.drawTerms)
+  
+
+    def tertiaryButtonClicked(self):
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+        if self.tertiaryButton.isChecked():
+            self.descriptionLabel.setText("Tertiary branches grow from secondary branches and produce fruit and leaves.")
+            self.descriptionLabel.setStyleSheet("font-size: 50px;")
+            self.tertiaryButton.setText("Hide")
+            self.tertiaryButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                            "QPushButton::pressed {background-color: #4F9153;}")
+            self.drawTerms[2] = True
+            # Don't highlight anything else until the branches are clicked
+            self.trunkButton.setEnabled(False)
+            self.secondaryButton.setEnabled(False)
+            # self.tertiaryButton.setEnabled(False)
+            # TO DO: Call function in GLWidget to prune the branch
+
+        else:
+            self.descriptionLabel.setText("")
+            self.tertiaryButton.setText("Show")
+            self.drawTerms[2] = False
+            self.trunkButton.setEnabled(True)
+            self.secondaryButton.setEnabled(True)
+            # self.tertiaryButton.setEnabled(True)
+        
+        self.glWidgetTree.toDrawTerms(self.drawTerms)
+
+
+
+
+
+    
+    """
+        TERM CUTS SCREEN AND HELPER FUNCTIONS:
+            - termCutsScreen
+            - headingButtonClicked
+            - thinningButtonClicked
+    """ 
     def termCutsScreen(self):
         self.loadTreeSectionScreen()
 
@@ -2964,10 +3408,113 @@ class Window(QMainWindow):
         self.thinningButton.clicked.connect(self.thinningButtonClicked)
         self.cutLayout.addWidget(self.thinningButton, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
+
+
+    def headingButtonClicked(self):
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+        self.cutLabel.setText("A Heading Cut leaves part of the branch on the secondary branch but removes the end")
+        self.cutLabel.setStyleSheet("font-size: 45px;")
+        self.glWidgetTree.setManipulationIndex(index=1)
         
 
+    def thinningButtonClicked(self):
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+        self.cutLabel.setText("A Thinning Cut removes the branch completely from the secondary branch")
+        self.cutLabel.setStyleSheet("font-size: 45px;")
+        self.glWidgetTree.setManipulationIndex(index=2)
 
-    
+
+
+    """
+        BIN FEATURES SCREEN AND HELPER FUNCTIONS:
+            - binFeaturesScreen
+            - weakButtonClicked
+            - strongButtonClicked
+            - vigorousButtonClicked
+    """      
+
+    def binFeaturesScreen(self):
+        self.loadTreeSectionScreen()
+
+        self.binFeatureFrame = QFrame(self.central_widget)
+        self.binFeatureFrame.setFrameShape(QFrame.Shape.Box)
+        self.binFeatureFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.binFeatureFrame.setFixedHeight(500)
+        self.layout.addWidget(self.binFeatureFrame, self.screen_width+1, 1, 1, 1)
+        self.binFeatureLayout = QGridLayout(self.binFeatureFrame)
+
+        # Label explaining the type of cuts
+        self.vigorLabel = QLabel("Branch Vigor, or a branch's health, is a continuous scale with three levels:")
+        self.vigorLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.binFeatureLayout.addWidget(self.vigorLabel, 0, 0, 1, 3, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.featureLabel = QLabel("Branch Vigor Description:")
+        self.featureLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.binFeatureLayout.addWidget(self.featureLabel, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.descriptionLabel = QLabel("")
+        self.descriptionLabel.setStyleSheet("font-size: 45px;")
+        self.binFeatureLayout.addWidget(self.descriptionLabel, 2, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
+
+      
+        self.weakButton = QPushButton("Weak") 
+        self.weakButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                         "QPushButton::pressed {background-color: #4F9153;}")
+        self.weakButton.setFixedSize(300, 100)
+        self.weakButton.clicked.connect(self.weakButtonClicked)
+        self.binFeatureLayout.addWidget(self.weakButton, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.strongButton = QPushButton("Strong") 
+        self.strongButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                         "QPushButton::pressed {background-color: #4F9153;}")
+        self.strongButton.setFixedSize(300, 100)
+        self.strongButton.clicked.connect(self.strongButtonClicked)
+        self.binFeatureLayout.addWidget(self.strongButton, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.vigorousButton = QPushButton("Vigorous") 
+        self.vigorousButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+                                         "QPushButton::pressed {background-color: #4F9153;}")
+        self.vigorousButton.setFixedSize(300, 100)
+        self.vigorousButton.clicked.connect(self.vigorousButtonClicked)
+        self.binFeatureLayout.addWidget(self.vigorousButton, 1, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+    def weakButtonClicked(self):
+        self.descriptionLabel.setText("Weak branches are shorter, thinner, and have few buds")
+        self.descriptionLabel.setStyleSheet("font-size: 45px;")
+        self.glWidgetTree.setWantedFeature("Weak")
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+
+    def strongButtonClicked(self):
+        self.descriptionLabel.setText("Strong branches are thicker, longer, with several buds")
+        self.descriptionLabel.setStyleSheet("font-size: 45px;")
+        self.glWidgetTree.setWantedFeature("Strong")
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+
+    def vigorousButtonClicked(self):
+        self.descriptionLabel.setText("Vigorous branches are incredibly long, thick, with few buds and large bud spacing")
+        self.descriptionLabel.setStyleSheet("font-size: 45px;")
+        self.glWidgetTree.setWantedFeature("Vigorous")
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+
+
+    """
+        SCALE SCREEN FOR MANIPULATION TASKS
+    """    
     def scaleScreen(self):
         self.loadTreeSectionScreen()
 
@@ -3011,26 +3558,19 @@ class Window(QMainWindow):
         
         self.scaleLayout.addWidget(self.scaleSlider, 0, 1, 1, 2) # 3 1 1 1
         # self.scaleSliderLabel.setBuddy(self.scaleSlider)
-
-
-        
         self.scaleLayout.addWidget(self.scaleSlider, 0, 1)
 
         empty = QLabel("") 
         self.scaleLayout.addWidget(empty, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
-    
-
-        # self.scaleLayout.addWidget(empty, 3, 0, 1, 1)
-        # # self.nextButton = QPushButton("Next") # Make a blank button
-        # # self.nextButton.setStyleSheet("QPushButton {font-size: 50px;" "font:bold}\n"
-        # #                                "QPushButton::pressed {background-color: #4F9153;}")
-        # # self.nextButton.clicked.connect(self.nextPageButtonClicked)
-        # # self.nextButton.setFixedSize(300, 100)
-        # self.scaleLayout.addWidget(QLabel(), 3, 0, 1, 1) # Have a placeholder in the row for the next button so it is the correct size
-        # # self.scaleLayout.addWidget(self.nextButton, 3, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
 
 
+    """
+        BIN SCREEN AND HELPER FUNCTIONS:
+            - binScreen
+            - dropDownTextSelected
+            - setDropDownValues
+    """
     def binScreen(self):
         self.loadTreeSectionScreen()
 
