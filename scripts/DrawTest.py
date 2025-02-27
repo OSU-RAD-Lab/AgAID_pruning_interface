@@ -207,9 +207,29 @@ class Test(QOpenGLWidget):
                                     -1.000000, 1.000000, -1.000000,
                                     1.000000, 1.000000, -1.000000,
                                     1.000000, -1.000000, -1.000000], dtype=np.float32) # making a cube
+
         self.pruneVAO = None
         self.pruneVBO = None
         self.pruneProgram = None
+
+        self.testCube = np.array([0, 2.146, 0, # trunk
+                                  0.20556462, 2.06136332-0.05, 1.28046104, # trunk
+                                  -0.5038, 1.963, -0.004,
+                                  0.13779826, 2.02686186-0.05, 1.28046104,
+                                  0.4273, 1.922, -0.07807,                                  
+                                  0.326576,   2.03179064-0.05, 1.28046104,
+                                  0.1512, 1.994, -0.02245,
+                                  0.28482026, 1.99236039, 1.28562765 
+                                 ], dtype=np.float32)
+        # [0.20556462 2.06136332 1.28046104 1.        ]
+        # [0.13779826 2.02686186 1.28046104 1.        ]
+        # [0.326576   2.03179064 1.28046104 1.        ]
+        # [0.30721418 1.99236039 1.28046104 1.        ]
+
+        # np.array([-0.5, 1.5, 0,
+        #           0.5, 1.5, 0,
+        #           0, 2, 0
+        #           ], dtype=np.float32)
 
 
         # FOR DRAWING THE BOUNDING BOX IN THE WHOLE CAMERA VIEW
@@ -887,28 +907,6 @@ class Test(QOpenGLWidget):
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
 
-        # Bind vao and vbo for labels
-        gl.glUseProgram(0) 
-        # Create program, VAO and VBO for drawing the lines directly from the label to the object on the tree
-        vertexShader = Shader("vertex", "simple_shader.vert").shader # get out the shader value    
-        fragmentShader = Shader("fragment", "simple_shader.frag").shader
-        self.labelProgram = gl.glCreateProgram()
-        gl.glAttachShader(self.labelProgram, vertexShader)
-        gl.glAttachShader(self.labelProgram, fragmentShader)
-        gl.glLinkProgram(self.labelProgram)
-        gl.glUseProgram(self.labelProgram)
-        self.labelVAO = gl.glGenVertexArrays(1)
-        gl.glBindVertexArray(self.labelVAO)
-        self.labelVBO = gl.glGenBuffers(1)
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.labelVBO)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.labelLines.nbytes, self.labelLines, gl.GL_DYNAMIC_DRAW) # 6 vertices at a time (2 end points)
-        gl.glEnableVertexAttribArray(0)
-        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 3 * self.labelLines.itemsize, ctypes.c_void_p(0))
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
-
-
 
     def renderText(self, text, x, y, scale, color=None):
         gl.glEnable(gl.GL_CULL_FACE)
@@ -978,128 +976,124 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)
         gl.glDisable(gl.GL_CULL_FACE)
         gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDisable(gl.GL_BLEND)
+        # gl.glDisable(gl.GL_BLEND)
+        gl.glEnable(gl.GL_BLEND)
          
 
+    def initializeLabels(self):
+        # Bind vao and vbo for labels
+        gl.glUseProgram(0) 
+        # Create program, VAO and VBO for drawing the lines directly from the label to the object on the tree
+        vertexShader = Shader("vertex", "simple_shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "simple_shader.frag").shader
+        self.labelProgram = gl.glCreateProgram()
+        gl.glAttachShader(self.labelProgram, vertexShader)
+        gl.glAttachShader(self.labelProgram, fragmentShader)
+        gl.glLinkProgram(self.labelProgram)
+        gl.glUseProgram(self.labelProgram)
+
+        
+        self.labelVAO = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(self.labelVAO)
+        
+        self.labelVBO = gl.glGenBuffers(1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.labelVBO)
+        # gl.glBufferData(gl.GL_ARRAY_BUFFER, self.labelLines.nbytes, self.labelLines, gl.GL_DYNAMIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.testCube.nbytes, self.testCube, gl.GL_DYNAMIC_DRAW)
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 3 * self.testCube.itemsize, ctypes.c_void_p(0))
+        
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        
+        gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
+
+
+
+    def getLabelPoints(self, screenPose):
+        toUpdate = False # do I need to send an update to the system to redraw
+        for i, label in enumerate(self.jsonData["Features"]):
+            # print(f"Label {label}: {screenPose[i]}")
+            x, y = screenPose[i]
+            start = 6 * i
+            end = 6 * (i+1)
+            # projection on the screen
+            # textProject = np.transpose(mt.create_orthogonal_projection_matrix(0.0, self.width, 0.0, self.height, self.ZNEAR, self.ZFAR))
+            # print(textProject)
+            # text uses a different projection to 
+
+            # find the position on the screen in local coordinates
+            u,v = self.convertXYtoUV(x, y)  # IS IT GETTING THE FULL WIDTH X HEIGHT for the 
+            # print(f"[{u}, {v}, d=0]")
+           
+            # 
+            # xyz_w = inv_mvp @ np.transpose([u, v, 0, 1])
+            # xyz_w = inv_mvp @ np.transpose([u, v, 0.1, 1])
+            xyz_w = self.convertUVDtoXYZ(u=u, v=v, d=0.1)
+            # print(f"Label {label}: {xyz_w}")
+            
+            if not np.all(np.isclose(self.labelLines[start:start+3], xyz_w[:3])):
+                print("Label Point Different")
+                print(f"Label Lines: {self.labelLines[start:start+3]}")
+                print(f"xyz_w: {xyz_w[:3]}")
+                toUpdate = True
+                self.labelLines[start:start+3] = xyz_w[:3] # self.convertUVDtoXYZ(u, v, 0)[:3] # want at the 0 position on the screen
+
+            # convert the point from label features back from 
+            # Convert from Blender coordinate system (+x right, +y into screen, +z up) to OpenGL coordinate system (+x right, +y up, +z out of screen)
+            # -90 degree rotation around the x axis
+            
+            endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][2], -1 * self.jsonData["Features"][label][1]] # +y --> -z 
+            # print(f"uvd={endPt} conversion: {xyz_w}")
+            self.labelLines[end-3:end] = np.array(endPt, dtype=np.float32) # locations stored in local space
+        
+        if toUpdate:
+            print("Update Label Lines")
+            gl.glNamedBufferSubData(self.labelVBO, 0, self.labelLines.nbytes, self.labelLines)
+            self.update()
+        else:
+            print("Don't Update Label Lines")
+            
 
 
     def drawLabels(self, screenPose):
         # Loop through each label
         # Need to convert x, y of screen positions to local space coordinates
+        gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glUseProgram(0)
         gl.glLoadIdentity()
         gl.glPushMatrix()
         
-        self.labelLines = np.zeros( 4 * 2 * 3 ) # 4 labels * 2 pts per label * 3 dimensions
-        print(f"{self.wholeView} -- Width: {self.width} x Height: {self.height}")
+        # self.labelLines = np.zeros( 4 * 2 * 3 ) # 4 labels * 2 pts per label * 3 dimensions
         print(self.projection @ self.view @ self.model)
-
-       
-        print(f"Label Trunk: {screenPose[0]}")
-        x, y = screenPose[0]
-        start = 6 * 0
-        end = 6 * (0+1)
-        self.renderText(text="Trunk", x=x, y=y, scale=1.0, color=[1, 1, 0])
-
-        # projection on the screen
-        # textProject = np.transpose(mt.create_orthogonal_projection_matrix(0.0, self.width, 0.0, self.height, self.ZNEAR, self.ZFAR))
-        # print(textProject)
-        # text uses a different projection to 
-
-        # find the position on the screen in local coordinates
-        # u,v = self.convertXYtoUV(x, y)  # IS IT GETTING THE FULL WIDTH X HEIGHT for the 
-        # print(f"[{u}, {v}, d=0]")
         mvp = self.projection @ self.view @ self.model
         inv_mvp = np.linalg.inv(mvp)
-
-        xyz_w = inv_mvp @ np.transpose([0.1, 0, 0.1, 1])
-        xyz_w /= xyz_w[3] # normalize by the w term 
-        # xyz_w[0] -= self.TREE_SECTION_DX
-        # xyz_w[1] -= self.TREE_DY
-        print(f"uvd=[0, 0, 0, 1]: {xyz_w}")
         
-        self.labelLines[start:start+3] = xyz_w[:3] # self.convertUVDtoXYZ(u, v, 0)[:3] # want at the 0 position on the screen
-        print(self.labelLines)
-        # convert the point from label features back from 
-        # Convert from Blender coordinate system (+x right, +y into screen, +z up) to OpenGL coordinate system (+x right, +y up, +z out of screen)
-        # -90 degree rotation around the x axis
+        for i, label in enumerate(self.jsonData["Features"]):
+            # print(f"Label {label}: {screenPose[i]}")
+            x, y = screenPose[i]
+            
+            # find the position on the screen in local coordinates
+            u,v = self.convertXYtoUV(x, y)  # IS IT GETTING THE FULL WIDTH X HEIGHT for the 
+            # print(f"[{u}, {v}, d=0]")
+            mvp = self.projection @ self.view @ self.model
+            
+            xyz_w = self.convertUVDtoXYZ(u=u, v=v, d=0.1)
+            print(xyz_w)
+
+        # test = mvp @ np.transpose([-0.5, 2, 0, 1])
+        # test /= test[3]
+        # print(test)
+
+
+        # self.getLabelPoints(screenPose) # get where to draw and update (if necessary)
         
-        # endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][2], -1 * self.jsonData["Features"][label][1]] # +y --> -z 
-        # endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][1], self.jsonData["Features"][label][2]] # +y --> -z 
-        # print(f"end point: {endPt}")
-
-        xyz_w = inv_mvp @ np.transpose([-0.1, 0, 0.1, 1])
-        xyz_w /= xyz_w[3] # normalize by the w term 
-        # xyz_w[0] -= self.TREE_SECTION_DX
-        # xyz_w[1] -= self.TREE_DY
-        print(f"uvd=[0, 0, 1, 1] conversion: {xyz_w}")
+        # render text on the screen
+        for i, label in enumerate(self.jsonData["Features"]):
+            x, y = screenPose[i]
+            # print(f"Label {label}: {screenPose[i]}")
+            self.renderText(label, x, y, 1)
         
-        # test = [endPt[0], endPt[1], endPt[2], 1]
-        # uvd = mvp @ np.transpose(test)
-        # uvd /= uvd[3]
-        # print(uvd, "\n")
-
-        test = [xyz_w[0], xyz_w[1], xyz_w[2], 1]
-        uvd = mvp @ np.transpose(test)
-        uvd /= uvd[3]
-        print(uvd, "\n")
-
-        # endPt = mt.create_from_x_rotation(-np.pi / 2) @ np.transpose(endPt)
-        # endPt = [openX, openY, openZ]
-        self.labelLines[end-3:end] = np.array(xyz_w[:3], dtype=np.float32) # locations stored in local space
-
-        print(self.labelLines)
-        # for i, label in enumerate(self.jsonData["Features"]):
-        #     print(f"Label {label}: {screenPose[i]}")
-        #     x, y = screenPose[i]
-        #     start = 6 * i
-        #     end = 6 * (i+1)
-        #     self.renderText(text=label, x=x, y=y, scale=1.0, color=[1, 1, 0])
-
-        #     # projection on the screen
-        #     # textProject = np.transpose(mt.create_orthogonal_projection_matrix(0.0, self.width, 0.0, self.height, self.ZNEAR, self.ZFAR))
-        #     # print(textProject)
-        #     # text uses a different projection to 
-
-        #     # find the position on the screen in local coordinates
-        #     u,v = self.convertXYtoUV(x, y)  # IS IT GETTING THE FULL WIDTH X HEIGHT for the 
-        #     print(f"[{u}, {v}, d=0]")
-        #     mvp = self.projection @ self.view @ self.model
-        #     inv_mvp = np.linalg.inv(mvp)
-
-        #     xyz_w = inv_mvp @ np.transpose([u, v, 0, 1])
-        #     xyz_w /= xyz_w[3] # normalize by the w term 
-        #     print(f"Label {label}: {xyz_w}")
-            
-        #     self.labelLines[start:start+3] = xyz_w[:3] # self.convertUVDtoXYZ(u, v, 0)[:3] # want at the 0 position on the screen
-
-        #     # convert the point from label features back from 
-        #     # Convert from Blender coordinate system (+x right, +y into screen, +z up) to OpenGL coordinate system (+x right, +y up, +z out of screen)
-        #     # -90 degree rotation around the x axis
-            
-        #     # endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][2], -1 * self.jsonData["Features"][label][1]] # +y --> -z 
-        #     # endPt = [self.jsonData["Features"][label][0], self.jsonData["Features"][label][1], self.jsonData["Features"][label][2]] # +y --> -z 
-        #     # print(f"end point: {endPt}")
-
-        #     xyz_w = inv_mvp @ np.transpose([0, 0, 0, 1])
-        #     xyz_w /= xyz_w[3] # normalize by the w term 
-        #     print(f"uvd=[0, 0, 0, 1] conversion: {xyz_w}")
-            
-        #     # test = [endPt[0], endPt[1], endPt[2], 1]
-        #     # uvd = mvp @ np.transpose(test)
-        #     # uvd /= uvd[3]
-        #     # print(uvd, "\n")
-
-        #     test = [xyz_w[0], xyz_w[1], xyz_w[2], 1]
-        #     uvd = mvp @ np.transpose(test)
-        #     uvd /= uvd[3]
-        #     print(uvd, "\n")
-
-        #     # endPt = mt.create_from_x_rotation(-np.pi / 2) @ np.transpose(endPt)
-        #     # endPt = [openX, openY, openZ]
-        #     self.labelLines[end-3:end] = np.array(xyz_w[:3], dtype=np.float32) # locations stored in local space
-
-
         gl.glUseProgram(0)
         gl.glUseProgram(self.labelProgram)
 
@@ -1119,10 +1113,11 @@ class Test(QOpenGLWidget):
         gl.glBindVertexArray(self.labelVAO)
         # gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.skyTexture)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.labelVBO)
-        gl.glNamedBufferSubData(self.labelVBO, 0, self.labelLines.nbytes, self.labelLines)
+        
         # gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, lines.nbytes, lines)
 
-        gl.glDrawArrays(gl.GL_LINES, 0, int(self.labelLines.size)) 
+        # gl.glDrawArrays(gl.GL_LINES, 0, int(self.labelLines.size)) 
+        gl.glDrawArrays(gl.GL_LINES, 0, int(self.testCube.size))
         
         gl.glUseProgram(0)
         gl.glBindVertexArray(0) # unbind the vao
@@ -1887,6 +1882,8 @@ class Test(QOpenGLWidget):
          
         self.initializeTreeMesh()
 
+        self.initializeLabels()
+
         self.initializeManipulationFiles() # Also for the binning values
 
         self.initializeBinPruneDrawing()
@@ -1954,9 +1951,15 @@ class Test(QOpenGLWidget):
         # Paint the tree regardless of the view
         self.paintTree()  
 
-        
         if self.wholeView:
             self.drawBoundingBox()
+
+        if not self.wholeView and self.displayLabels:
+            screenPose = [(950, 300), # trunk
+                          (250, 650), # Secondary
+                          (2200, 600), # Tertiary branch
+                          (2000, 1000)] # bud TO CHANGE (250, 250)
+            self.drawLabels(screenPose)
             
         if self.toManipulate: #  and not self.wholeView
             self.drawManipulationBranch()
@@ -1980,13 +1983,6 @@ class Test(QOpenGLWidget):
         if self.drawLines and not self.wholeView:
             self.drawPruningLines()
 
-
-        if not self.wholeView and self.displayLabels:
-            screenPose = [(950, 300), # trunk
-                          (250, 650), # Secondary
-                          (2200, 600), # Tertiary branch
-                          (2000, 1000)] # bud TO CHANGE (250, 250)
-            self.drawLabels(screenPose)
             
     
 
@@ -2005,7 +2001,7 @@ class Test(QOpenGLWidget):
     
 
     def convertXYtoUV(self, x=0, y=0):
-        print(f"convertXYtoUV -- Width: {self.width} x Height: {self.height}")
+        # print(f"convertXYtoUV -- Width: {self.width} x Height: {self.height}")
         u = ((2 * x) / self.width) - 1.0 
         v = 1.0 - ((2 * y) / self.height)
         # print(u, v)
@@ -3332,6 +3328,7 @@ class Window(QMainWindow):
         self.glWidgetTree.toDrawTerms(self.drawTerms)
   
 
+
     def tertiaryButtonClicked(self):
         self.interacted = True
         self.isCorrect = True
@@ -3732,16 +3729,12 @@ class Window(QMainWindow):
             self.nextLabel.setText(text)
             self.nextLabel.setStyleSheet("font-size: 25px;")
             
-
-
     
     def compareBinAnswers(self, answers, values):
         for answer, value in zip(answers, values):
             if answer != value:
                 return False 
         return True
-    
-
     
 
     def labelButtonClicked(self):

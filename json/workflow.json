@@ -1,19 +1,19 @@
 {
     "Test": [ 
         {
-            "Module": "Terminology Terminology", 
-            "Your Task": "Select the different 'Tree Terminology' Buttons to\nexplore the different parts of a tree.\nClick 'Next' when finished",
-            "Layout": "tree_terms",
+            "Module": "Vigor Bins", 
+            "Your Task": "Identify the correct pruning cut decisions using\nthe drop down menus for the three labeled branches.\nClick 'Submit' to check your answer.",
+            "Layout": "bin",
             "Tree File": "textureTree.obj",
-            "File Directory": "tree_terms"
+            "File Directory": "vigor_bins"
         },
-
+        
         {
-            "Module": "Branch Vigor Terminology", 
-            "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three categories of Branch Vigor.\nClick 'Next' when finished",
-            "Layout": "bin_features",
+            "Module": "End of Vigor Tutorials", 
+            "Your Task": "This concludes the vigor tutorials.\nClick 'Next' to proceed to the next activity.",
+            "Layout": "end_section",
             "Tree File": "textureTree.obj",
-            "File Directory": "vigor_terms"
+            "File Directory": ""
         },
 
         {
@@ -44,6 +44,8 @@
             "Tree File": "textureTree.obj",
             "File Directory": ""
         },
+
+        
         {
             "Module": "Type of Cuts Terminology", 
             "Your Task": "Select each button to explore the different cut types.\nClick 'Next' when finished.",
@@ -52,12 +54,28 @@
             "File Directory": "type_of_cuts"
         },
         {
+            "Module": "Branch Vigor Terminology", 
+            "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three categories of Branch Vigor.\nClick 'Next' when finished",
+            "Layout": "bin_features",
+            "Tree File": "textureTree.obj",
+            "File Directory": "vigor_terms"
+        },
+        {
+            "Module": "Terminology Terminology", 
+            "Your Task": "Select the different 'Tree Terminology' Buttons to\nexplore the different parts of a tree.\nClick 'Next' when finished",
+            "Layout": "tree_terms",
+            "Tree File": "textureTree.obj",
+            "File Directory": "tree_terms"
+        },
+        {
             "Module": "End of Terminology Section", 
             "Your Task": "This concludes the Terminology Section. Click 'Next'\nto proceed to the next learning activity section.",
             "Layout": "end_section",
             "Tree File": "textureTree.obj",
             "File Directory": ""
         },
+
+
         {
             "Module": "6 inch rule", 
             "Your Task": "Select each button to explore how the '6 inch rule'\nis applied to individual branches. You may need to\nmove the camera to see all branch prunes.\nClick 'Next' when finished.",
@@ -116,21 +134,7 @@
             "Tree File": "textureTree.obj",
             "File Directory": "vigor"
         },       
-        {
-            "Module": "Vigor Bins", 
-            "Your Task": "Identify the correct pruning cut decisions using\nthe drop down menus for the three labeled branches.\nClick 'Submit' to check your answer.",
-            "Layout": "bin",
-            "Tree File": "textureTree.obj",
-            "File Directory": "vigor_bins"
-        },
-        {
-            "Module": "End of Vigor Tutorials", 
-            "Your Task": "This concludes the vigor tutorials.\nClick 'Next' to proceed to the next activity.",
-            "Layout": "end_section",
-            "Tree File": "textureTree.obj",
-            "File Directory": ""
-        },
-
+        
 
         {
             "Module": "End of Pilot Study", 
