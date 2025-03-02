@@ -4,13 +4,20 @@ import sys
 sys.path.append('../')
 
 
-from PySide2 import QtCore, QtGui
-from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget
-from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint
-from PySide2.QtOpenGL import QGLWidget
-from PySide2.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4
-from shiboken2 import VoidPtr
-# from PySide2.shiboken2 import VoidPtr
+from PySide6 import QtCore, QtGui, QtOpenGL
+
+from PySide6.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QComboBox, QProgressBar
+    # QOpenGLWidget
+
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
+
+from PySide6.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint, QCoreApplication, QPoint
+
+# from PySide6.QtOpenGL import QGLWidget, QGLContext
+
+from PySide6.QtGui import QFont
+# from PySide6.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4, QSurfaceFormat, QPainter,
+from OpenGL.GL.shaders import compileShader, compileProgram
 
 # from PyQt6 import QtCore      # core Qt functionality
 # from PyQt6 import QtGui       # extends QtCore with GUI functionality

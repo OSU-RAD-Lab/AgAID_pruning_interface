@@ -6,12 +6,19 @@ import os
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
 
-from PySide2 import QtCore, QtGui, QtOpenGL
-from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QFormLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget, QComboBox, QProgressBar
-from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint, QCoreApplication, QPoint
-from PySide2.QtOpenGL import QGLWidget, QGLContext
-from PySide2.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4, QSurfaceFormat, QPainter, QFont
-from shiboken2 import VoidPtr
+from PySide6 import QtCore, QtGui, QtOpenGL
+
+from PySide6.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QComboBox, QProgressBar
+    # QOpenGLWidget
+
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
+
+from PySide6.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint, QCoreApplication, QPoint
+
+# from PySide6.QtOpenGL import QGLWidget, QGLContext
+
+from PySide6.QtGui import QFont
+# from PySide6.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4, QSurfaceFormat, QPainter,
 from OpenGL.GL.shaders import compileShader, compileProgram
 
 
@@ -2652,7 +2659,7 @@ class Window(QMainWindow):
                            meshDictionary=self.meshDictionary,
                            jsonData=self.jsonData["Tree Files"][self.fname],
                            manipulation=self.manipulation)
-        self.viewGL.setFixedSize(900, 700)
+        self.viewGL.setFixedSize(350, 300) # 900, 700
         self.layout.addWidget(self.viewGL, 0, 2, 1, 1) # 1, 2, 1, 1
         self.hSlider.valueChanged.connect(self.viewGL.setTurnTableRotation) # Connect the vertical and horizontal camera sliders to the view screen
         self.viewGL.turnTableRotation.connect(self.hSlider.setValue)
@@ -2682,7 +2689,7 @@ class Window(QMainWindow):
         self.textFrame = QFrame(self.central_widget) # self.central_widget
         self.textFrame.setFrameShape(QFrame.Shape.Box)
         self.textFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.textFrame.setFixedWidth(900)
+        self.textFrame.setFixedWidth(350) # 900
         self.layout.addWidget(self.textFrame, 1, 2, 1, 1)  # Row 1, Column 1, Span 1 row and 1 column
 
         # Create a QVBoxLayout for the directory and buttons column
@@ -2691,55 +2698,55 @@ class Window(QMainWindow):
 
         # Create a QLabel to display the directory
         self.directory_label = QLabel("Your Task:")
-        self.directory_label.setStyleSheet("font-size: 50px;" "font:bold")
+        self.directory_label.setStyleSheet("font-size: 25px;" "font:bold")
 
         self.directory_layout.addWidget(self.directory_label)
 
         # Create a QLabel to display the task description
         # QLabel should be filled in with json data
         self.task_label = QLabel(self.labels[self.pageIndex]) # SET WITH LABELS
-        self.task_label.setStyleSheet("font-size: 35px;")
+        self.task_label.setStyleSheet("font-size: 15px;")
         self.directory_layout.addWidget(self.task_label)
     
         self.progressFrame = QFrame(self.central_widget) # self.central_widget
-        self.progressFrame.setFixedSize(900, 500)
+        self.progressFrame.setFixedSize(350, 300) # 900, 500
         self.progressFrame.setFrameShape(QFrame.Shape.Box)
         self.progressFrame.setFrameShadow(QFrame.Shadow.Sunken)
         self.layout.addWidget(self.progressFrame, 2, 2, 2, 1)  # Row 1, Column 1, Span 1 row and 1 column
 
         self.progress_layout = QVBoxLayout(self.progressFrame)
         self.progress_label = QLabel("Your Progress")
-        self.progress_label.setStyleSheet("font-size: 50px;" "font:bold")
+        self.progress_label.setStyleSheet("font-size: 25px;" "font:bold")
         self.progress_layout.addWidget(self.progress_label)
 
         text = f"Module: {self.modules[self.pageIndex]}" 
         self.moduleLabel = QLabel(text)
-        self.moduleLabel.setStyleSheet("font-size: 40px;")
+        self.moduleLabel.setStyleSheet("font-size: 15px;")
         self.progress_layout.addWidget(self.moduleLabel)
 
         self.progressBar = QProgressBar(self.central_widget)
         self.progressBar.setRange(0, len(self.modules) - 1)
         # self.progressBar.setGeometry(0, 0, 50, 30)
-        self.progressBar.setFixedSize(800, 50)
+        self.progressBar.setFixedSize(300, 50) # 800, 50
         self.progressBar.setValue(self.pageIndex)
         # TARDIS BLUE 003B6F
         # Chunk width = 120px 
         # "QProgressBar::chunk {background-color: #4F9153; width: 120px; margin: 0.5px;}"
-        self.progressBar.setStyleSheet("QProgressBar {width: 35px; text-align: center;}\n"
+        self.progressBar.setStyleSheet("QProgressBar {width: 30px; text-align: center;}\n"
                                        "QProgressBar::chunk {background-color: #4F9153; margin: 0.5px;}") 
         #{border: 2px solid #2196F3; border-radius: 5px; background-color: #E0E0E0;}
         # background-color: #4F9153; 
         self.progress_layout.addWidget(self.progressBar)
 
         self.nextButton = QPushButton("Next") # Make a blank button
-        self.nextButton.setStyleSheet("QPushButton {font-size: 50px;" "font:bold}\n"
+        self.nextButton.setStyleSheet("QPushButton {font-size: 25px;" "font:bold}\n"
                                       "QPushButton::pressed {background-color: #4F9153;}") # 
         self.nextButton.clicked.connect(self.nextPageButtonClicked)
         if self.screenType == "end_section":
             self.nextButton.setEnabled(True)
         else:
             self.nextButton.setEnabled(False)
-        self.nextButton.setFixedSize(300, 100)
+        self.nextButton.setFixedSize(150, 50) # 300, 100
         self.nextButton.setCheckable(True)
 
         self.nextLabel = QLabel() #
@@ -2753,7 +2760,7 @@ class Window(QMainWindow):
             slider = QSlider(Qt.Horizontal)
         else:
             slider = QSlider(Qt.Vertical)
-            slider.setStyleSheet("QSlider::handle:vertical {background-color: blue; border: 1px solid; height: 40px; width: 50px; margin: -15px 0px;}")
+            slider.setStyleSheet("QSlider::handle:vertical {background-color: blue; border: 1px solid; height: 15px; width: 25px; margin: -15px 0px;}")
             # "QSlider::groove:vertical {background: darkgray; border: 1px; height: 10px; margin: 2px 0;}"
             # "QSlider::groove:vertical {border: 1px; height: 30px; margin: 0px}\n"
         # slider.setRange(0, 360) # 0 - 360*16
@@ -2767,7 +2774,7 @@ class Window(QMainWindow):
             slider.setPageStep(5)
             slider.setTickPosition(QSlider.TicksBothSides) # TicksBelow
             if horizontal:
-                slider.setStyleSheet("QSlider::handle:horizontal {background-color: blue; border: 1px solid; height: 40px; width: 50px; margin: -15px 0px;}")
+                slider.setStyleSheet("QSlider::handle:horizontal {background-color: blue; border: 1px solid; height: 15px; width: 25px; margin: -15px 0px;}")
                 # "QSlider::groove:horizontal {border: 1px; height: 30px; margin: 0px}\n"
         else:
             if endRange == 0:
@@ -2778,7 +2785,7 @@ class Window(QMainWindow):
             # slider.setPageStep(10)
             slider.setPageStep(1)
             slider.setTickPosition(QSlider.TicksBelow) 
-            slider.setStyleSheet("QSlider::handle:horizontal {background-color: black; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
+            slider.setStyleSheet("QSlider::handle:horizontal {background-color: black; border: 1px solid; height: 25px; width: 30px; margin: -10px 0px;}")
             
             # slider.setStyleSheet("QSlider::groove:horizontal {border: 1px; height: 30px; margin: 0px}\n"
             #                  "QSlider::handle:horizontal {background-color: black; border: 1px solid; height: 30px; width: 30px; margin: -15px 0px;}")
@@ -2788,7 +2795,7 @@ class Window(QMainWindow):
         
         # "QSlider::groove:horizontal {height: 10px; margin: 0 0;}\n"
         # "QSlider::handle:horizontal {background-color: black; border: 1px; height: 
-        # 40px; width: 40px; margin: 0 0;}\n"
+        # 15px; width: 15px; margin: 0 0;}\n"
         # ""
         return slider
 
@@ -2801,43 +2808,43 @@ class Window(QMainWindow):
 
     
     def hCameraSliderClicked(self):
-        self.hSlider.setStyleSheet("QSlider::handle:horizontal {background-color: green; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
+        self.hSlider.setStyleSheet("QSlider::handle:horizontal {background-color: green; border: 1px solid; height: 25px; width: 30px; margin: -10px 0px;}")
 
     def hCameraSliderReleased(self):
         self.interacted = True
         if self.screenType == "normal":
             self.isCorrect = True
             self.nextButton.setEnabled(True)
-        self.hSlider.setStyleSheet("QSlider::handle:horizontal {background-color: blue; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
+        self.hSlider.setStyleSheet("QSlider::handle:horizontal {background-color: blue; border: 1px solid; height: 25px; width: 30px; margin: -10px 0px;}")
 
 
     def vCameraSliderClicked(self):
-        self.vSlider.setStyleSheet("QSlider::handle:vertical {background-color: green; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
+        self.vSlider.setStyleSheet("QSlider::handle:vertical {background-color: green; border: 1px solid; height: 25px; width: 30px; margin: -10px 0px;}")
  
     def vCameraSliderReleased(self):
         self.interacted = True
         if self.screenType == "normal":
             self.isCorrect = True
             self.nextButton.setEnabled(True)
-        self.vSlider.setStyleSheet("QSlider::handle:vertical {background-color: blue; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
+        self.vSlider.setStyleSheet("QSlider::handle:vertical {background-color: blue; border: 1px solid; height: 25px; width: 30px; margin: -10px 0px;}")
 
     def branchScaleSliderClicked(self):
         self.interacted = True
-        self.scaleSlider.setStyleSheet("QSlider::handle:horizontal {background-color: green; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
+        self.scaleSlider.setStyleSheet("QSlider::handle:horizontal {background-color: green; border: 1px solid; height: 25px; width: 30px; margin: -10px 0px;}")
 
     def branchScaleSliderReleased(self):
         self.interacted = True
         self.isCorrect = True
         self.nextButton.setEnabled(True)
-        self.scaleSlider.setStyleSheet("QSlider::handle:horizontal {background-color: black; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
+        self.scaleSlider.setStyleSheet("QSlider::handle:horizontal {background-color: black; border: 1px solid; height: 25px; width: 30px; margin: -10px 0px;}")
 
     def branchManipSliderClicked(self):
         self.interacted = True
-        self.manipulationSlider.setStyleSheet("QSlider::handle:horizontal {background-color: green; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
+        self.manipulationSlider.setStyleSheet("QSlider::handle:horizontal {background-color: green; border: 1px solid; height: 25px; width: 30px; margin: -10px 0px;}")
 
     def branchManipSliderReleased(self):
         self.interacted = True
-        self.manipulationSlider.setStyleSheet("QSlider::handle:horizontal {background-color: black; border: 1px solid; height: 50px; width: 30px; margin: -10px 0px;}")
+        self.manipulationSlider.setStyleSheet("QSlider::handle:horizontal {background-color: black; border: 1px solid; height: 25px; width: 30px; margin: -10px 0px;}")
 
     
     def setManipulationSlider(self, value):
@@ -2944,16 +2951,16 @@ class Window(QMainWindow):
         
         # LABEL BUTTON
         self.labelButton = QPushButton("Labels On") # Make a blank button
-        self.labelButton.setStyleSheet("font-size: 50px;" "font:bold")
+        self.labelButton.setStyleSheet("font-size: 25px;" "font:bold")
         self.labelButton.setCheckable(True)
-        self.labelButton.setFixedSize(300, 100)
+        self.labelButton.setFixedSize(150, 50) # 300, 100
         self.labelButton.clicked.connect(self.labelButtonClicked)
         self.hLayout.addWidget(self.labelButton)
 
         # SUBMIT BUTTON
         # if self.screenType == "normal": # should only show when both are false
         #     self.submitButton = QPushButton("Next") # Make a blank button
-        #     self.submitButton.setStyleSheet("font-size: 50px;" "font:bold", "QPushButton::pressed {background-color: #4F9153;}")
+        #     self.submitButton.setStyleSheet("font-size: 25px;" "font:bold", "QPushButton::pressed {background-color: #4F9153;}")
         #     self.submitButton.clicked.connect(self.nextPageButtonClicked) # TO CONNECT THE BUTTON WITH SCREEN
         #     self.submitButton.setFixedSize(300, 100)
         #     self.hLayout.addWidget(self.submitButton)
@@ -2961,8 +2968,8 @@ class Window(QMainWindow):
             # UNDO BUTTON
         if self.screenType == "draw_tutorial" or self.screenType == "prune":
             self.undoButton = QPushButton("Undo")
-            self.undoButton.setStyleSheet("font-size: 50px;" "font:bold")
-            self.undoButton.setFixedSize(300, 100)
+            self.undoButton.setStyleSheet("font-size: 25px;" "font:bold")
+            self.undoButton.setFixedSize(150, 50) # 300, 100
             self.undoButton.clicked.connect(self.glWidgetTree.undoDraw)
             self.undoButton.clicked.connect(self.undoClicked)
             self.hLayout.addWidget(self.undoButton)
@@ -3004,7 +3011,7 @@ class Window(QMainWindow):
         self.manipulationFrame = QFrame(self.central_widget) # self.central_widget
         self.manipulationFrame.setFrameShape(QFrame.Shape.Box)
         self.manipulationFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.manipulationFrame.setFixedHeight(500)
+        self.manipulationFrame.setFixedHeight(300) # 500
         self.layout.addWidget(self.manipulationFrame, self.screen_width+1, 1, 1, 1) # span the screen width but start below the sliders
         self.manipLayout = QGridLayout(self.manipulationFrame)
 
@@ -3013,7 +3020,7 @@ class Window(QMainWindow):
     
         # TO CHANGE THE NAME OF THE SLIDER BASED ON WHAT WE ARE MANIPULATING
         self.manipulationLabel = QLabel("Branch Manipulation Slider:") 
-        self.manipulationLabel.setStyleSheet("font-size: 50px;" "font:bold")
+        self.manipulationLabel.setStyleSheet("font-size: 25px;" "font:bold")
         self.manipLayout.addWidget(self.manipulationLabel, 0, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         # MANIPULATION SLIDER
@@ -3038,16 +3045,16 @@ class Window(QMainWindow):
 
         # SUBMIT BUTTON
         self.submitButton = QPushButton("Submit") # Make a blank button
-        self.submitButton.setStyleSheet("QPushButton {font-size: 50px;" "font:bold}\n"
+        self.submitButton.setStyleSheet("QPushButton {font-size: 25px;" "font:bold}\n"
                                         "QPushButton::pressed {background-color: #4F9153;}") # 
         
-        self.submitButton.setFixedSize(300, 100)
+        self.submitButton.setFixedSize(150, 50) # 300, 100
         # self.submitButton.clicked.connect(self.submitButtonClicked)
         self.submitButton.clicked.connect(self.submit)
         self.manipLayout.addWidget(self.submitButton, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         
-        self.answerText.setStyleSheet("font-size: 50px;")
+        self.answerText.setStyleSheet("font-size: 25px;")
         self.manipLayout.addWidget(self.answerText, 1, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
         # self.manipLayout.addWidget(self.submitButton, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
         
@@ -3084,7 +3091,7 @@ class Window(QMainWindow):
     def scaleIndex(self, value):
         self.index = value
         self.answerText.setText("")
-        self.answerText.setStyleSheet("font-size: 50px;")
+        self.answerText.setStyleSheet("font-size: 25px;")
 
 
     def submit(self):
@@ -3092,7 +3099,7 @@ class Window(QMainWindow):
         self.correctFeature = self.glWidgetTree.correctFeature
         text = self.checkAnswer()
         self.answerText.setText(text)
-        self.answerText.setStyleSheet("font-size: 50px;")
+        self.answerText.setStyleSheet("font-size: 25px;")
         
 
     def pruneButtonClicked(self):
@@ -3102,7 +3109,7 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.branch1PruneButton.isChecked():
             self.branch1PruneButton.setText("Don't Prune")
-            self.branch1PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+            self.branch1PruneButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                                   "QPushButton::pressed {background-color: #4F9153;}")
             self.branchCuts[0] = "Heading Cut" 
             # TO DO: Call function in GLWidget to prune the branch
@@ -3119,7 +3126,7 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.branch2PruneButton.isChecked():
             self.branch2PruneButton.setText("Don't Prune")
-            self.branch2PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+            self.branch2PruneButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                                   "QPushButton::pressed {background-color: #4F9153;}")
             self.branchCuts[1] = "Heading Cut"
             # TO DO: Call function in GLWidget to prune the branch
@@ -3136,7 +3143,7 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.branch3PruneButton.isChecked():
             self.branch3PruneButton.setText("Don't Prune")
-            self.branch3PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+            self.branch3PruneButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                                   "QPushButton::pressed {background-color: #4F9153;}")
             self.branchCuts[2] = "Heading Cut" 
             # TO DO: Call function in GLWidget to prune the branch
@@ -3156,51 +3163,51 @@ class Window(QMainWindow):
         self.ruleFrame = QFrame(self.central_widget) # self.central_widget
         self.ruleFrame.setFrameShape(QFrame.Shape.Box)
         self.ruleFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.ruleFrame.setFixedHeight(500)
+        self.ruleFrame.setFixedHeight(300) # 500 
         self.layout.addWidget(self.ruleFrame, self.screen_width+1, 1, 1, 1) # Where on the screen we add
         self.ruleLayout = QGridLayout(self.ruleFrame)
 
         self.inchLabel = QLabel("6 Inch Rule: Prune back branches with a heading cut to within 6 inches of the secondary branch")
-        self.inchLabel.setStyleSheet("font-size: 50px;" "font:bold")
+        self.inchLabel.setStyleSheet("font-size: 25px;" "font:bold")
         self.ruleLayout.addWidget(self.inchLabel, 0, 0, 1, 3, Qt.AlignBottom | Qt.AlignCenter)
 
         # make the 3 labels and buttons for the individual branches that should be pruned when clicked
         self.branch1Label = QLabel("Branch 1")
-        self.branch1Label.setStyleSheet("font-size: 45px;" "font:bold")
+        self.branch1Label.setStyleSheet("font-size: 20px;" "font:bold")
         self.ruleLayout.addWidget(self.branch1Label, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         
         self.branch1PruneButton = QPushButton("Prune")
         self.branch1PruneButton.setCheckable(True)
-        self.branch1PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.branch1PruneButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
-        self.branch1PruneButton.setFixedSize(300, 100)
+        self.branch1PruneButton.setFixedSize(150, 50) # 300, 100
         self.branch1PruneButton.clicked.connect(self.pruneButtonClicked)
         self.ruleLayout.addWidget(self.branch1PruneButton, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         # BRANCH 2
         self.branch2Label = QLabel("Branch 2")
-        self.branch2Label.setStyleSheet("font-size: 45px;" "font:bold")
+        self.branch2Label.setStyleSheet("font-size: 20px;" "font:bold")
         self.ruleLayout.addWidget(self.branch2Label, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         self.branch2PruneButton = QPushButton("Prune") 
         self.branch2PruneButton.setCheckable(True)
-        self.branch2PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.branch2PruneButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
-        self.branch2PruneButton.setFixedSize(300, 100)
+        self.branch2PruneButton.setFixedSize(150, 50) # 300, 100
         self.branch2PruneButton.clicked.connect(self.pruneButtonClicked2)
         self.ruleLayout.addWidget(self.branch2PruneButton, 2, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         # BRANCH 3
         self.branch3Label = QLabel("Branch 3")
-        self.branch3Label.setStyleSheet("font-size: 45px;" "font:bold")
+        self.branch3Label.setStyleSheet("font-size: 20px;" "font:bold")
         self.ruleLayout.addWidget(self.branch3Label, 1, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         self.branch3PruneButton = QPushButton("Prune") 
         self.branch3PruneButton.setCheckable(True)
-        self.branch3PruneButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.branch3PruneButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
-        self.branch3PruneButton.setFixedSize(300, 100)
+        self.branch3PruneButton.setFixedSize(150, 50) # 300, 100
         self.branch3PruneButton.clicked.connect(self.pruneButtonClicked3)
         self.ruleLayout.addWidget(self.branch3PruneButton, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
@@ -3216,55 +3223,55 @@ class Window(QMainWindow):
         self.treeTermFrame = QFrame(self.central_widget) # self.central_widget
         self.treeTermFrame.setFrameShape(QFrame.Shape.Box)
         self.treeTermFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.treeTermFrame.setFixedHeight(500)
+        self.treeTermFrame.setFixedHeight(300) # 500
         self.layout.addWidget(self.treeTermFrame, self.screen_width+1, 1, 1, 1) # Where on the screen we add
         self.treeTermLayout = QGridLayout(self.treeTermFrame)
 
         self.termLabel = QLabel("Tree Terminology")
-        self.termLabel.setStyleSheet("font-size: 50px;" "font:bold")
+        self.termLabel.setStyleSheet("font-size: 25px;" "font:bold")
         self.treeTermLayout.addWidget(self.termLabel, 0, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         self.descriptionLabel = QLabel("")
-        self.descriptionLabel.setStyleSheet("font-size: 50px;")
+        self.descriptionLabel.setStyleSheet("font-size: 25px;")
         self.treeTermLayout.addWidget(self.descriptionLabel, 0, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
 
         # make the 3 labels and buttons for the individual branches that should be pruned when clicked
         self.trunkLabel = QLabel("Trunk")
-        self.trunkLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.trunkLabel.setStyleSheet("font-size: 20px;" "font:bold")
         self.treeTermLayout.addWidget(self.trunkLabel, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         
         self.trunkButton = QPushButton("Show")
         self.trunkButton.setCheckable(True)
-        self.trunkButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.trunkButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
-        self.trunkButton.setFixedSize(300, 100)
+        self.trunkButton.setFixedSize(150, 50) # 150, 50
         self.trunkButton.clicked.connect(self.trunkButtonClicked)
         self.treeTermLayout.addWidget(self.trunkButton, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         # BRANCH 2
         self.secondaryLabel = QLabel("Secondary Branch")
-        self.secondaryLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.secondaryLabel.setStyleSheet("font-size: 20px;" "font:bold")
         self.treeTermLayout.addWidget(self.secondaryLabel, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         self.secondaryButton = QPushButton("Show") 
         self.secondaryButton.setCheckable(True)
-        self.secondaryButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.secondaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
-        self.secondaryButton.setFixedSize(300, 100)
+        self.secondaryButton.setFixedSize(150, 50) # 300, 100
         self.secondaryButton.clicked.connect(self.secondaryButtonClicked)
         self.treeTermLayout.addWidget(self.secondaryButton, 2, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         # BRANCH 3
         self.tertiaryLabel = QLabel("Tertiary Branch")
-        self.tertiaryLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.tertiaryLabel.setStyleSheet("font-size: 20px;" "font:bold")
         self.treeTermLayout.addWidget(self.tertiaryLabel, 1, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         self.tertiaryButton = QPushButton("Show") 
         self.tertiaryButton.setCheckable(True)
-        self.tertiaryButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.tertiaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
-        self.tertiaryButton.setFixedSize(300, 100)
+        self.tertiaryButton.setFixedSize(150, 50)
         self.tertiaryButton.clicked.connect(self.tertiaryButtonClicked)
         self.treeTermLayout.addWidget(self.tertiaryButton, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
@@ -3275,10 +3282,10 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.trunkButton.isChecked():
             self.descriptionLabel.setText("Trunk, primary branch, or leader is the main structure that connects to the roots")
-            self.descriptionLabel.setStyleSheet("font-size: 50px;")
+            self.descriptionLabel.setStyleSheet("font-size: 25px;")
 
             self.trunkButton.setText("Hide")
-            self.trunkButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+            self.trunkButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                             "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[0] = True
             # Don't highlight anything else until the branches are clicked
@@ -3305,9 +3312,9 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.secondaryButton.isChecked():
             self.descriptionLabel.setText("Secondary Branches are wired down support branches growing out from the trunk")
-            self.descriptionLabel.setStyleSheet("font-size: 50px;")
+            self.descriptionLabel.setStyleSheet("font-size: 25px;")
             self.secondaryButton.setText("Hide")
-            self.secondaryButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+            self.secondaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                             "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[1] = True
             # Don't highlight anything else until the branches are clicked
@@ -3335,9 +3342,9 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.tertiaryButton.isChecked():
             self.descriptionLabel.setText("Tertiary branches grow from secondary branches and produce fruit and leaves.")
-            self.descriptionLabel.setStyleSheet("font-size: 50px;")
+            self.descriptionLabel.setStyleSheet("font-size: 25px;")
             self.tertiaryButton.setText("Hide")
-            self.tertiaryButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+            self.tertiaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                             "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[2] = True
             # Don't highlight anything else until the branches are clicked
@@ -3373,35 +3380,35 @@ class Window(QMainWindow):
         self.cutFrame = QFrame(self.central_widget)
         self.cutFrame.setFrameShape(QFrame.Shape.Box)
         self.cutFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.cutFrame.setFixedHeight(500)
+        self.cutFrame.setFixedHeight(300) # 300
         self.layout.addWidget(self.cutFrame, self.screen_width+1, 1, 1, 1)
         self.cutLayout = QGridLayout(self.cutFrame)
 
         # Label explaining the type of cuts
         self.descriptionLabel = QLabel("Pruning Cut Description:")
-        self.descriptionLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;" "font:bold")
         self.cutLayout.addWidget(self.descriptionLabel, 0, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
 
         self.cutLabel = QLabel("")
-        self.cutLabel.setStyleSheet("font-size: 45px;")
+        self.cutLabel.setStyleSheet("font-size: 20px;")
         self.cutLayout.addWidget(self.cutLabel, 0, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
 
         
         self.headingButton = QPushButton("Heading Cut") 
         self.headingButton.setCheckable(True)
-        self.headingButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.headingButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                          "QPushButton::pressed {background-color: #4F9153;}")
-        self.headingButton.setFixedSize(300, 100)
+        self.headingButton.setFixedSize(150, 50)
         self.headingButton.clicked.connect(self.headingButtonClicked)
         self.cutLayout.addWidget(self.headingButton, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
 
         self.thinningButton = QPushButton("Thinning Cut") 
         self.thinningButton.setCheckable(True)
-        self.thinningButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.thinningButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                          "QPushButton::pressed {background-color: #4F9153;}")
-        self.thinningButton.setFixedSize(300, 100)
+        self.thinningButton.setFixedSize(150, 50)
         self.thinningButton.clicked.connect(self.thinningButtonClicked)
         self.cutLayout.addWidget(self.thinningButton, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
@@ -3412,7 +3419,7 @@ class Window(QMainWindow):
         self.isCorrect = True
         self.nextButton.setEnabled(True)
         self.cutLabel.setText("A Heading Cut leaves part of the branch on the secondary branch but removes the end")
-        self.cutLabel.setStyleSheet("font-size: 45px;")
+        self.cutLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setManipulationIndex(index=1)
         
 
@@ -3421,7 +3428,7 @@ class Window(QMainWindow):
         self.isCorrect = True
         self.nextButton.setEnabled(True)
         self.cutLabel.setText("A Thinning Cut removes the branch completely from the secondary branch")
-        self.cutLabel.setStyleSheet("font-size: 45px;")
+        self.cutLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setManipulationIndex(index=2)
 
 
@@ -3440,53 +3447,53 @@ class Window(QMainWindow):
         self.binFeatureFrame = QFrame(self.central_widget)
         self.binFeatureFrame.setFrameShape(QFrame.Shape.Box)
         self.binFeatureFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.binFeatureFrame.setFixedHeight(500)
+        self.binFeatureFrame.setFixedHeight(300) # 500
         self.layout.addWidget(self.binFeatureFrame, self.screen_width+1, 1, 1, 1)
         self.binFeatureLayout = QGridLayout(self.binFeatureFrame)
 
         # Label explaining the type of cuts
         self.vigorLabel = QLabel("Branch Vigor, or a branch's health, is a continuous scale with three levels:")
-        self.vigorLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.vigorLabel.setStyleSheet("font-size: 20px;" "font:bold")
         self.binFeatureLayout.addWidget(self.vigorLabel, 0, 0, 1, 3, Qt.AlignBottom | Qt.AlignCenter)
 
 
         self.featureLabel = QLabel("Branch Vigor Description:")
-        self.featureLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        self.featureLabel.setStyleSheet("font-size: 20px;" "font:bold")
         self.binFeatureLayout.addWidget(self.featureLabel, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
 
         self.descriptionLabel = QLabel("")
-        self.descriptionLabel.setStyleSheet("font-size: 45px;")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
         self.binFeatureLayout.addWidget(self.descriptionLabel, 2, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
 
       
         self.weakButton = QPushButton("Weak") 
-        self.weakButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.weakButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                          "QPushButton::pressed {background-color: #4F9153;}")
-        self.weakButton.setFixedSize(300, 100)
+        self.weakButton.setFixedSize(150, 50)
         self.weakButton.clicked.connect(self.weakButtonClicked)
         self.binFeatureLayout.addWidget(self.weakButton, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
 
         self.strongButton = QPushButton("Strong") 
-        self.strongButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.strongButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                          "QPushButton::pressed {background-color: #4F9153;}")
-        self.strongButton.setFixedSize(300, 100)
+        self.strongButton.setFixedSize(150, 50)
         self.strongButton.clicked.connect(self.strongButtonClicked)
         self.binFeatureLayout.addWidget(self.strongButton, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
 
         self.vigorousButton = QPushButton("Vigorous") 
-        self.vigorousButton.setStyleSheet("QPushButton {font-size: 40px;" "font:bold}\n"
+        self.vigorousButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                          "QPushButton::pressed {background-color: #4F9153;}")
-        self.vigorousButton.setFixedSize(300, 100)
+        self.vigorousButton.setFixedSize(150, 50)
         self.vigorousButton.clicked.connect(self.vigorousButtonClicked)
         self.binFeatureLayout.addWidget(self.vigorousButton, 1, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
 
     def weakButtonClicked(self):
         self.descriptionLabel.setText("Weak branches are shorter, thinner, and have few buds")
-        self.descriptionLabel.setStyleSheet("font-size: 45px;")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setWantedFeature("Weak")
         self.interacted = True
         self.isCorrect = True
@@ -3494,7 +3501,7 @@ class Window(QMainWindow):
 
     def strongButtonClicked(self):
         self.descriptionLabel.setText("Strong branches are thicker, longer, with several buds")
-        self.descriptionLabel.setStyleSheet("font-size: 45px;")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setWantedFeature("Strong")
         self.interacted = True
         self.isCorrect = True
@@ -3502,7 +3509,7 @@ class Window(QMainWindow):
 
     def vigorousButtonClicked(self):
         self.descriptionLabel.setText("Vigorous branches are incredibly long, thick, with few buds and large bud spacing")
-        self.descriptionLabel.setStyleSheet("font-size: 45px;")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setWantedFeature("Vigorous")
         self.interacted = True
         self.isCorrect = True
@@ -3519,7 +3526,7 @@ class Window(QMainWindow):
         self.scaleFrame = QFrame(self.central_widget) # self.central_widget
         self.scaleFrame.setFrameShape(QFrame.Shape.Box)
         self.scaleFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.scaleFrame.setFixedHeight(500)
+        self.scaleFrame.setFixedHeight(300) # 500
         self.layout.addWidget(self.scaleFrame, self.screen_width+1, 1, 1, 1) # Where on the screen we add
         self.scaleLayout = QGridLayout(self.scaleFrame)
 
@@ -3529,17 +3536,17 @@ class Window(QMainWindow):
         
         # text = "Branch Vigor Level: " + self.meshDictionary["Branches"]["Description"][0]
         # self.scaleLabel = QLabel(text)
-        # self.scaleLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        # self.scaleLabel.setStyleSheet("font-size: 20px;" "font:bold")
         # self.scaleLayout.addWidget(self.scaleLabel, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter) # where in the small table we add        
         
         # # Maybe I should make a button appear if they move the slider
         # pruneText = "Pruning Decision: " + self.meshDictionary["Branches"]["Prunes"][0]
         # self.pruneScaleLabel = QLabel(pruneText)
-        # self.pruneScaleLabel.setStyleSheet("font-size: 45px;" "font:bold")
+        # self.pruneScaleLabel.setStyleSheet("font-size: 20px;" "font:bold")
         # self.scaleLayout.addWidget(self.pruneScaleLabel, 1, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter) # where in the small table we add        
 
         self.scaleSliderLabel = QLabel("Branch Manipulation Slider:")
-        self.scaleSliderLabel.setStyleSheet("font-size: 50px;" "font:bold")
+        self.scaleSliderLabel.setStyleSheet("font-size: 25px;" "font:bold")
         self.scaleLayout.addWidget(self.scaleSliderLabel, 0, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
         sliderLength = len(self.meshDictionary["Branches"]["Description"]) - 1 
@@ -3575,7 +3582,7 @@ class Window(QMainWindow):
         self.binFrame = QFrame(self.central_widget) # self.central_widget
         self.binFrame.setFrameShape(QFrame.Shape.Box)
         self.binFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.binFrame.setFixedHeight(500)
+        self.binFrame.setFixedHeight(300)
         self.layout.addWidget(self.binFrame, self.screen_width+1, 1, 1, 1) # Where on the screen we add
         self.binLayout = QGridLayout(self.binFrame)
         
@@ -3586,11 +3593,11 @@ class Window(QMainWindow):
         # Need to add a QLayout
         # Want the branch name on top of the combo box option 
         self.binLabel = QLabel("Branch 1")
-        self.binLabel.setStyleSheet("font-size: 50px;" "font:bold")
+        self.binLabel.setStyleSheet("font-size: 25px;" "font:bold")
         self.binLayout.addWidget(self.binLabel, 1, 0, Qt.AlignBottom | Qt.AlignCenter) # where in the small table we add
         
         self.dropDown = QComboBox()
-        self.dropDown.setFixedSize(500, 100)
+        self.dropDown.setFixedSize(300, 50)
         self.dropDown.setFont(font)
         self.dropDown.addItems(self.binValues)
         self.dropDown.setCurrentIndex(self.binIndices[0])
@@ -3599,11 +3606,11 @@ class Window(QMainWindow):
 
         # Second dropdown box
         self.binLabel2 = QLabel("Branch 2")
-        self.binLabel2.setStyleSheet("font-size: 50px;" "font:bold")
+        self.binLabel2.setStyleSheet("font-size: 25px;" "font:bold")
         self.binLayout.addWidget(self.binLabel2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
         
         self.dropDown2 = QComboBox()
-        self.dropDown2.setFixedSize(500, 100)
+        self.dropDown2.setFixedSize(300, 50)
         self.dropDown2.setFont(font)
         self.dropDown2.addItems(self.binValues)
         self.dropDown2.setCurrentIndex(self.binIndices[1])
@@ -3612,11 +3619,11 @@ class Window(QMainWindow):
 
         # 3rd drop down
         self.binLabel3 = QLabel("Branch 3")
-        self.binLabel3.setStyleSheet("font-size: 50px;" "font:bold")
+        self.binLabel3.setStyleSheet("font-size: 25px;" "font:bold")
         self.binLayout.addWidget(self.binLabel3, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
         
         self.dropDown3 = QComboBox()
-        self.dropDown3.setFixedSize(500, 100)
+        self.dropDown3.setFixedSize(300, 50)
         self.dropDown3.setFont(font)
         self.dropDown3.addItems(self.binValues)
         self.dropDown3.setCurrentIndex(self.binIndices[2]) # SET THE VALUE TO PREVIOUS RESULTS
@@ -3626,15 +3633,15 @@ class Window(QMainWindow):
         self.dropDownTextSelected("") # grab the current text in the dropdown menus
 
         self.submitButton = QPushButton("Submit") # Make a blank button
-        self.submitButton.setStyleSheet("QPushButton {font-size: 50px;" "font:bold}\n"
+        self.submitButton.setStyleSheet("QPushButton {font-size: 25px;" "font:bold}\n"
                                         "QPushButton::pressed {background-color: #4F9153;}") # 
         # self.submitButton.clicked.connect(self.submitButtonClicked)
         self.submitButton.clicked.connect(self.submit)
-        self.submitButton.setFixedSize(300, 100)
+        self.submitButton.setFixedSize(150, 50)
         self.binLayout.addWidget(self.submitButton, 3, 0)
 
         
-        self.answerText.setStyleSheet("font-size: 50px;")
+        self.answerText.setStyleSheet("font-size: 25px;")
         self.binLayout.addWidget(self.answerText, 3, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)       
 
 
@@ -3653,7 +3660,7 @@ class Window(QMainWindow):
         print(f"Different text selected: {self.binAnswers}")
 
         self.answerText.setText("")
-        self.answerText.setStyleSheet("font-size: 50px;")
+        self.answerText.setStyleSheet("font-size: 25px;")
     
     def setDropDownValues(self):
         self.dropDown.setCurrentIndex(self.binIndices[0])
@@ -3788,4 +3795,5 @@ if __name__ == '__main__':
     window = Window() # GLDemo()
     # window = MainWindow()
     window.show()
-    sys.exit(app.exec_())
+    # sys.exit(app.exec_())
+    sys.exit(app.exec())
