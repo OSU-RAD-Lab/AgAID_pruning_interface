@@ -1,42 +1,31 @@
 {
     "Test": [ 
+
         {
-            "Module": "Vigor Bins", 
-            "Your Task": "Identify the correct pruning cut decisions using\nthe drop down menus for the three labeled branches.\nClick 'Submit' to check your answer.",
-            "Layout": "bin",
+            "Module": "Draw Tutorial", 
+            "Your Task": "Draw on the screen from points A to B to 'prune'\nthe tree. Click Undo to remove your draw\nline. Click 'Next' when finished",
+            "Layout": "draw_tutorial",
             "Tree File": "textureTree.obj",
-            "File Directory": "vigor_bins"
+            "File Directory": ""
         },
         
         {
-            "Module": "End of Vigor Tutorials", 
-            "Your Task": "This concludes the vigor tutorials.\nClick 'Next' to proceed to the next activity.",
-            "Layout": "end_section",
+            "Module": "Camera Tutorial", 
+            "Your Task": "Manipulate the (blue) Camera Sliders on the left\nside of the screen to move the camera view. You\ncan move the camera at any time.\nClick 'Next' when finished",
+            "Layout": "normal",
             "Tree File": "textureTree.obj",
             "File Directory": ""
         },
 
         {
-            "Module": "Camera Tutorial", 
-            "Your Task": "Manipulate the (blue) Camera Sliders on the left\nside of the screen to move the camera view. You\n can choose to move the camera at any time.\nClick 'Next' when finished",
-            "Layout": "normal",
-            "Tree File": "textureTree.obj",
-            "File Directory": ""
-        },
-        {
             "Module": "Labels Tutorial", 
-            "Your Task": "Select the 'Labels On' button to turn on tree\nterminology. To turn off the labels, select the\n'Labels Off' button. You can choose to turn on these\nlabels at any time.\nClick 'Next' when finished",
+            "Your Task": "Select the 'Labels On' button to turn on tree\nterminology. To turn off the labels, select the\n'Labels Off' button. You can choose to turn on\nthe labels at any time.\nClick 'Next' when finished",
             "Layout": "normal",
             "Tree File": "textureTree.obj",
             "File Directory": ""
         },
-        {
-            "Module": "Draw Tutorial", 
-            "Your Task": "Draw on the screen from points A to B to 'prune' the\ntree. Click Undo to remove your draw line.\nCan only draw on the screen when 'Undo' is visible.\nClick 'Next' when finished",
-            "Layout": "draw_tutorial",
-            "Tree File": "textureTree.obj",
-            "File Directory": ""
-        },
+
+        
         {
             "Module": "End of Interface Tutorial", 
             "Your Task": "This concludes the interface tutorials.\nClick 'Next' to proceed to the learning activities.",
@@ -44,73 +33,114 @@
             "Tree File": "textureTree.obj",
             "File Directory": ""
         },
-
         
         {
-            "Module": "Type of Cuts Terminology", 
-            "Your Task": "Select each button to explore the different cut types.\nClick 'Next' when finished.",
-            "Layout": "term_cuts",
-            "Tree File": "textureTree.obj",
-            "File Directory": "type_of_cuts"
-        },
-        {
-            "Module": "Branch Vigor Terminology", 
-            "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three categories of Branch Vigor.\nClick 'Next' when finished",
-            "Layout": "bin_features",
-            "Tree File": "textureTree.obj",
-            "File Directory": "vigor_terms"
-        },
-        {
-            "Module": "Terminology Terminology", 
+            "Module": "Tree Terminology", 
             "Your Task": "Select the different 'Tree Terminology' Buttons to\nexplore the different parts of a tree.\nClick 'Next' when finished",
             "Layout": "tree_terms",
             "Tree File": "textureTree.obj",
             "File Directory": "tree_terms"
         },
+
+        {
+            "Module": "Type of Cuts Terminology", 
+            "Your Task": "Select each button to explore the different cut\ntypes. Click 'Next' when finished.",
+            "Layout": "term_cuts",
+            "Tree File": "textureTree.obj",
+            "File Directory": "type_of_cuts"
+        },
+
+        {
+            "Module": "Branch Vigor Terminology", 
+            "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three levels of Branch Vigor.\nClick 'Next' when finished",
+            "Layout": "bin_features",
+            "Tree File": "textureTree.obj",
+            "File Directory": "vigor_terms"
+        },
+
         {
             "Module": "End of Terminology Section", 
-            "Your Task": "This concludes the Terminology Section. Click 'Next'\nto proceed to the next learning activity section.",
+            "Your Task": "This concludes the Terminology Section. Click\n'Next' to proceed to the next learning\nactivity section.",
             "Layout": "end_section",
             "Tree File": "textureTree.obj",
             "File Directory": ""
         },
 
+        {
+            "Module": "Bud Spacing", 
+            "Your Task": "Select the different 'Bud Spacing' Buttons to\nlearn different 'Bud Spacing' examples.\nClick 'Next' when finished",
+            "Layout": "bud_features",
+            "Tree File": "textureTree.obj",
+            "File Directory": "bud_features"
+        },
+
+        {
+            "Module": "Bud Spacing Bins", 
+            "Your Task": "Select the different 'Bud Spacing' Buttons to\nlearn different 'Bud Spacing' examples.\nClick 'Next' when finished",
+            "Layout": "bin",
+            "Tree File": "textureTree.obj",
+            "File Directory": "bud_spacing_bin"
+        },
+
+        {
+            "Module": "Bud Spacing Scale", 
+            "Your Task": "Move the Branch Manipulation Slider\nto see how Bud Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
+            "Layout": "scale",
+            "Tree File": "textureTree.obj",
+            "File Directory": "bud_spacing"
+        },        
+        {
+            "Module": "Bud Spacing Manipulation", 
+            "Your Task": "Move the Branch Manipulation Slider\nuntil the buds are 'Too Close' and need\nto be pruned with a 'Heading Cut'.\nClick 'Next' when finished.",
+            "Layout": "manipulation",
+            "Tree File": "textureTree.obj",
+            "File Directory": "bud_spacing"
+        },
+
+        {
+            "Module": "End of Bud Spacing Section", 
+            "Your Task": "This concludes the Bud Spacing Section. Click\n'Next' to proceed to the next learning\nactivity section.",
+            "Layout": "end_section",
+            "Tree File": "textureTree.obj",
+            "File Directory": ""
+        },
 
         {
             "Module": "6 inch rule", 
-            "Your Task": "Select each button to explore how the '6 inch rule'\nis applied to individual branches. You may need to\nmove the camera to see all branch prunes.\nClick 'Next' when finished.",
+            "Your Task": "Select each button to explore how to apply\nthe '6 inch rule' to the labeled branches.\nYou may need to move the camera to see.\nClick 'Next' when finished.",
             "Layout": "rule",
             "Tree File": "textureTree.obj",
             "File Directory": "inch_rule"
         },
         {
             "Module": "Canopy Spacing", 
-            "Your Task": "Manipulate the Branch Manipulation Slider\n to see how Branch Spacing affects pruning\n cut decisions. Click 'Next' when finished.",
+            "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
             "Layout": "scale",
             "Tree File": "textureTree.obj",
             "File Directory": "canopy_spacing"
         },
         {
             "Module": "Canopy Spacing Manipulation", 
-            "Your Task": "Move the Branch Manipulation Slider until the spacing\nbetween branches is 'Too Close' and you need to\nuse a 'Thinning Cut'.\nClick 'Submit' to check your answer.",
+            "Your Task": "Move the Branch Manipulation Slider until the\nspacing between branches is 'Too Close' and\nneeds a 'Thinning Cut'.\nClick 'Submit' to check your answer.",
             "Layout": "manipulation",
             "Tree File": "textureTree.obj",
             "File Directory": "canopy_spacing"
         }, 
         {
             "Module": "Canopy Direction", 
-            "Your Task": "Manipulate the Branch Manipulation Slider to see\nhow Branch Direction affects pruning cut decisions.\nYou may need to move the camera to see the branch.\nClick 'Next' when finished.",
+            "Your Task": "Move the Branch Manipulation Slider to see\nhow Branch Direction affects pruning decisions.\nYou may need to move the camera to see\nthe branch. Click 'Next' when finished.",
             "Layout": "scale",
             "Tree File": "textureTree.obj",
             "File Directory": "canopy_rotation"
         },
         {
             "Module": "Canopy Rotation Manipulation", 
-            "Your Task": "Manipulate the Branch Manipulation Slider until the\nBranch Direction has 'Too Much Angle' and you\nneed a 'Thinning Cut'. You may need\n to move the camera to see the branch.\nClick 'Next' when finished.",
+            "Your Task": "Move the Branch Manipulation Slider until the\nBranch Direction has 'Too Much Angle' and\nneeds a 'Thinning Cut'. You may need\nto move the camera to see the branch.\nClick 'Next' when finished.",
             "Layout": "manipulation",
             "Tree File": "textureTree.obj",
             "File Directory": "canopy_rotation"
         },
+
         {
             "Module": "End of Canopy Section", 
             "Your Task": "This concludes the Canopy Section. Click 'Next'\nto proceed to the next learning activity section.",
@@ -121,7 +151,7 @@
 
         {
             "Module": "Vigor Scale", 
-            "Your Task": "Manipulate the Branch Manipulation Slider\n to see how Branch Vigor affects pruning\n cut decisions. Click 'Next' when finished.",
+            "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Vigor affects pruning\ncut decisions. Click 'Next' when finished.",
             "Layout": "scale",
             "Tree File": "textureTree.obj",
             "File Directory": "vigor"
@@ -129,12 +159,31 @@
  
         {
             "Module": "Vigor Manipulation", 
-            "Your Task": "Move the Branch Manipulation Slider until the branch \nis Vigorous and you need to use a 'Thinning Cut'.\nClick 'Submit' to check your answer.",
+            "Your Task": "Move the Branch Manipulation Slider until the\nbranch is Vigorous and needs a\n'Thinning Cut'. Click 'Submit' to check your answer.",
             "Layout": "manipulation",
             "Tree File": "textureTree.obj",
             "File Directory": "vigor"
         },       
         
+        {
+            "Module": "Vigor Bins", 
+            "Your Task": "Identify the correct cut using the\ndrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+            "Layout": "bin",
+            "Tree File": "textureTree.obj",
+            "File Directory": "vigor_bins"
+        },
+
+        {
+            "Module": "End of Vigor Tutorials", 
+            "Your Task": "This concludes the vigor tutorials.\nClick 'Next' to proceed to the next activity.",
+            "Layout": "end_section",
+            "Tree File": "textureTree.obj",
+            "File Directory": ""
+        },
+
+
+
+
 
         {
             "Module": "End of Pilot Study", 

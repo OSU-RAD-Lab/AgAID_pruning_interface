@@ -19,34 +19,195 @@
 
     "Manipulation Files":
         {
+            "bud_features":
+            {
+                "Answer": "",
+                "Correct": "",
+                "Incorrect": "",
+                "Bin_Values": ["SELECT", "Too Close", "Enough Space"],
+                "Start_Index": 0,
+                "Files":[
+                    {
+                        "File Name": "budSpacing1.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "budSpacing2.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.45, 0.015, 0.005],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "spacing6.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.75, -0.083, 0.05],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "budSpacing3.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "budSpacing4.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.45, 0.015, 0.005],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "budSpacing5.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.75, -0.083, 0.05],
+                        "Rotate": [5, 0, 0]
+                    }
+                ] 
+            },
+
+            "bud_spacing_bin":
+            {
+                "Answer": ["Too Close", "Too Close", "Enough Space"],
+                "Correct": "Correct! Branches bud spacing binned correctly.",
+                "Incorrect": "Try Again. At least one branch binned incorrectly.",
+                "Bin_Values": ["SELECT", "Too Close", "Enough Space"],
+                "Files":[
+                    {
+                        "File Name": "budSpacing1.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "budSpacing2.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.45, 0.015, 0.005],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "budSpacing5.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.75, -0.083, 0.05],
+                        "Rotate": [5, 0, 0]
+                    }
+                ] 
+            },
+            
+            
+            "bud_spacing":
+            {
+                "Answer": "Too Close",
+                "Correct": "Correct! Buds have enough space.",
+                "Incorrect": "Try Again. Wrong bud spacing.",
+                "Bin_Values": "",
+                "Files":[
+                    {
+                        "File Name": "spacing1.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "spacing2.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "spacing3.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "spacing4.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "spacing5.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Don't Prune",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "spacing6.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    },
+                    {
+                        "File Name": "spacing7.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [0.8, 0.8, 0.8],
+                        "Translate": [0.15, 0.08, 0],
+                        "Rotate": [5, 0, 0]
+                    }
+                ] 
+            },
+
             "type_of_cuts":
             {
                 "Answer":["Don't Prune", "Heading Cut", "Thinning Cut"],
                 "Correct": "",
                 "Incorrect": "",
+                "Bin_Values": "",
                 "Files":[
                     {
-                        "File Name": "cylinder3.obj",
+                        "File Name": "textureBudBranch.obj",
                         "Feature Description": "Strong",
                         "Pruning Description": "Don't Prune",
-                        "Scale": [0.0125, 0.1, 0.0125],
-                        "Translate": [0.15, 0.16, 0],
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.15, 0.08, 0],
                         "Rotate": [5, 0, 0]
                     },
                     {
-                        "File Name": "cylinder3.obj",
+                        "File Name": "textureBudBranch.obj",
                         "Feature Description": "Strong",
                         "Pruning Description": "Heading Cut",
-                        "Scale": [0.0125, 0.1, 0.0125],
-                        "Translate": [0.15, 0.16, 0],
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.15, 0.08, 0],
                         "Rotate": [5, 0, 0]
                     },
                     {
-                        "File Name": "cylinder3.obj",
+                        "File Name": "textureBudBranch.obj",
                         "Feature Description": "Strong",
                         "Pruning Description": "Thinning Cut",
-                        "Scale": [0.0125, 0.1, 0.0125],
-                        "Translate": [0.15, 0.16, 0],
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.15, 0.08, 0],
                         "Rotate": [5, 0, 0]
                     }
                 ] 
@@ -56,7 +217,8 @@
             {
                 "Answer":["Don't Prune", "Heading Cut", "Thinning Cut"],
                 "Correct": "Correct. All branches binned correctly",
-                "Incorrect": "Incorrect. At least one branch binned incorrectly",
+                "Incorrect": "Try Again. At least one branch binned incorrectly",
+                "Bin_Values": ["SELECT", "Don't Prune", "Heading Cut", "Thinning Cut"],
                 "Files":[
                     {
                         "File Name": "cylinder4.obj",
@@ -89,7 +251,8 @@
             {
                 "Answer": "Vigorous",
                 "Correct": "Correct! The branch has the right Vigor Level.",
-                "Incorrect": "Incorrect. The branch does not have the correct Vigor Level. Try again.",  
+                "Incorrect": "Try Again. The branch does not have the correct Vigor.",  
+                "Bin_Values": ["SELECT", "Too Close", "Enough Space"],
                 "Start_Index": 0,
                 "Files": [
                     {
@@ -124,7 +287,8 @@
             {
                 "Answer": "Vigorous",
                 "Correct": "Correct! The branch has the right Vigor Level.",
-                "Incorrect": "Incorrect. The branch does not have the correct Vigor Level. Try again.",  
+                "Incorrect": "Try Again. The branch does not have the correct Vigor.", 
+                "Bin_Values": "",
                 "Start_Index": 0,
                 "Files": [
                     {
@@ -207,7 +371,8 @@
             {
                 "Answer": "Vigorous",
                 "Correct": "Correct! The branch has the right Vigor Level.",
-                "Incorrect": "Incorrect. The branch does not have the correct Vigor Level. Try again.",  
+                "Incorrect": "Try Again. The branch does not have the correct Vigor.", 
+                "Bin_Values": "", 
                 "Start_Index": 0,
                 "Files": [
                     {
@@ -282,6 +447,7 @@
                 "Answer":"",
                 "Correct": "",
                 "Incorrect": "",
+                "Bin_Values": "",
                 "Files":[
                     {
                         "File Name": "cylinder4.obj",
@@ -314,9 +480,10 @@
             "canopy_spacing":
             {
                 "Answer": "Too Close",
-                "Correct": "Correct! The branches have the correct spacing between them.",
-                "Incorrect": "Incorrect. The branches do not have the correct spacing. Try again.",
-                "Start_Index": 10,  
+                "Correct": "Correct! Branches have the correct spacing.",
+                "Incorrect": "Try Again. Branches do not have the correct spacing.",
+                "Bin_Values": "",
+                "Start_Index": 0,  
                 "Files": [
                     {
                         "File Name": "cylinder4.obj",
@@ -413,7 +580,8 @@
             {
                 "Answer": "Too Much Angle",
                 "Correct": "Correct! The branch has the right Branch Vector.",
-                "Incorrect": "Incorrect. The branch does not have the correct Branch Vector. Try again.",
+                "Incorrect": "Try Again. The branch does not have the correct Branch Vector.",
+                "Bin_Values": "",
                 "Start_Index": 5,  
                 "Files": [
                     {

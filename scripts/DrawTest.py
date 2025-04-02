@@ -8,7 +8,7 @@ os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
 from PySide6 import QtCore, QtGui, QtOpenGL
 
-from PySide6.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QComboBox, QProgressBar
+from PySide6.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QComboBox, QProgressBar, QRadioButton
     # QOpenGLWidget
 
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
@@ -150,6 +150,12 @@ class Test(QOpenGLWidget):
         self.vao = None
         self.vbo = None 
 
+        
+        self.vigorColor = [255.0/255.0, 95.0/255.0, 31.0/255.0]
+        self.spacingColor = [33.0/255.0, 252.0/255.0, 13.0/255.0]
+        self.canopyColor = [0.0/255.0, 240.0/255.0, 255.0/255.0]
+        self.penColor = self.vigorColor
+
         # Manipulation files
         # self.meshes = [None] * 10 # fill in for meshes of the manipulations branches
         self.meshes = meshDictionary["Branches"]["Meshes"]
@@ -255,7 +261,7 @@ class Test(QOpenGLWidget):
         self.drawVBO = None
         self.drawProgram = None
         self.drawLines = False # determine if to draw lines
-        self.drawVertices = np.zeros(3000, dtype=np.float32) # give me a set of values to declare for vbo
+        self.drawVertices = np.zeros(3600, dtype=np.float32) # give me a set of values to declare for vbo
         self.drawCount = 0
         
         # TEXT DISPLAYING
@@ -596,10 +602,10 @@ class Test(QOpenGLWidget):
                 if self.screenType == "scale" and not self.wholeView:
                     vigorText = f"Branch Feature: {self.currentFeature}"
                     pruneText = f"Pruning Description: {self.pruneFeature}"
-                    self.renderText(vigorText, x=1400, y=920, scale=0.85, color=[1, 0.27, 0]) # 1100, 650  [1, 0.477, 0.706]
-                    self.renderText(pruneText, x=1400, y=870, scale=0.85, color=[1, 0.27, 0]) # 1100, 650
+                    self.renderText(vigorText, x=450, y=200, scale=0.35, color=[1, 0.27, 0]) # 1400, 650  [1, 0.477, 0.706]
+                    self.renderText(pruneText, x=450, y=170, scale=0.35, color=[1, 0.27, 0]) # 1400, 650
 
-                # elif self.screenType = "bin" and not self.wholeView:
+                # elif self.screenType = "bin" and not self.wholeView:s
                 #     self.renderText("Branch", x=1200, y=820, scale=0.85, color=[1, 0, 0])
 
                 gl.glBindVertexArray(0) # unbind the vao
@@ -753,7 +759,7 @@ class Test(QOpenGLWidget):
                 gl.glBindVertexArray(0) # unbind the vao
             
             # ADD LABELS:
-            binLabelLocs = [(1100, 650), (1600, 600), (2000, 500)]
+            binLabelLocs = [(450, 250), (600, 215), (750, 200)] # 
             for i in range(len(self.meshes)):
                 branch_label = f"Branch {i+1}"
                 x, y = binLabelLocs[i]
@@ -762,7 +768,7 @@ class Test(QOpenGLWidget):
                 #                                     translation=treeTranslation,           # where in the tree
                 #                                     rotation=cameraRotation,               # just where is the camera location
                 #                                     scale=scale)              # how much to scale the branch by
-                self.renderText(branch_label, x, y, 1.0)
+                self.renderText(branch_label, x, y, 0.4, color=[0, 1, 0])
 
 
         gl.glPopMatrix()
@@ -1072,7 +1078,7 @@ class Test(QOpenGLWidget):
         gl.glPushMatrix()
         
         # self.labelLines = np.zeros( 4 * 2 * 3 ) # 4 labels * 2 pts per label * 3 dimensions
-        print(self.projection @ self.view @ self.model)
+        # print(self.projection @ self.view @ self.model)
         mvp = self.projection @ self.view @ self.model
         inv_mvp = np.linalg.inv(mvp)
         
@@ -1086,7 +1092,7 @@ class Test(QOpenGLWidget):
             mvp = self.projection @ self.view @ self.model
             
             xyz_w = self.convertUVDtoXYZ(u=u, v=v, d=0.1)
-            print(xyz_w)
+            # print(xyz_w)
 
         # test = mvp @ np.transpose([-0.5, 2, 0, 1])
         # test /= test[3]
@@ -1099,7 +1105,7 @@ class Test(QOpenGLWidget):
         for i, label in enumerate(self.jsonData["Features"]):
             x, y = screenPose[i]
             # print(f"Label {label}: {screenPose[i]}")
-            self.renderText(label, x, y, 1)
+            self.renderText(label, x, y, 0.5)
         
         gl.glUseProgram(0)
         gl.glUseProgram(self.labelProgram)
@@ -1124,7 +1130,7 @@ class Test(QOpenGLWidget):
         # gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, lines.nbytes, lines)
 
         # gl.glDrawArrays(gl.GL_LINES, 0, int(self.labelLines.size)) 
-        gl.glDrawArrays(gl.GL_LINES, 0, int(self.testCube.size))
+        # gl.glDrawArrays(gl.GL_LINES, 0, int(self.testCube.size))
         
         gl.glUseProgram(0)
         gl.glBindVertexArray(0) # unbind the vao
@@ -1210,7 +1216,7 @@ class Test(QOpenGLWidget):
         # Use the skyvertices vertex counts to draw the bounding box
         gl.glBufferData(gl.GL_ARRAY_BUFFER, self.boundBoxVertices.nbytes, self.boundBoxVertices, gl.GL_STATIC_DRAW)
 
-        stride = self.drawVertices.itemsize * 3
+        stride = self.boundBoxVertices.itemsize * 3
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0)) # coordinates start at bit 20 (5*4)
 
@@ -1416,7 +1422,7 @@ class Test(QOpenGLWidget):
         gl.glLoadIdentity()
         gl.glPushMatrix()
 
-        # print("Inside Bin Features")
+        print("Inside Bin Features")
         drawing = False
         if len(self.meshes) > 0: # check I have values just in case
             # Bind the texture and link the program
@@ -1471,7 +1477,7 @@ class Test(QOpenGLWidget):
                 modelLoc = gl.glGetUniformLocation(self.program, "model")
                 gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
 
-                # print(f"wanted feature: {self.wantedFeature}")
+                print(f"wanted feature: {self.wantedFeature}")
                 if self.wantedFeature == self.meshDescriptions[i]:
                     # print(f"Drawing Bin with feature: {self.meshDescriptions[i]}\n")
                     gl.glBindVertexArray(self.VAOs[i])
@@ -1487,12 +1493,12 @@ class Test(QOpenGLWidget):
                 gl.glBindVertexArray(0) # unbind the vao
             # END FOR
             if drawing:
-                binLabelLocs = [(1100, 650), (1450, 600), (1800, 550)]
+                binLabelLocs = [(350, 250), (500, 215), (650, 200)] # (1100, 650), (1450, 600), (1800, 550)
                 for i in range(3):
                     branch_label = f"{self.wantedFeature} Branch {i+1}"
                     x, y = binLabelLocs[i]
                     scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
-                    self.renderText(branch_label, x, y, 1.0)
+                    self.renderText(branch_label, x, y, 0.3)
         # END IF
 
         gl.glPopMatrix()
@@ -1599,7 +1605,7 @@ class Test(QOpenGLWidget):
                         else:
                             dy = (0.175 - self.meshTranslations[i][1] - (BRANCH - self.meshTranslations[i][1])*math.sin(xRad))
                         # ((self.meshTranslations[i][1] - BRANCH)/math.cos(xRad))
-                        print(f"Branch {i+1}: {dy}")
+                        # print(f"Branch {i+1}: {dy}")
 
                         cut_pos = [0, dy, 0, 1]
                         dx, dy, dz, _ = branchRotation @ np.transpose(cut_pos)
@@ -1662,8 +1668,8 @@ class Test(QOpenGLWidget):
     def initializeDrawing(self):
         gl.glUseProgram(0)
 
-        vertexShader = Shader("vertex", "simple_shader.vert").shader # get out the shader value    
-        fragmentShader = Shader("fragment", "simple_shader.frag").shader
+        vertexShader = Shader("vertex", "draw_shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "draw_shader.frag").shader
 
         self.drawProgram = gl.glCreateProgram()
         gl.glAttachShader(self.drawProgram, vertexShader)
@@ -1680,11 +1686,15 @@ class Test(QOpenGLWidget):
 
         gl.glBufferData(gl.GL_ARRAY_BUFFER, self.drawVertices.nbytes, self.drawVertices, gl.GL_DYNAMIC_DRAW) # GL_STATIC_DRAW
 
-        stride = self.drawVertices.itemsize * 3
+        stride = self.drawVertices.itemsize * 6 # 3 for pos 3 for color
 
         # enable the pointer for the shader
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0))  
+
+        # Add a new vertex attribute that correlates with color
+        gl.glEnableVertexAttribArray(1)
+        gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(12)) # Start at pos 3 with float size 4 --> 3*4
 
     
     def drawPruningLines(self):
@@ -1720,7 +1730,7 @@ class Test(QOpenGLWidget):
 
         # gl.glPointSize(3.0)
         gl.glLineWidth(5.0)
-        gl.glDrawArrays(gl.GL_QUADS, 0, int(self.drawVertices.size / 3))
+        gl.glDrawArrays(gl.GL_QUADS, 0, int(self.drawVertices.size / 6)) # 6 given 3 vertices 3 color
         # gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.drawCount) 
 
         gl.glBindVertexArray(0) # unbind the vao
@@ -1864,8 +1874,8 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)
 
         if self.screenType == "draw_tutorial":
-            self.renderText("A", x=600, y=550, scale=1, color=[1, 1, 0])
-            self.renderText("B", x=900, y=500, scale=1, color=[1, 1, 0])
+            self.renderText("A", x=200, y=250, scale=1, color=[1, 1, 0]) # 600, 550
+            self.renderText("B", x=300, y=200, scale=1, color=[1, 1, 0]) # 600, 550
 
 
        
@@ -1962,10 +1972,10 @@ class Test(QOpenGLWidget):
             self.drawBoundingBox()
 
         if not self.wholeView and self.displayLabels:
-            screenPose = [(950, 300), # trunk
-                          (250, 650), # Secondary
-                          (2200, 600), # Tertiary branch
-                          (2000, 1000)] # bud TO CHANGE (250, 250)
+            screenPose = [(350, 300), # trunk (950, 300)
+                          (50, 400), # Secondary (250, 650)
+                          (820, 250), # Tertiary branch (2200, 600)
+                          (650, 95)] # bud TO CHANGE (2000, 1000)
             self.drawLabels(screenPose)
             
         if self.toManipulate: #  and not self.wholeView
@@ -2153,15 +2163,18 @@ class Test(QOpenGLWidget):
 
 
     def addDrawVertices(self, drawPts):
-    
+        print(f"Draw Count (Before Add): {self.drawCount}")
         for i in range(len(drawPts)):
             # start adding at point 3*count in draw array
-            start = (self.drawCount+i) * 3
+            start = (self.drawCount) + 6 * i 
+            print(f"Adding values from {start} to {start+6}")
             # localPt = self.convertWorldToLocal(quad[i])
             self.drawVertices[start:start+3] = drawPts[i]
-            # self.draw["vertices"].extend(quad[i])
-        self.drawCount += len(drawPts) # add 4 since added 4 vertices to create a quad
-        # self.draw["count"] += 4
+            self.drawVertices[start+3:start+6] = self.penColor
+
+        
+        self.drawCount += len(drawPts) * 2 * 3 # add 24 pts * 2 (color and vertices) * 3 (length of array)
+        print(f"Draw Count (After Add): {self.drawCount}")
 
 
     def get_drawn_coords(self, u, v, z):
@@ -2225,7 +2238,7 @@ class Test(QOpenGLWidget):
         # |/_____|/
         # 5       7
 
-        drawPt1 = self.get_drawn_coords(u1, v1, minZ)
+        drawPt1 = self.get_drawn_coords(u1, v1, minZ) # returns a length 3 array
         drawPt2 = self.get_drawn_coords(u1, v1, maxZ)
         drawPt3 = self.get_drawn_coords(u2, v2, maxZ)
         drawPt4 = self.get_drawn_coords(u2, v2, minZ)
@@ -2295,15 +2308,13 @@ class Test(QOpenGLWidget):
 
                 # See the distance:
                 drawPts = self.determine_draw_plane(self.startPose, self.lastPose, u1, v1, minZ, u2, v2, maxZ)
-                # print(drawPts)
-                # Need to calculate difference in u1 v1 and u2 v2 for adding a description 
-                # self.addDrawVertices(drawPt1, drawPt2, drawPt3, drawPt4)
                 self.addDrawVertices(drawPts)
 
                 # UPDATE VBO TO INCORPORATE THE NEW VERTICES
                 gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
 
         # print(f"Total time for draw: {time.time() - start}\n")
+
         self.update()              
                              
 
@@ -2402,25 +2413,24 @@ class Test(QOpenGLWidget):
     # The purpose of this button is to undo the drawing that participants have drawn so far on the screen
     def undoDraw(self):
         if self.drawCount > 0:
-            print(self.drawCount)
-            start = (self.drawCount - 24) * 3
-            end = self.drawCount * 3
+            # 8 vertices
+            # 3 pos + 3 color
+            # 8 * 6 = 48
 
-            # print(f"Delete vertices from indices {start}:{end}")
-            # need to replace all the values from drawCount
+            stride = 8 * 6 * 3 # 8 vertices (cube) with 6 points (each vertex having pos (3) and color (3)) each with points a length of 3
+
+            start = (self.drawCount - stride)  # (self.drawCount - 24) * 3
+            end = self.drawCount # self.drawCount * 3
+
+            # need to replace values at that section in draw vertices to null
             self.drawVertices[start:end] = np.zeros(end - start)
-            self.drawCount -= 24  # becuase of the cube vertices count
+            
+            self.drawCount -= stride  # because of the cube vertices count
+            
+            # gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
             gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
-            self.update()
-        else:
-            print("No line to remove")
-        # if self.drawArray["count"] > 0:
-        #     self.drawArray["vertices"] = self.drawArray["vertices"][:-2]
-        #     self.drawArray["count"] -= 2
-        #     print("Removed line")
-        #     self.update()               # need to redraw the scene so call update
-        # else:
-        #     print("No line to remove")
+        
+        self.update() # update the GL Call
 
     def addLabels(self, checked=False):
         self.displayLabels = checked
@@ -2446,6 +2456,18 @@ class Test(QOpenGLWidget):
         self.wantedFeature = feature
         self.update() # Update the screen to draw the feature
 
+    def setPenColor(self, option):
+        print(f"Draw Count (Before Pen Color): {self.drawCount}")
+        if option == "Branch Vigor":
+            self.penColor = self.vigorColor
+        elif option == "Canopy Cut":
+            self.penColor = self.canopyColor
+        else:
+            self.penColor = self.spacingColor
+
+        # print(f"Set Pen Color:\n{self.drawVertices[:self.drawCount]}")
+        print(f"Draw Count (After Pen Color): {self.drawCount}")
+        # self.update()
 
 
 # QWidget 
@@ -2597,6 +2619,7 @@ class Window(QMainWindow):
             branches["Description"] = featureDescription
             branches["Prunes"] = pruneDescription
             branches["Answer"] = branchFiles[manipDirectory]["Answer"] # looking if the correct answer
+            self.binValues = branchFiles[manipDirectory]["Bin_Values"]
         
         if skyBoxFile is not None:
             fname = directory + skyBoxFile
@@ -2631,6 +2654,9 @@ class Window(QMainWindow):
         
         elif self.screenType == "bin":
             self.binScreen()
+        
+        elif self.screenType == "bud_features":
+            self.budFeaturesScreen()
 
         elif self.screenType == "scale":
             self.scaleScreen()
@@ -2904,7 +2930,7 @@ class Window(QMainWindow):
             self.toBin = True
             self.toPrune = False
 
-        elif self.screenType == "bin_features":
+        elif self.screenType == "bin_features" or self.screenType == "bud_features":
             self.screen_width = 2
             self.glWidgetTree.setScreenProperties(screenType=self.screenType, toBinFeatures=True) # MIGHT TRY AND CHANGE
             self.toBinFeatures = True
@@ -2973,6 +2999,46 @@ class Window(QMainWindow):
             self.undoButton.clicked.connect(self.glWidgetTree.undoDraw)
             self.undoButton.clicked.connect(self.undoClicked)
             self.hLayout.addWidget(self.undoButton)
+
+            font = QFont()
+            font.setPointSize(font.pointSize()+2)
+            self.answerText = QLabel("")
+
+            # create a dropdown menu with different color
+            self.pruningRules = ["Vigor", "Canopy", "Spacing"]
+
+            self.penLabel = QLabel("Pruning Cut:")
+            self.penLabel.setStyleSheet("font-size: 25px;" "font:bold;" "color: white")
+            self.hLayout.addWidget(self.penLabel)
+
+            self.vigorRadio = QRadioButton("Branch Vigor")
+            self.vigorRadio.setChecked(True)
+            self.vigorRadio.setStyleSheet("font-size: 20px;" "color: #ff5f1f")
+            self.vigorRadio.toggled.connect(lambda: self.radioButtonClicked("Branch Vigor"))
+            
+            self.canopyRadio = QRadioButton("Canopy Cut")
+            self.canopyRadio.setStyleSheet("font-size: 20px;" "color: #00f0ff")
+            self.canopyRadio.toggled.connect(lambda: self.radioButtonClicked("Canopy Cut"))
+            
+            self.spacingRadio = QRadioButton("Bud Spacing")
+            self.spacingRadio.setStyleSheet("font-size: 20px;" "color: #21fc0d")
+            self.spacingRadio.toggled.connect(lambda: self.radioButtonClicked("Bud Spacing"))
+
+            self.hLayout.addWidget(self.vigorRadio)
+            self.hLayout.addWidget(self.canopyRadio)
+            self.hLayout.addWidget(self.spacingRadio)
+
+            self.radioButtonClicked("Branch Vigor")
+
+            
+
+            # self.dropDownPen = QComboBox()
+            # self.dropDownPen.setFixedSize(300, 50)
+            # self.dropDownPen.setFont(font)
+            # self.dropDownPen.addItems()
+            # self.dropDownPen.setCurrentIndex(self.binIndices[0])
+            # self.dropDownPen.activated.connect(self.dropDownTextSelected)
+            # self.binLayout.addWidget(self.dropDown, 2, 0, Qt.AlignTop | Qt.AlignCenter)
             
 
         
@@ -3002,6 +3068,14 @@ class Window(QMainWindow):
         if self.screenType == "draw_tutorial":
             self.isCorrect = True
             self.nextButton.setEnabled(True)
+
+
+    def radioButtonClicked(self, option):
+        if option:
+            print(f"Pruning Decision: {option}\n")
+            self.glWidgetTree.setPenColor(option)
+
+
 
     
     def manipulationScreen(self):
@@ -3064,7 +3138,7 @@ class Window(QMainWindow):
         if self.screenType == "manipulation": # self.glWidgetTree.toManipulate
             if self.correctFeature:
                 # print("IS THE CORRECT FEATURE")
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"] + " Click 'Next' to continue."
+                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"]
                 self.isCorrect = True
                 self.nextButton.setEnabled(True)
                 # self.submitButton = QPushButton("Next") 
@@ -3077,7 +3151,7 @@ class Window(QMainWindow):
         elif self.screenType == "bin": # CHECK THE BIN ANSWERS
             correct = self.jsonData["Manipulation Files"][self.manipulationDir]["Answer"]
             if self.compareBinAnswers(correct, self.binAnswers):
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"] + " Click 'Next' to continue."
+                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"]
                 self.isCorrect = True
                 self.nextButton.setEnabled(True)
                 # self.submitButton = QPushButton("Next") 
@@ -3167,7 +3241,7 @@ class Window(QMainWindow):
         self.layout.addWidget(self.ruleFrame, self.screen_width+1, 1, 1, 1) # Where on the screen we add
         self.ruleLayout = QGridLayout(self.ruleFrame)
 
-        self.inchLabel = QLabel("6 Inch Rule: Prune back branches with a heading cut to within 6 inches of the secondary branch")
+        self.inchLabel = QLabel("6 Inch Rule: Prune back branches to within 6 inches of the secondary branch")
         self.inchLabel.setStyleSheet("font-size: 25px;" "font:bold")
         self.ruleLayout.addWidget(self.inchLabel, 0, 0, 1, 3, Qt.AlignBottom | Qt.AlignCenter)
 
@@ -3282,7 +3356,7 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.trunkButton.isChecked():
             self.descriptionLabel.setText("Trunk, primary branch, or leader is the main structure that connects to the roots")
-            self.descriptionLabel.setStyleSheet("font-size: 25px;")
+            self.descriptionLabel.setStyleSheet("font-size: 20px;")
 
             self.trunkButton.setText("Hide")
             self.trunkButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
@@ -3312,7 +3386,7 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.secondaryButton.isChecked():
             self.descriptionLabel.setText("Secondary Branches are wired down support branches growing out from the trunk")
-            self.descriptionLabel.setStyleSheet("font-size: 25px;")
+            self.descriptionLabel.setStyleSheet("font-size: 20px;")
             self.secondaryButton.setText("Hide")
             self.secondaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                             "QPushButton::pressed {background-color: #4F9153;}")
@@ -3342,7 +3416,7 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.tertiaryButton.isChecked():
             self.descriptionLabel.setText("Tertiary branches grow from secondary branches and produce fruit and leaves.")
-            self.descriptionLabel.setStyleSheet("font-size: 25px;")
+            self.descriptionLabel.setStyleSheet("font-size: 20px;")
             self.tertiaryButton.setText("Hide")
             self.tertiaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                             "QPushButton::pressed {background-color: #4F9153;}")
@@ -3396,7 +3470,7 @@ class Window(QMainWindow):
 
         
         self.headingButton = QPushButton("Heading Cut") 
-        self.headingButton.setCheckable(True)
+        self.headingButton.setCheckable(False)
         self.headingButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                          "QPushButton::pressed {background-color: #4F9153;}")
         self.headingButton.setFixedSize(150, 50)
@@ -3405,7 +3479,7 @@ class Window(QMainWindow):
 
 
         self.thinningButton = QPushButton("Thinning Cut") 
-        self.thinningButton.setCheckable(True)
+        self.thinningButton.setCheckable(False)
         self.thinningButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
                                          "QPushButton::pressed {background-color: #4F9153;}")
         self.thinningButton.setFixedSize(150, 50)
@@ -3418,7 +3492,7 @@ class Window(QMainWindow):
         self.interacted = True
         self.isCorrect = True
         self.nextButton.setEnabled(True)
-        self.cutLabel.setText("A Heading Cut leaves part of the branch on the secondary branch but removes the end")
+        self.cutLabel.setText("A Heading Cut leaves part of the branch but removes the end")
         self.cutLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setManipulationIndex(index=1)
         
@@ -3491,6 +3565,7 @@ class Window(QMainWindow):
         self.binFeatureLayout.addWidget(self.vigorousButton, 1, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
 
+
     def weakButtonClicked(self):
         self.descriptionLabel.setText("Weak branches are shorter, thinner, and have few buds")
         self.descriptionLabel.setStyleSheet("font-size: 20px;")
@@ -3511,6 +3586,66 @@ class Window(QMainWindow):
         self.descriptionLabel.setText("Vigorous branches are incredibly long, thick, with few buds and large bud spacing")
         self.descriptionLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setWantedFeature("Vigorous")
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+
+
+    """BUD FEATURES SCREEN"""
+    def budFeaturesScreen(self):
+        self.loadTreeSectionScreen()
+
+        self.binFeatureFrame = QFrame(self.central_widget)
+        self.binFeatureFrame.setFrameShape(QFrame.Shape.Box)
+        self.binFeatureFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.binFeatureFrame.setFixedHeight(300) # 500
+        self.layout.addWidget(self.binFeatureFrame, self.screen_width+1, 1, 1, 1)
+        self.binFeatureLayout = QGridLayout(self.binFeatureFrame)
+
+        # Label explaining the type of cuts
+        self.spacingLabel = QLabel("Buds need enough space (~2-3 inches) to produce apples:")
+        self.spacingLabel.setStyleSheet("font-size: 20px;" "font:bold")
+        self.binFeatureLayout.addWidget(self.spacingLabel, 0, 0, 1, 3, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.featureLabel = QLabel("Bud Spacing:")
+        self.featureLabel.setStyleSheet("font-size: 20px;" "font:bold")
+        self.binFeatureLayout.addWidget(self.featureLabel, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.descriptionLabel = QLabel("")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
+        self.binFeatureLayout.addWidget(self.descriptionLabel, 2, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
+
+      
+        self.spaceButton = QPushButton("Enough Space") 
+        self.spaceButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+                                         "QPushButton::pressed {background-color: #4F9153;}")
+        self.spaceButton.setFixedSize(150, 50)
+        self.spaceButton.clicked.connect(self.spaceButtonClicked)
+        self.binFeatureLayout.addWidget(self.spaceButton, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.closeButton = QPushButton("Too Close") 
+        self.closeButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+                                         "QPushButton::pressed {background-color: #4F9153;}")
+        self.closeButton.setFixedSize(150, 50)
+        self.closeButton.clicked.connect(self.closeButtonClicked)
+        self.binFeatureLayout.addWidget(self.closeButton, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+    def closeButtonClicked(self):
+        self.descriptionLabel.setText("Buds are less than 2-3 inches apart")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
+        self.glWidgetTree.setWantedFeature("Too Close")
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+    
+    def spaceButtonClicked(self):
+        self.descriptionLabel.setText("Buds are have more than 2-3 inches apart")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
+        self.glWidgetTree.setWantedFeature("Enough Space")
         self.interacted = True
         self.isCorrect = True
         self.nextButton.setEnabled(True)
@@ -3734,7 +3869,7 @@ class Window(QMainWindow):
         else:
             text = "Cannot continue until 'Your Task' is completed"
             self.nextLabel.setText(text)
-            self.nextLabel.setStyleSheet("font-size: 25px;")
+            self.nextLabel.setStyleSheet("font-size: 15px;")
             
     
     def compareBinAnswers(self, answers, values):
