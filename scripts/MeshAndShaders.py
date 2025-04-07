@@ -120,6 +120,58 @@ class Mesh(QWidget):
         self.count = len(self.mesh.vertices)
 
 
+    #############################################
+    # DESCRIPTION: write the participant's cuts to a mesh file 
+    #   - save mesh file of cuts as PID_#_treeName.obj in a folder under PID_#
+    #
+    # INPUT:
+    #   - treeName: a String representing the name of the .obj tree file participants interacted with (excluding .obj)
+    #   - pid: an Int representing the participant's ID number 
+    #   - cuts: a List of dictionaries containing the sequence of cuts, a participant's cut decision,
+    #                and vertices of the cut.
+    # OUTPUT: None        
+    #############################################
+    def write_mesh_file(self, treeName, pid, cuts):
+        # Loop through dictionary containing: Cut decision (in order) and their vertices
+        # Write the objects to the same mesh file 
+        fname = "PID_" + str(pid) + "_" + treeName + ".obj"
+        
+        for idx, cut in enumerate(cuts):
+            objName = "Cut_" + str(idx+1) + "_" + cuts["Decision"]
+
+            # vertices first obj has vertices 1-8
+            # obj 2 has vertices 9-16
+            # remember that x increases as you go right and y increases as you go down
+            """ 
+            Start object line with o Name
+            Uses the same VN for all vertices
+            vn 0.0000 -1.0000 0.0000
+            vn 0.0000 1.0000 0.0000
+            vn 1.0000 0.0000 0.0000
+            vn -0.0000 -0.0000 1.0000
+            vn -1.0000 -0.0000 -0.0000
+            vn 0.0000 0.0000 -1.0000
+
+            Cube Faces: v/vt/vn
+
+              2________4
+              /|      /|
+             /_|_____/ |
+             1       3 |
+             | |____|__|
+             | 6    |  8
+             | /    | /
+             |/_____|/
+             5       7
+            
+            f 1//1 2//1 3//1 4//1
+            f 5//2 8//2 7//2 6//2
+            f 1//3 5//3 6//3 2//3
+            f 2//4 6//4 7//4 3//4
+            f 3//5 7//5 8//5 4//5
+            f 5//6 1//6 4//6 8//6
+            """
+
 
     def split_vertices(self):
         # print(self.vertices.size)

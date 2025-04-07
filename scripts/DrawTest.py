@@ -133,6 +133,9 @@ class Test(QOpenGLWidget):
         self.TREE_SECTION_DX = -0.25 # -0.25
         self.TREE_SECTION_ASPECT = 1.5
         
+
+        self.cutNumber = 0 # keeping track of sequence of cuts
+
         # can use to scale
         self.MAX_WIDTH = 2820
         self.MAX_HEIGHT = 1275 # to change
@@ -155,6 +158,27 @@ class Test(QOpenGLWidget):
         self.spacingColor = [33.0/255.0, 252.0/255.0, 13.0/255.0]
         self.canopyColor = [0.0/255.0, 240.0/255.0, 255.0/255.0]
         self.penColor = self.vigorColor
+
+        self.decision = "" # "Vigor"
+        self.crossYMenu = False # don't display the 
+
+        # for documenting the decisions users make
+
+        self.cutSequenceDict = {
+            "Rule": [],
+            "Sequence": [],
+            "Vertices": [],
+            "Cut Time": [],
+            "Rule Time": [],
+            "Between Cut Time": []
+        }
+        
+        
+        self.crossyTextBounds = {
+            "Branch Vigor": [], 
+            "Canopy Cut": [],
+            "Bud Spacing": []
+        }
 
         # Manipulation files
         # self.meshes = [None] * 10 # fill in for meshes of the manipulations branches
@@ -602,8 +626,8 @@ class Test(QOpenGLWidget):
                 if self.screenType == "scale" and not self.wholeView:
                     vigorText = f"Branch Feature: {self.currentFeature}"
                     pruneText = f"Pruning Description: {self.pruneFeature}"
-                    self.renderText(vigorText, x=450, y=200, scale=0.35, color=[1, 0.27, 0]) # 1400, 650  [1, 0.477, 0.706]
-                    self.renderText(pruneText, x=450, y=170, scale=0.35, color=[1, 0.27, 0]) # 1400, 650
+                    _ = self.renderText(vigorText, x=450, y=200, scale=0.35, color=[1, 0.27, 0]) # 1400, 650  [1, 0.477, 0.706]
+                    _ = self.renderText(pruneText, x=450, y=170, scale=0.35, color=[1, 0.27, 0]) # 1400, 650
 
                 # elif self.screenType = "bin" and not self.wholeView:s
                 #     self.renderText("Branch", x=1200, y=820, scale=0.85, color=[1, 0, 0])
@@ -768,7 +792,7 @@ class Test(QOpenGLWidget):
                 #                                     translation=treeTranslation,           # where in the tree
                 #                                     rotation=cameraRotation,               # just where is the camera location
                 #                                     scale=scale)              # how much to scale the branch by
-                self.renderText(branch_label, x, y, 0.4, color=[0, 1, 0])
+                _ = self.renderText(branch_label, x, y, 0.4, color=[0, 1, 0])
 
 
         gl.glPopMatrix()
@@ -953,6 +977,12 @@ class Test(QOpenGLWidget):
 
         gl.glActiveTexture(gl.GL_TEXTURE0)
         gl.glBindVertexArray(self.textVAO)
+        # want to get the bounding box of the text
+        
+        minX = x
+        minY = y
+        maxX = x
+        maxY = y
         for char in text:
             # intChar = ord(char) # convert the character to a number
             character = self.characters[char]
@@ -962,6 +992,9 @@ class Test(QOpenGLWidget):
 
             w = character.size[0] * scale
             h = character.size[1] * scale
+
+            maxX = xpos + w
+            maxY = np.max([ypos + h, maxY])
 
             textVertices = np.array([[xpos,     ypos + h, 0.0, 0.0],
                                     [xpos,     ypos,     0.0, 1.0],
@@ -991,6 +1024,8 @@ class Test(QOpenGLWidget):
         gl.glEnable(gl.GL_DEPTH_TEST)
         # gl.glDisable(gl.GL_BLEND)
         gl.glEnable(gl.GL_BLEND)
+        bounds = [minX, maxX, self.height - minY, self.height - maxY]
+        return bounds
          
 
     def initializeLabels(self):
@@ -1105,7 +1140,7 @@ class Test(QOpenGLWidget):
         for i, label in enumerate(self.jsonData["Features"]):
             x, y = screenPose[i]
             # print(f"Label {label}: {screenPose[i]}")
-            self.renderText(label, x, y, 0.5)
+            _ = self.renderText(label, x, y, 0.5)
         
         gl.glUseProgram(0)
         gl.glUseProgram(self.labelProgram)
@@ -1498,7 +1533,7 @@ class Test(QOpenGLWidget):
                     branch_label = f"{self.wantedFeature} Branch {i+1}"
                     x, y = binLabelLocs[i]
                     scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
-                    self.renderText(branch_label, x, y, 0.3)
+                    _ = self.renderText(branch_label, x, y, 0.3)
         # END IF
 
         gl.glPopMatrix()
@@ -1733,6 +1768,30 @@ class Test(QOpenGLWidget):
         gl.glDrawArrays(gl.GL_QUADS, 0, int(self.drawVertices.size / 6)) # 6 given 3 vertices 3 color
         # gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.drawCount) 
 
+
+        if len(self.cutSequenceDict["Rule"]) == 0:
+            self.endCutTime = time.time()
+        
+
+        # Need to determine if I display the text of the pruning choices
+        if self.crossYMenu:
+            self.ruleTimeStart = time.time() # Start recording time between decisions
+            # print("Display text on the screen")
+            # print(f"{self.lastPose.x()}, {self.lastPose.y()}")
+            lastX, lastY =  (self.lastPose.x()+10, self.lastPose.y())
+            # display coordinates in text coordinates (0 in bottom left)
+            crossYPos = [(lastX, self.height - lastY), (lastX, self.height - lastY - 30), (lastX, self.height - lastY - 60)]
+            text = ["Branch Vigor", "Canopy Cut", "Bud Spacing"]
+            colors = [self.vigorColor, self.canopyColor, self.spacingColor]
+            for i in range(len(text)):
+                x, y = crossYPos[i]
+                # print(f"{text[i]}: {x}, {y}")
+                self.crossyTextBounds[text[i]] = self.renderText(text[i], x=x, y=y, scale=0.5, color=colors[i])
+                # self.crossyTextBounds[text[i]][2] = -1 * (self.crossyTextBounds[text[i]][2] - self.height)  # fix to back to screen coordinates and not text coordinates   
+                # self.crossyTextBounds[text[i]][3] = -1 * (self.crossyTextBounds[text[i]][3] - self.height)
+                # print(f"{text[i]} bounds: {self.crossyTextBounds[text[i]]}")
+
+
         gl.glBindVertexArray(0) # unbind the vao
         gl.glPopMatrix()
         gl.glUseProgram(0)
@@ -1874,8 +1933,8 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)
 
         if self.screenType == "draw_tutorial":
-            self.renderText("A", x=200, y=250, scale=1, color=[1, 1, 0]) # 600, 550
-            self.renderText("B", x=300, y=200, scale=1, color=[1, 1, 0]) # 600, 550
+            _ = self.renderText("A", x=200, y=250, scale=1, color=[1, 1, 0]) # 600, 550
+            _ = self.renderText("B", x=300, y=200, scale=1, color=[1, 1, 0]) # 600, 550
 
 
        
@@ -2005,16 +2064,147 @@ class Test(QOpenGLWidget):
 
     # MOUSE ACTION EVENTS WITH GLWIDGET SCREEN
     def mousePressEvent(self, event) -> None:
+        # event.pos()
+        # p = event.globalPosition().toPoint()
+        self.press = QPoint(event.pos()) # returns the last position of the mouse when clicked
         self.startPose = QPoint(event.pos()) # returns the last position of the mouse when clicked
+        self.pressTime = time.time()
     
 
     def mouseReleaseEvent(self, event) -> None:
-        self.lastPose = QPoint(event.pos())
-        if abs(self.lastPose.x() - self.startPose.x()) > 5 and abs(self.lastPose.y() - self.startPose.y()) > 5:
+        self.release = QPoint(event.pos()) 
+
+        self.lastPose = QPoint(event.pos()) # event.pos()
+        self.releaseTime = time.time()
+        if abs(self.lastPose.x() - self.startPose.x()) > 5 or abs(self.lastPose.y() - self.startPose.y()) > 5: # and
             self.rayDraw()
         else:
-            print("Drawing Circle")
-        _ = self.rayDirection(self.lastPose.x(), self.lastPose.y())
+            # print(f"Crossy Menu on Click: {self.crossYMenu}")
+            if self.crossYMenu:
+                self.crossYDecision()
+            else:
+                print("Do Nothing")        
+        # _ = self.rayDirection(self.lastPose.x(), self.lastPose.y())
+        # self.update()
+
+   
+
+
+    def updateCutColorToDecision(self):
+        if self.drawCount > 0:
+            # 8 vertices
+            # 3 pos + 3 color
+            # 8 * 6 = 48
+            stride = 8 * 6 * 3 # 8 vertices (cube) with 6 points (each vertex having pos (3) and color (3)) each with points a length of 3
+            start = (self.drawCount - stride)  # (self.drawCount - 24) * 3
+            # need to replace values at that section in draw vertices to null
+            # loop over the range from start to end and replace every values with index 3-5 with pen color
+            for i in range(int(stride / 6)): # divided by 6 as we take every 6 section chunk
+                idx = (start + 3) + (6 * i) 
+                self.drawVertices[idx:idx+3] = self.penColor
+            
+            gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
+        
+        self.update() # update the GL Call
+        
+
+    def crossYDecision(self):
+        # self.crossYMenu = False
+        # Look at position of the drawing strokes 
+        self.penColor = [1, 0, 0]
+
+        startX = self.startPose.x()
+        startY = self.startPose.y()
+        endX = self.lastPose.x()
+        endY = self.lastPose.y()
+
+        # print(f"({startX}, {startY}) to ({endX}, {endY})")
+        
+        # check if the start value is in the text or if the end value is in the 
+        for decision in self.crossyTextBounds:
+            bound = self.crossyTextBounds[decision]
+            # print(f"{decision}:")
+            intersect = self.clickInBounds(start=(startX, startY), end=(endX, endY), bounds=bound)
+            # intersect = self.lineInTextBounds(start=(startX, startY), end=(endX, endY), bounds=bound)
+
+            if intersect:
+                # print("Intersect detected!")
+                self.setPenColor(decision=decision)
+                self.crossYMenu = False # only reset the crossYMenue when you have successfully set the decision to a new value
+                
+                self.endCutTime = time.time()
+
+                ruleTime = self.endCutTime - self.ruleTimeStart # Get the end of time between cuts
+                print(f"Rule Time: {ruleTime}")
+                self.cutSequenceDict["Rule Time"].append(ruleTime)
+
+                self.updateCutColorToDecision() # update the color of the drawing and go!
+                break
+        # print(f"CrossYMenu decision: {self.crossYMenu}")
+    
+    
+    def clickInBounds(self, start, end, bounds):
+        sX, sY = start
+        eX, eY = end
+        minX = np.min([bounds[0], bounds[1]])
+        maxX = np.max([bounds[0], bounds[1]])
+        minY = np.min([bounds[2], bounds[3]])
+        maxY = np.max([bounds[2], bounds[3]])
+       
+        return eX >= minX and eX <= maxX and eY >= minY and eY <= maxY
+
+
+
+    # def lineInTextBounds(self, start, end, bounds):
+    #     # check if the values are in the bounds
+    #     # Bounds is a list of floats from [minX, maxX, minY, maxY] of the text
+
+    #     # IF STARTING AND END POINTS DON'T INTERSECT TO START
+    #     # shift everything to make it appear the start point is x=0 and end point y = 0
+    #     sX = 0
+    #     sY = start[1] - end[1]
+
+    #     eX = end[0] - start[0]
+    #     eY = 0
+
+    #     print(f"({sX}, {sY}) to ({eX}, {eY})")
+
+    #     # get the bounds in the shifted space
+    #     minX = bounds[0] - start[0]
+    #     maxX = bounds[1] - start[0]
+    #     minY = bounds[2] - end[1]
+    #     maxY = bounds[3] - end[1]
+
+    #     print(f"Bounds: ({minX}, {maxX}, {minY}, {maxY})")
+
+    #     # line completely encompassed in the bounds
+    #     if sX >= minX and sX <= maxX and sY >= minY and sY <= maxY:
+    #         return True
+    #     elif eX >= minX and eX <= maxX and eY >= minY and eY <= maxY:
+    #         return True
+
+    #     # get the slope of the line
+    #     if eX - sX > 0:
+    #         slope = (eY - sY) / (eX - sX)
+    #     else:
+    #         slope = (eY - sY) / 1e-13 # ensure no divide by 0
+
+    #     # looking for the values in the slope to see if it intersects the square before it exits the region between min and max X
+    #     yStart = slope * minX + sY
+    #     print(f"Intersect value minX: {yStart}")
+    #     # check if the point is inside the bounds of 
+    #     if yStart >= minY and yStart <=maxY:
+    #         return True
+        
+    #     yEnd = slope * maxX + sY 
+    #     print(f"Intersect value maxX: {yEnd}")
+    #     if yEnd >= minY and yEnd <=maxY:
+    #         return True
+
+    #     else:
+    #         return False 
+
+    
     
 
     def convertXYtoUV(self, x=0, y=0):
@@ -2163,18 +2353,14 @@ class Test(QOpenGLWidget):
 
 
     def addDrawVertices(self, drawPts):
-        print(f"Draw Count (Before Add): {self.drawCount}")
         for i in range(len(drawPts)):
             # start adding at point 3*count in draw array
             start = (self.drawCount) + 6 * i 
-            print(f"Adding values from {start} to {start+6}")
             # localPt = self.convertWorldToLocal(quad[i])
             self.drawVertices[start:start+3] = drawPts[i]
-            self.drawVertices[start+3:start+6] = self.penColor
+            self.drawVertices[start+3:start+6] = [1, 0, 0] #self.penColor
 
-        
         self.drawCount += len(drawPts) * 2 * 3 # add 24 pts * 2 (color and vertices) * 3 (length of array)
-        print(f"Draw Count (After Add): {self.drawCount}")
 
 
     def get_drawn_coords(self, u, v, z):
@@ -2247,14 +2433,22 @@ class Test(QOpenGLWidget):
         drawPt7 = self.get_drawn_coords(u4, v4, minZ)
         drawPt8 = self.get_drawn_coords(u4, v4, maxZ)
 
-        cubeVertices = [drawPt1, drawPt2, drawPt3, drawPt4,
-                        drawPt1, drawPt2, drawPt6, drawPt5, 
-                        drawPt5, drawPt6, drawPt7, drawPt8,
-                        drawPt3, drawPt4, drawPt7, drawPt8,
-                        drawPt2, drawPt4, drawPt6, drawPt8,
-                        drawPt1, drawPt3, drawPt5, drawPt7]
+        vertices = [drawPt1, drawPt2, drawPt3, drawPt4, drawPt5, drawPt6, drawPt7, drawPt8]
 
-        return cubeVertices   
+        # cubeVertices = [drawPt1, drawPt2, drawPt3, drawPt4,
+        #                 drawPt1, drawPt2, drawPt6, drawPt5, 
+        #                 drawPt5, drawPt6, drawPt7, drawPt8,
+        #                 drawPt3, drawPt4, drawPt7, drawPt8,
+        #                 drawPt2, drawPt4, drawPt6, drawPt8,
+        #                 drawPt1, drawPt3, drawPt5, drawPt7]
+        cubeVertices = [drawPt1, drawPt2, drawPt3, drawPt4,
+                        drawPt5, drawPt8, drawPt7, drawPt6, 
+                        drawPt1, drawPt5, drawPt6, drawPt2,
+                        drawPt2, drawPt6, drawPt7, drawPt3,
+                        drawPt3, drawPt7, drawPt8, drawPt4,
+                        drawPt5, drawPt1, drawPt4, drawPt8]
+
+        return cubeVertices, vertices 
 
 
 
@@ -2266,56 +2460,73 @@ class Test(QOpenGLWidget):
         # midPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
         # dir = self.rayDirection(x=midPt[0], y=midPt[1])[:3]
         # print(dir)
+        if not self.crossYMenu:
+            u1, v1 = self.convertXYtoUV(x=self.startPose.x(), y=self.startPose.y())
+            u2, v2 = self.convertXYtoUV(x=self.lastPose.x(), y=self.lastPose.y())
 
-        u1, v1 = self.convertXYtoUV(x=self.startPose.x(), y=self.startPose.y())
-        u2, v2 = self.convertXYtoUV(x=self.lastPose.x(), y=self.lastPose.y())
-
-        # print(f"Start ({self.startPose.x()}, {self.startPose.y()}), or ({u1}, {v1})")
-        # print(f"End ({self.lastPose.x()}, {self.lastPose.y()}) or ({u2}, {v2})")
-        # returns intersect faces in local coordinates
-        intersectFaces = self.mesh.intersect_faces(u1=u1, v1=v1, u2=u2, v2=v2, projection=self.projection, view=self.view, model=self.model)
-        # intersectFaces = None
-        if intersectFaces is not None:
-            # Determine faces in a given region   
-            dirPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
-            dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
-            depth, intercept = self.interception(origin=self.camera_pos, rayDirection=dir, faces=intersectFaces)
-            # Need to pass in the vertices to the code
-            if len(intercept) == 0:
-                print("No intercept detected")
-            else:
-                # Now I need to find the min and max z but max their value slightly larger for the rectangle
-                # Depth given in world space
-
-                # TURN THE DRAWLINES TO TRUE SO IT DRAWS ON SCREEN
-                if self.screenType == "draw_tutorial" or self.screenType == "prune":
-                    self.drawLines = True
-                
-                minZ = np.min(depth) 
-                maxZ = np.max(depth) + 0.05 # need to offset to get in the right spot
-                # print(f"Local Zs: {minZ} & {maxZ}")
+            # print(f"Start ({self.startPose.x()}, {self.startPose.y()}), or ({u1}, {v1})")
+            # print(f"End ({self.lastPose.x()}, {self.lastPose.y()}) or ({u2}, {v2})")
+            # returns intersect faces in local coordinates
+            intersectFaces = self.mesh.intersect_faces(u1=u1, v1=v1, u2=u2, v2=v2, projection=self.projection, view=self.view, model=self.model)
+            # intersectFaces = None
+            if intersectFaces is not None:
+                # Determine faces in a given region
+                self.cutReleaseTime = self.releaseTime
+                cutTime = self.cutReleaseTime - self.pressTime
+                self.cutSequenceDict["Cut Time"].append(cutTime)
+                sequence = len(self.cutSequenceDict["Cut Time"])
+                print(f"\nCut #{sequence} Time: {cutTime}")
 
 
-                # Check if the distance is too great between values as it shouldn't be larger than 0.15 at most
-                # print(maxZ - minZ)
-                if maxZ - minZ > 0.1:
-                    center = (maxZ + minZ) / 2
-                    # print(f"Center {center}")
-                    minZ = center - ((maxZ + minZ) / 5)
-                    # print(f"MinZ {minZ} and MaxZ {maxZ}")
-                    maxZ = center + ((maxZ + minZ) / 5)
+                betweenCutTime = self.pressTime - self.endCutTime
+                print(f"Time Between Cuts {sequence-1} and {sequence}: {betweenCutTime}")
+                self.cutSequenceDict["Between Cut Time"].append(betweenCutTime)
+
+                dirPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
+                dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
+                depth, intercept = self.interception(origin=self.camera_pos, rayDirection=dir, faces=intersectFaces)
+                # Need to pass in the vertices to the code
+                if len(intercept) == 0:
+                    print("No intercept detected")
+                else:
+                    # Now I need to find the min and max z but max their value slightly larger for the rectangle
+                    # Depth given in world space
+
+                    # TURN THE DRAWLINES TO TRUE SO IT DRAWS ON SCREEN
+                    if self.screenType == "draw_tutorial" or self.screenType == "prune":
+                        self.drawLines = True
                     
+                    minZ = np.min(depth) 
+                    maxZ = np.max(depth) + 0.05 # need to offset to get in the right spot
+                    # print(f"Local Zs: {minZ} & {maxZ}")
 
-                # See the distance:
-                drawPts = self.determine_draw_plane(self.startPose, self.lastPose, u1, v1, minZ, u2, v2, maxZ)
-                self.addDrawVertices(drawPts)
 
-                # UPDATE VBO TO INCORPORATE THE NEW VERTICES
-                gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
+                    # Check if the distance is too great between values as it shouldn't be larger than 0.15 at most
+                    # print(maxZ - minZ)
+                    if maxZ - minZ > 0.1:
+                        center = (maxZ + minZ) / 2
+                        # print(f"Center {center}")
+                        minZ = center - ((maxZ + minZ) / 5)
+                        # print(f"MinZ {minZ} and MaxZ {maxZ}")
+                        maxZ = center + ((maxZ + minZ) / 5)
+                        
 
-        # print(f"Total time for draw: {time.time() - start}\n")
+                    # See the distance:
+                    cubeVertices, vertices = self.determine_draw_plane(self.startPose, self.lastPose, u1, v1, minZ, u2, v2, maxZ)
+                    """
+                    TODO: See if I need to translate the points back to world frame for  storing before writing to a mesh file
+                    """
+                    print(f"Vertices: {vertices}")
+                    self.cutSequenceDict["Vertices"].append(vertices)
 
-        self.update()              
+                    self.addDrawVertices(cubeVertices)
+
+                    # UPDATE VBO TO INCORPORATE THE NEW VERTICES
+                    gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
+
+            # print(f"Total time for draw: {time.time() - start}\n")
+            self.crossYMenu = True
+            self.update()              
                              
 
     ###############################################
@@ -2456,18 +2667,33 @@ class Test(QOpenGLWidget):
         self.wantedFeature = feature
         self.update() # Update the screen to draw the feature
 
-    def setPenColor(self, option):
-        print(f"Draw Count (Before Pen Color): {self.drawCount}")
-        if option == "Branch Vigor":
+    def setPenColor(self, decision):
+        if decision == "Branch Vigor":
             self.penColor = self.vigorColor
-        elif option == "Canopy Cut":
+            self.decision = "Vigor"
+
+        elif decision == "Canopy Cut":
             self.penColor = self.canopyColor
+            self.decision = "Canopy"
         else:
             self.penColor = self.spacingColor
+            self.decision = "Spacing"
+        
+        self.cutSequenceDict["Rule"].append(self.decision)
+        sequence = len(self.cutSequenceDict["Rule"])
+        print(f"Cut #{sequence}: {self.decision}")
+        self.cutSequenceDict["Sequence"].append(sequence) # what order of cuts are we using. 
+        # self.update()s
 
-        # print(f"Set Pen Color:\n{self.drawVertices[:self.drawCount]}")
-        print(f"Draw Count (After Pen Color): {self.drawCount}")
-        # self.update()
+
+    #############################################
+    # DESCRIPTION: write the participant's cuts to a mesh file 
+    #   - save mesh file of cuts as PID_#_treeName.obj in a folder under PID_#
+    #############################################
+    def saveCutDecisions(self):
+        # Loop through dictionary containing: Cut decision (in order) and their vertices
+        # Write the values to the same mesh file
+        return 
 
 
 # QWidget 
@@ -3000,35 +3226,35 @@ class Window(QMainWindow):
             self.undoButton.clicked.connect(self.undoClicked)
             self.hLayout.addWidget(self.undoButton)
 
-            font = QFont()
-            font.setPointSize(font.pointSize()+2)
-            self.answerText = QLabel("")
+            # font = QFont()
+            # font.setPointSize(font.pointSize()+2)
+            # self.answerText = QLabel("")
 
-            # create a dropdown menu with different color
-            self.pruningRules = ["Vigor", "Canopy", "Spacing"]
+            # # create a dropdown menu with different color
+            # self.pruningRules = ["Vigor", "Canopy", "Spacing"]
 
-            self.penLabel = QLabel("Pruning Cut:")
-            self.penLabel.setStyleSheet("font-size: 25px;" "font:bold;" "color: white")
-            self.hLayout.addWidget(self.penLabel)
+            # self.penLabel = QLabel("Pruning Cut:")
+            # self.penLabel.setStyleSheet("font-size: 25px;" "font:bold;" "color: white")
+            # self.hLayout.addWidget(self.penLabel)
 
-            self.vigorRadio = QRadioButton("Branch Vigor")
-            self.vigorRadio.setChecked(True)
-            self.vigorRadio.setStyleSheet("font-size: 20px;" "color: #ff5f1f")
-            self.vigorRadio.toggled.connect(lambda: self.radioButtonClicked("Branch Vigor"))
+            # self.vigorRadio = QRadioButton("Branch Vigor")
+            # self.vigorRadio.setChecked(True)
+            # self.vigorRadio.setStyleSheet("font-size: 20px;" "color: #ff5f1f")
+            # self.vigorRadio.toggled.connect(lambda: self.radioButtonClicked("Branch Vigor"))
             
-            self.canopyRadio = QRadioButton("Canopy Cut")
-            self.canopyRadio.setStyleSheet("font-size: 20px;" "color: #00f0ff")
-            self.canopyRadio.toggled.connect(lambda: self.radioButtonClicked("Canopy Cut"))
+            # self.canopyRadio = QRadioButton("Canopy Cut")
+            # self.canopyRadio.setStyleSheet("font-size: 20px;" "color: #00f0ff")
+            # self.canopyRadio.toggled.connect(lambda: self.radioButtonClicked("Canopy Cut"))
             
-            self.spacingRadio = QRadioButton("Bud Spacing")
-            self.spacingRadio.setStyleSheet("font-size: 20px;" "color: #21fc0d")
-            self.spacingRadio.toggled.connect(lambda: self.radioButtonClicked("Bud Spacing"))
+            # self.spacingRadio = QRadioButton("Bud Spacing")
+            # self.spacingRadio.setStyleSheet("font-size: 20px;" "color: #21fc0d")
+            # self.spacingRadio.toggled.connect(lambda: self.radioButtonClicked("Bud Spacing"))
 
-            self.hLayout.addWidget(self.vigorRadio)
-            self.hLayout.addWidget(self.canopyRadio)
-            self.hLayout.addWidget(self.spacingRadio)
+            # self.hLayout.addWidget(self.vigorRadio)
+            # self.hLayout.addWidget(self.canopyRadio)
+            # self.hLayout.addWidget(self.spacingRadio)
 
-            self.radioButtonClicked("Branch Vigor")
+            # self.radioButtonClicked("Branch Vigor")
 
             
 
@@ -3072,7 +3298,6 @@ class Window(QMainWindow):
 
     def radioButtonClicked(self, option):
         if option:
-            print(f"Pruning Decision: {option}\n")
             self.glWidgetTree.setPenColor(option)
 
 
@@ -3836,6 +4061,16 @@ class Window(QMainWindow):
         if self.interacted and self.isCorrect:    
             # self.nextLabel.setText("Loading Next Page")
             self.pageIndex += 1 # increment the page by 1
+
+
+            # If the screenType is "prune" then we need to save the user's cutSequenceDict from the glWidget
+            # save the values under the tree name 
+            if self.screenType == "draw_tutorial" or self.screenType == "prune":
+                print(f"\nUser's data: {self.curTree[:-4]}")
+                print(self.glWidgetTree.cutSequenceDict)
+
+            
+
 
             if self.isCorrect:
                 self.isCorrect = False

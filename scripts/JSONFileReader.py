@@ -38,6 +38,14 @@ class JSONFile:
                 self.data = json.load(fp)
         except FileNotFoundError:
             print(f"Could not find the file at {self.pname}")
+
+    
+    def write_file(self, userData, pid):
+        fname = "PID_" + str(pid) + "_data.json"
+        
+        with open(fname, "w") as file:
+            json.dumps(userData, file, indent=4)
+            
                 
 
 if __name__ == "__main__":
