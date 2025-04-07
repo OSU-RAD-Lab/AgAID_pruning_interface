@@ -182,13 +182,10 @@
         },
 
 
-
-
-
         {
             "Module": "End of Pilot Study", 
             "Your Task": "Thank you for participating!",
-            "Layout": "end_section",
+            "Layout": "end",
             "Tree File": "textureTree.obj",
             "File Directory": ""
         } 

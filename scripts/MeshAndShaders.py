@@ -2,7 +2,7 @@
 
 import sys
 sys.path.append('../')
-
+import os
 
 from PySide6 import QtCore, QtGui, QtOpenGL
 
@@ -127,50 +127,80 @@ class Mesh(QWidget):
     # INPUT:
     #   - treeName: a String representing the name of the .obj tree file participants interacted with (excluding .obj)
     #   - pid: an Int representing the participant's ID number 
-    #   - cuts: a List of dictionaries containing the sequence of cuts, a participant's cut decision,
+    #   - cutDictionary: a List of dictionaries containing the sequence of cuts, a participant's cut decision,
     #                and vertices of the cut.
     # OUTPUT: None        
     #############################################
-    def write_mesh_file(self, treeName, pid, cuts):
+    def write_mesh_file(self, treeName, pid, cutDictionary):
         # Loop through dictionary containing: Cut decision (in order) and their vertices
         # Write the objects to the same mesh file 
         fname = "PID_" + str(pid) + "_" + treeName + ".obj"
         
-        for idx, cut in enumerate(cuts):
-            objName = "Cut_" + str(idx+1) + "_" + cuts["Decision"]
+        # loop over all the cuts and through their vertices to add the files
+        # create the directory if it doesn't exist for the participant
+        pid_directory = f"../user_data/PID_{pid}"
 
-            # vertices first obj has vertices 1-8
-            # obj 2 has vertices 9-16
-            # remember that x increases as you go right and y increases as you go down
-            """ 
-            Start object line with o Name
-            Uses the same VN for all vertices
-            vn 0.0000 -1.0000 0.0000
-            vn 0.0000 1.0000 0.0000
-            vn 1.0000 0.0000 0.0000
-            vn -0.0000 -0.0000 1.0000
-            vn -1.0000 -0.0000 -0.0000
-            vn 0.0000 0.0000 -1.0000
+        # Create a directory for the PID if it doesn't exist
+        if not os.path.exists(pid_directory):
+            os.makedirs(pid_directory)
+        
 
-            Cube Faces: v/vt/vn
+        file = pid_directory + "/" + fname
 
-              2________4
-              /|      /|
-             /_|_____/ |
-             1       3 |
-             | |____|__|
-             | 6    |  8
-             | /    | /
-             |/_____|/
-             5       7
+        with open(file, "a") as mesh:
             
-            f 1//1 2//1 3//1 4//1
-            f 5//2 8//2 7//2 6//2
-            f 1//3 5//3 6//3 2//3
-            f 2//4 6//4 7//4 3//4
-            f 3//5 7//5 8//5 4//5
-            f 5//6 1//6 4//6 8//6
-            """
+            for idx in range(len(cutDictionary["Rule"])):
+                objName = "Cut_" + str(idx+1) + "_" + cutDictionary["Rule"][idx]
+
+                # loop over the vertices to generate the mesh file.
+                # always 8 vertices in the data!!
+
+                mesh.write(f"o {objName}\n") # tell what object it is first
+                
+
+                # vertices first obj has vertices 1-8
+                for v in cutDictionary["Vertices"][idx]:
+                    mesh.write(f"v {v[0]} {v[1]} {v[2]}\n")
+
+                # modify face value by shifting it 8 for each new object in the mesh
+                mesh.write(f"f {(1 + idx * 8)} {(2 + idx * 8)} {(3 + idx * 8)} {(4 + idx * 8)}\n")
+                mesh.write(f"f {(5 + idx * 8)} {(8 + idx * 8)} {(7 + idx * 8)} {(6 + idx * 8)}\n")
+                mesh.write(f"f {(1 + idx * 8)} {(5 + idx * 8)} {(6 + idx * 8)} {(2 + idx * 8)}\n")
+                mesh.write(f"f {(2 + idx * 8)} {(6 + idx * 8)} {(7 + idx * 8)} {(3 + idx * 8)}\n")
+                mesh.write(f"f {(3 + idx * 8)} {(7 + idx * 8)} {(8 + idx * 8)} {(4 + idx * 8)}\n")
+                mesh.write(f"f {(5 + idx * 8)} {(1 + idx * 8)} {(4 + idx * 8)} {(8 + idx * 8)}\n")
+                
+    
+                """ 
+                Start object line with o Name
+                Uses the same VN for all vertices
+                vn 0.0000 -1.0000 0.0000
+                vn 0.0000 1.0000 0.0000
+                vn 1.0000 0.0000 0.0000
+                vn -0.0000 -0.0000 1.0000
+                vn -1.0000 -0.0000 -0.0000
+                vn 0.0000 0.0000 -1.0000
+
+                Cube Faces: v//vn
+
+                 2________4
+                 /|      /|
+                /_|_____/ |
+                1       3 |
+                | |____|__|
+                | 6    |  8
+                | /    | /
+                |/_____|/
+                5       7
+                
+                # I DON'T INCLUDE NORMALS
+                f 1//1 2//1 3//1 4//1
+                f 5//2 8//2 7//2 6//2
+                f 1//3 5//3 6//3 2//3
+                f 2//4 6//4 7//4 3//4
+                f 3//5 7//5 8//5 4//5
+                f 5//6 1//6 4//6 8//6
+                """
 
 
     def split_vertices(self):

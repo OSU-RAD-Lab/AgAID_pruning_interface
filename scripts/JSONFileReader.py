@@ -43,7 +43,7 @@ class JSONFile:
     def write_file(self, userData, pid):
         fname = "PID_" + str(pid) + "_data.json"
         
-        with open(fname, "w") as file:
+        with open(fname, "a") as file:
             json.dumps(userData, file, indent=4)
             
                 

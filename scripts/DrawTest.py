@@ -5,6 +5,7 @@ sys.path.append('../')
 import os
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
+import argparse
 
 from PySide6 import QtCore, QtGui, QtOpenGL
 
@@ -2700,11 +2701,12 @@ class Test(QOpenGLWidget):
 # QtOpenGL.QMainWindow 
 class Window(QMainWindow):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, pid=None):
         QMainWindow.__init__(self, parent)
         # Practice loading in data
         self.fname = "textureTree.obj"
         self.jsonData = JSONFile("objFileDescription.json", "o").data
+        self.pid = pid
 
         # QtOpenGL.QMainWindow.__init__(self)
         # self.resize(1000, 1000)
@@ -3143,7 +3145,7 @@ class Window(QMainWindow):
             self.glWidgetTree.setScreenProperties(screenType=self.screenType, termDraw=True)
             self.termDraw = True
         
-        elif self.screenType == "end_section":
+        elif self.screenType == "end_section" or self.screenType == "end":
             self.isCorrect = True
             self.interacted = True
             self.screen_width = 3
@@ -4062,13 +4064,20 @@ class Window(QMainWindow):
             # self.nextLabel.setText("Loading Next Page")
             self.pageIndex += 1 # increment the page by 1
 
+            treeName = self.curTree[:-4] # remove .obj from end
 
             # If the screenType is "prune" then we need to save the user's cutSequenceDict from the glWidget
             # save the values under the tree name 
             if self.screenType == "draw_tutorial" or self.screenType == "prune":
-                print(f"\nUser's data: {self.curTree[:-4]}")
-                print(self.glWidgetTree.cutSequenceDict)
+                
+                print(f"\nUser's data: {treeName}")
+                cutData = self.glWidgetTree.cutSequenceDict
+                print(cutData)
 
+                self.treeMesh.write_mesh_file(treeName=treeName, pid=self.pid, cutDictionary=cutData)
+
+            if self.screenType == "end":
+                JSONFile.write_file(self.userData, pid=self.pid)
             
 
 
@@ -4162,7 +4171,18 @@ if __name__ == '__main__':
     # QSurfaceFormat.setDefaultFormat(fmt)
 
 
-    window = Window() # GLDemo()
+    # Create the flags needed to get the pid 
+
+    parser = argparse.ArgumentParser(description="Participant ID")
+    parser.add_argument('--pid', help="participant identification")
+
+    args = parser.parse_args()
+    if args.pid:
+        pid = args.pid
+    else:
+        pid = "unknown"
+
+    window = Window(pid=pid) # GLDemo()
     # window = MainWindow()
     window.show()
     # sys.exit(app.exec_())
