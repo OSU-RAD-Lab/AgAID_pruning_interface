@@ -19,7 +19,7 @@ out vec2 TexCoord;
 void main()
 {
     
-    FragPos = vec3(model * vec4(vertexPos, 1.0)); // translates to workd space
+    FragPos = vec3(model * vec4(vertexPos, 1.0)); // translates to world space
     Normal = aNormal; 
     gl_Position = projection * view * model * vec4(vertexPos, 1.0); 
     TexCoord = aTexCoord; // set the coordinates

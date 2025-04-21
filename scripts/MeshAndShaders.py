@@ -33,12 +33,12 @@ import pywavefront
 import numpy as np
 import ctypes                 # to communicate with c code under the hood
 import pyrr.matrix44 as mt
-from threading import Thread
+# from threading import Thread
 import time
 
-from multiprocessing import Process, Value, Array
-from freetype.raw import * # allows us to display text on the screen
-from freetype import *
+# from multiprocessing import Process, Value, Array
+# from freetype.raw import * # allows us to display text on the screen
+# from freetype import *
 
 #########################################
 #
@@ -80,14 +80,14 @@ class Shader:
 
 
 class Mesh(QWidget):
-    def __init__(self, load_obj = None):
+    def __init__(self, load_obj = None, color=False):
         if load_obj is None:
             load_obj = "/obj_files/testMonkey.obj"
         else:
             self.load_obj = load_obj
         
         self.mesh = None
-        self.vertices = None
+        self.vertices = []
         self.faces = None
         self.mesh_list = None
         self.normals = None
@@ -98,6 +98,7 @@ class Mesh(QWidget):
         self.faceCount = 0
         self.clipFaces = []
         self.centerFaces = None
+        self.color = color
         # Load and set the vertices
         
         self.load_mesh(self.load_obj)
@@ -116,8 +117,43 @@ class Mesh(QWidget):
         self.faces = self.mesh_list[0].faces
         # self.normals = self.mesh_list[0].normals
         # print(self.mesh_list[0].materials[0].vertices[:10])
-        self.vertices = self.mesh_list[0].materials[0].vertices # gets the vertices in [nx, ny, nz, x, y, z] format
+        # testVertices = []
+        # for name, material in self.mesh.materials.items():
+        #     # print(f"Vertices of {self.load_obj}: {material.vertices[:8]}\n")
+        #     # testVertices.extend(material.vertices[:8])
+        #     verticesWithColor = material.vertices
+        #     if self.color:
+        #         # print(f"Diffuse color for {self.load_obj}: {material.diffuse}")
+        #         color = material.diffuse[:3]
+        #         verticesWithColor = self.add_color_vertices(color, material.vertices)
+
+        # self.vertices.extend(verticesWithColor)
+        # if self.color:
+        #     print(self.vertices[:22])
+        
+        # gets the vertices in [tx, ty, nx, ny, nz, x, y, z] format or in
+        # OR get the vertices in [tx, ty, r, g, b, nx, ny, nz, x, y, z] T2, C3, N3, V3
+        
+        self.vertices = self.mesh_list[0].materials[0].vertices 
         self.count = len(self.mesh.vertices)
+        # self.count = len(self.vertices)
+
+
+    def add_color_vertices(self, color, vertices):
+        # loop over all the vertices
+        counts = len(vertices) / 8 # 8 for 2T, 3NF, 3V
+        colorVertices = np.zeros(int(counts * 11)) # 11 for 2T, 3C, 2NF, 3V
+        stride = 11
+        for i in range(int(counts)):
+            cStart = i*stride
+            vStart = 1*8
+            # get the texture coordinate
+            colorVertices[cStart:cStart+2] = vertices[vStart:vStart+2]
+            colorVertices[cStart+2:cStart+5] = color
+            # print(colorVertices[cStart+5:cStart+11])
+            colorVertices[cStart+5:cStart+11] = vertices[vStart+2:vStart+8]
+
+        return colorVertices
 
 
     #############################################
@@ -131,10 +167,10 @@ class Mesh(QWidget):
     #                and vertices of the cut.
     # OUTPUT: None        
     #############################################
-    def write_mesh_file(self, treeName, pid, cutDictionary):
+    def write_mesh_file(self, treeName, pid, pruningData):
         # Loop through dictionary containing: Cut decision (in order) and their vertices
         # Write the objects to the same mesh file 
-        fname = "PID_" + str(pid) + "_" + treeName + ".obj"
+        fname = "PID_" + str(pid) + "_" + treeName 
         
         # loop over all the cuts and through their vertices to add the files
         # create the directory if it doesn't exist for the participant
@@ -145,62 +181,63 @@ class Mesh(QWidget):
             os.makedirs(pid_directory)
         
 
-        file = pid_directory + "/" + fname
+        for attempt, cutDictionary in enumerate(pruningData):
+            file = pid_directory + "/" + fname + "_Attempt_" + str(attempt+1) + ".obj"
 
-        with open(file, "a") as mesh:
-            
-            for idx in range(len(cutDictionary["Rule"])):
-                objName = "Cut_" + str(idx+1) + "_" + cutDictionary["Rule"][idx]
-
-                # loop over the vertices to generate the mesh file.
-                # always 8 vertices in the data!!
-
-                mesh.write(f"o {objName}\n") # tell what object it is first
+            with open(file, "a") as mesh:
                 
+                for idx in range(len(cutDictionary["Rule"])):
+                    objName = "Cut_" + str(idx+1) + "_" + cutDictionary["Rule"][idx]
 
-                # vertices first obj has vertices 1-8
-                for v in cutDictionary["Vertices"][idx]:
-                    mesh.write(f"v {v[0]} {v[1]} {v[2]}\n")
+                    # loop over the vertices to generate the mesh file.
+                    # always 8 vertices in the data!!
 
-                # modify face value by shifting it 8 for each new object in the mesh
-                mesh.write(f"f {(1 + idx * 8)} {(2 + idx * 8)} {(3 + idx * 8)} {(4 + idx * 8)}\n")
-                mesh.write(f"f {(5 + idx * 8)} {(8 + idx * 8)} {(7 + idx * 8)} {(6 + idx * 8)}\n")
-                mesh.write(f"f {(1 + idx * 8)} {(5 + idx * 8)} {(6 + idx * 8)} {(2 + idx * 8)}\n")
-                mesh.write(f"f {(2 + idx * 8)} {(6 + idx * 8)} {(7 + idx * 8)} {(3 + idx * 8)}\n")
-                mesh.write(f"f {(3 + idx * 8)} {(7 + idx * 8)} {(8 + idx * 8)} {(4 + idx * 8)}\n")
-                mesh.write(f"f {(5 + idx * 8)} {(1 + idx * 8)} {(4 + idx * 8)} {(8 + idx * 8)}\n")
-                
-    
-                """ 
-                Start object line with o Name
-                Uses the same VN for all vertices
-                vn 0.0000 -1.0000 0.0000
-                vn 0.0000 1.0000 0.0000
-                vn 1.0000 0.0000 0.0000
-                vn -0.0000 -0.0000 1.0000
-                vn -1.0000 -0.0000 -0.0000
-                vn 0.0000 0.0000 -1.0000
+                    mesh.write(f"o {objName}\n") # tell what object it is first
+                    
 
-                Cube Faces: v//vn
+                    # vertices first obj has vertices 1-8
+                    for v in cutDictionary["Vertices"][idx]:
+                        mesh.write(f"v {v[0]} {v[1]} {v[2]}\n")
 
-                 2________4
-                 /|      /|
-                /_|_____/ |
-                1       3 |
-                | |____|__|
-                | 6    |  8
-                | /    | /
-                |/_____|/
-                5       7
-                
-                # I DON'T INCLUDE NORMALS
-                f 1//1 2//1 3//1 4//1
-                f 5//2 8//2 7//2 6//2
-                f 1//3 5//3 6//3 2//3
-                f 2//4 6//4 7//4 3//4
-                f 3//5 7//5 8//5 4//5
-                f 5//6 1//6 4//6 8//6
-                """
+                    # modify face value by shifting it 8 for each new object in the mesh
+                    mesh.write(f"f {(1 + idx * 8)} {(2 + idx * 8)} {(3 + idx * 8)} {(4 + idx * 8)}\n")
+                    mesh.write(f"f {(5 + idx * 8)} {(8 + idx * 8)} {(7 + idx * 8)} {(6 + idx * 8)}\n")
+                    mesh.write(f"f {(1 + idx * 8)} {(5 + idx * 8)} {(6 + idx * 8)} {(2 + idx * 8)}\n")
+                    mesh.write(f"f {(2 + idx * 8)} {(6 + idx * 8)} {(7 + idx * 8)} {(3 + idx * 8)}\n")
+                    mesh.write(f"f {(3 + idx * 8)} {(7 + idx * 8)} {(8 + idx * 8)} {(4 + idx * 8)}\n")
+                    mesh.write(f"f {(5 + idx * 8)} {(1 + idx * 8)} {(4 + idx * 8)} {(8 + idx * 8)}\n")
+                    
+        
+                    """ 
+                    Start object line with o Name
+                    Uses the same VN for all vertices
+                    vn 0.0000 -1.0000 0.0000
+                    vn 0.0000 1.0000 0.0000
+                    vn 1.0000 0.0000 0.0000
+                    vn -0.0000 -0.0000 1.0000
+                    vn -1.0000 -0.0000 -0.0000
+                    vn 0.0000 0.0000 -1.0000
+
+                    Cube Faces: v//vn
+
+                    2________4
+                    /|      /|
+                    /_|_____/ |
+                    1       3 |
+                    | |____|__|
+                    | 6    |  8
+                    | /    | /
+                    |/_____|/
+                    5       7
+                    
+                    # I DON'T INCLUDE NORMALS
+                    f 1//1 2//1 3//1 4//1
+                    f 5//2 8//2 7//2 6//2
+                    f 1//3 5//3 6//3 2//3
+                    f 2//4 6//4 7//4 3//4
+                    f 3//5 7//5 8//5 4//5
+                    f 5//6 1//6 4//6 8//6
+                    """
 
 
     def split_vertices(self):

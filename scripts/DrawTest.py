@@ -102,6 +102,9 @@ class Test(QOpenGLWidget):
         self.toPrune = False
         self.toBinFeatures = False
         self.termDraw = False
+        self.toExplain = False
+
+        self.userPruningCuts = []
 
         self.manipulation = manipulation
         self.screenType = screenType
@@ -128,12 +131,16 @@ class Test(QOpenGLWidget):
         self.red_color = [1, 0, 0]
         self.tree_color_light =  [0.447, 0.360, 0.259] # [0.670, 0.549, 0.416]
 
+
+        # Set for temp tree
         self.WHOLE_TREE_DEPTH = -5.0
         self.TREE_SECTION_DEPTH = -1.5
         self.TREE_DY = -2
         self.TREE_SECTION_DX = -0.25 # -0.25
         self.TREE_SECTION_ASPECT = 1.5
         
+        self.treeSectionTranslate = [self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]
+        self.wholeTreeTranslate = [0, self.TREE_DY, self.WHOLE_TREE_DEPTH]
 
         self.cutNumber = 0 # keeping track of sequence of cuts
 
@@ -149,6 +156,8 @@ class Test(QOpenGLWidget):
         # Get the mesh and vertices for the mesh loaded in from json file
         # self.mesh = Mesh(self.fname)
         self.mesh = meshDictionary["Tree"]
+        self.treeSectionTranslate = meshDictionary["Section Translate"]
+        self.wholeTreeTranslate = meshDictionary["Whole Translate"]
         self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
         self.texture = None
         self.vao = None
@@ -163,16 +172,18 @@ class Test(QOpenGLWidget):
         self.decision = "" # "Vigor"
         self.crossYMenu = False # don't display the 
 
-        # for documenting the decisions users make
+        self.userDrawn = False # Has the user drawn anything yet? 
 
+        # for documenting the decisions users make when pruning
         self.cutSequenceDict = {
             "Rule": [],
             "Sequence": [],
             "Vertices": [],
             "Cut Time": [],
             "Rule Time": [],
-            "Between Cut Time": []
+            "Between Time": [],
         }
+        self.endCutTime = time.time()
         
         
         self.crossyTextBounds = {
@@ -280,7 +291,6 @@ class Test(QOpenGLWidget):
         self.drawTerms = [False] * len(self.meshes) # Array of what term to highlight/draw
         
 
-
         # DRAWING VALUES
         self.drawVAO = None
         self.drawVBO = None
@@ -306,6 +316,37 @@ class Test(QOpenGLWidget):
         self.labelVAO = None
         self.labelVBO = None
         self.labelProgram = None
+
+
+        # Loading in the cuts for the trees
+        self.vigorCutsMesh = meshDictionary["Vigor Cuts"]
+        if self.vigorCutsMesh is not None:
+            self.vigorCutsVertices = np.array(self.vigorCutsMesh.vertices, dtype=np.float32)
+        self.vigorCutsVAO = None
+        self.vigorCutsVBO = None
+
+        self.canopyCutsMesh = meshDictionary["Canopy Cuts"]
+        if self.canopyCutsMesh is not None:
+            self.canopyCutsVertices = np.array(self.canopyCutsMesh.vertices, dtype=np.float32)
+        self.canopyCutsVAO = None
+        self.canopyCutsVBO = None
+
+        self.budSpacingCutsMesh = meshDictionary["Bud Spacing Cuts"]
+        if self.budSpacingCutsMesh is not None:
+            self.budSpacingCutsVertices = np.array(self.budSpacingCutsMesh.vertices, dtype=np.float32)
+        self.budSpacingCutsVAO = None
+        self.budSpacingCutsVBO = None
+
+
+
+        # self.pruningCutsMesh = meshDictionary["Cuts"]
+        # self.pruningCutsVertices = np.array(self.pruningCutsMesh.vertices, dtype=np.float32)
+        # self.pruningCutVAO = None
+        # self.pruningCutVBO = None
+
+
+        self.pruningCutProgram = None
+        self.branchTextPoses = meshDictionary["Text Pose"]
         
         # Get more information from the json file
         self.setFeatureLocations()
@@ -341,7 +382,7 @@ class Test(QOpenGLWidget):
             self.manipulationIndex.emit(index)
             self.update()
 
-    def setScreenProperties(self, screenType, toManipulate=False, toBin=False, toBinFeatures=False, toPrune=False, toPruneBin=False, drawLines=False, termDraw=False):
+    def setScreenProperties(self, screenType, toManipulate=False, toBin=False, toBinFeatures=False, toPrune=False, toPruneBin=False, drawLines=False, termDraw=False, toExplain=False):
         self.toManipulate = toManipulate
         self.toBin = toBin
         self.toBinFeatures = toBinFeatures
@@ -349,6 +390,7 @@ class Test(QOpenGLWidget):
         self.toPruneBin = toPruneBin
         self.drawLines = drawLines
         self.termDraw = termDraw
+        self.toExplain = toExplain
         self.screenType = screenType
 
     def loadNewJSONFile(self, jsonData):
@@ -366,11 +408,38 @@ class Test(QOpenGLWidget):
         print("LOADING NEW MESH DICTIONARY VALUES")
         if meshDictionary["Tree"] is not None:
             self.mesh = meshDictionary["Tree"]
+            self.treeSectionTranslate = meshDictionary["Section Translate"]
+            self.wholeTreeTranslate = meshDictionary["Whole Translate"]
             self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
             self.texture = None
             self.vao = None
             self.vbo = None
+
+            # load all the cuts for the tree
+            self.vigorCutsMesh = meshDictionary["Vigor Cuts"]
+            if self.vigorCutsMesh is not None:
+                self.vigorCutsVertices = np.array(self.vigorCutsMesh.vertices, dtype=np.float32)
+            self.vigorCutsVAO = None
+            self.vigorCutsVBO = None
+
+            self.canopyCutsMesh = meshDictionary["Canopy Cuts"]
+            if self.canopyCutsMesh is not None:
+                self.canopyCutsVertices = np.array(self.canopyCutsMesh.vertices, dtype=np.float32)
+            self.canopyCutsVAO = None
+            self.canopyCutsVBO = None
+
+            self.budSpacingCutsMesh = meshDictionary["Bud Spacing Cuts"]
+            if self.budSpacingCutsMesh is not None:
+                self.budSpacingCutsVertices = np.array(self.budSpacingCutsMesh.vertices, dtype=np.float32)
+            self.budSpacingCutsVAO = None
+            self.budSpacingCutsVBO = None
+            
             self.initializeTreeMesh()
+            self.initializePruningCutMesh()
+
+            # reset all the cut sequence data so it is empty for the new tree
+            self.userPruningCuts = []
+            self.resetCutSequence() 
         
         if meshDictionary["Branches"] is not None:
             # TO DO, Make the manipulation variable True
@@ -562,10 +631,12 @@ class Test(QOpenGLWidget):
             # horizontal = mt.create_from_x_rotation(hAngle)
 
             if self.wholeView: # looking at the whole tree view
-                treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+                treeTranslation = np.transpose(mt.create_from_translation(self.wholeTreeTranslate))
+                # treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH])) # 
                 # negTreeTranslation = np.transpose(mt.create_from_translation([0, 0, -self.WHOLE_TREE_DEPTH]))
             else:
-                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH])) 
+                treeTranslation = np.transpose(mt.create_from_translation(self.treeSectionTranslate))
+                # treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH])) 
                 # negTreeTranslation = np.transpose(mt.create_from_translation([-self.TREE_SECTION_DX, 0, -self.TREE_SECTION_DEPTH])) 
 
 
@@ -595,7 +666,7 @@ class Test(QOpenGLWidget):
                 # print(f"Angle X: {xRad}, Angle Y: {yRad}, Angle Z: {zRad}")
 
 
-                branchTranslation = np.transpose(mt.create_from_translation([dx, dy - self.TREE_DY, dz]))
+                branchTranslation = np.transpose(mt.create_from_translation([dx, dy - self.treeSectionTranslate[1], dz])) # [dx, dy - self.TREE_DY, dz]
                 # branchTranslation = np.transpose(mt.create_from_translation([dx, dy, dz]))
                 branchRotation = mt.create_from_x_rotation(xRad) @ mt.create_from_y_rotation(yRad) @ mt.create_from_z_rotation(zRad) 
                 
@@ -627,8 +698,10 @@ class Test(QOpenGLWidget):
                 if self.screenType == "scale" and not self.wholeView:
                     vigorText = f"Branch Feature: {self.currentFeature}"
                     pruneText = f"Pruning Description: {self.pruneFeature}"
-                    _ = self.renderText(vigorText, x=450, y=200, scale=0.35, color=[1, 0.27, 0]) # 1400, 650  [1, 0.477, 0.706]
-                    _ = self.renderText(pruneText, x=450, y=170, scale=0.35, color=[1, 0.27, 0]) # 1400, 650
+
+
+                    _ = self.renderText(vigorText, x=(0.43310 * self.width), y=self.height - (0.24721 * self.height), scale=0.35, color=[1, 0.27, 0]) # 1400, 650  [1, 0.477, 0.706]
+                    _ = self.renderText(pruneText, x=(0.43310 * self.width), y=self.height - (0.21013 * self.height), scale=0.35, color=[1, 0.27, 0]) # 1400, 650
 
                 # elif self.screenType = "bin" and not self.wholeView:s
                 #     self.renderText("Branch", x=1200, y=820, scale=0.85, color=[1, 0, 0])
@@ -671,9 +744,11 @@ class Test(QOpenGLWidget):
             cameraRotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
 
             if self.wholeView: # looking at the whole tree view
-                treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+                treeTranslation = np.transpose(mt.create_from_translation(self.wholeTreeTranslate))
+                # treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
             else:
-                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH])) 
+                treeTranslation = np.transpose(mt.create_from_translation(self.treeSectionTranslate))
+                # treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH])) 
 
             
             for i in range(len(self.meshes)):
@@ -681,7 +756,9 @@ class Test(QOpenGLWidget):
                 # rotation = self.getMeshRotation(self.meshRotations[i], cameraRotation) 
                 # translation = self.getMeshTranslation(self.meshTranslations[i], treeTranslation)
                 dx = self.meshTranslations[i][0]
-                dy = self.meshTranslations[i][1] - self.TREE_DY# Need to compensate for the move up. We don't want the branch translated that far. 
+
+                # dy = self.meshTranslations[i][1] - self.TREE_DY
+                dy = self.meshTranslations[i][1] - self.treeSectionTranslate[1] # Need to compensate for the move up. We don't want the branch translated that far. 
                 dz = self.meshTranslations[i][2]
                 
                 branchTranslation = np.transpose(mt.create_from_translation([dx, dy, dz]))
@@ -744,9 +821,11 @@ class Test(QOpenGLWidget):
             cameraRotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
 
             if self.wholeView: # looking at the whole tree view
-                treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+                treeTranslation = np.transpose(mt.create_from_translation(self.wholeTreeTranslate))
+                # treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
             else:
-                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH])) 
+                treeTranslation = np.transpose(mt.create_from_translation(self.treeSectionTranslate))
+                # treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH])) 
 
             
             for i in range(len(self.meshes)):
@@ -754,7 +833,8 @@ class Test(QOpenGLWidget):
                 # rotation = self.getMeshRotation(self.meshRotations[i], cameraRotation) 
                 # translation = self.getMeshTranslation(self.meshTranslations[i], treeTranslation)
                 dx = self.meshTranslations[i][0]
-                dy = self.meshTranslations[i][1] - self.TREE_DY # NEed to compensate for the move up. We don't want the branch translated that far. 
+                # self.meshTranslations[i][1] - self.TREE_DY
+                dy = self.meshTranslations[i][1] - self.treeSectionTranslate[1] # NEed to compensate for the move up. We don't want the branch translated that far. 
                 dz = self.meshTranslations[i][2]
                 
                 branchTranslation = np.transpose(mt.create_from_translation([dx, dy, dz]))
@@ -784,7 +864,7 @@ class Test(QOpenGLWidget):
                 gl.glBindVertexArray(0) # unbind the vao
             
             # ADD LABELS:
-            binLabelLocs = [(450, 250), (600, 215), (750, 200)] # 
+            binLabelLocs = [(0.34377, 0.30902), (0.45836, 0.26576), (0.57295, 0.24721)] # 
             for i in range(len(self.meshes)):
                 branch_label = f"Branch {i+1}"
                 x, y = binLabelLocs[i]
@@ -793,7 +873,7 @@ class Test(QOpenGLWidget):
                 #                                     translation=treeTranslation,           # where in the tree
                 #                                     rotation=cameraRotation,               # just where is the camera location
                 #                                     scale=scale)              # how much to scale the branch by
-                _ = self.renderText(branch_label, x, y, 0.4, color=[0, 1, 0])
+                _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.4, color=[0, 1, 0])
 
 
         gl.glPopMatrix()
@@ -1263,11 +1343,15 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)
         
         # aspectWidth = self.width / self.height
-        scaleRatio = (self.WHOLE_TREE_DEPTH - self.TREE_SECTION_DEPTH) / self.WHOLE_TREE_DEPTH
+        # scaleRatio = (self.WHOLE_TREE_DEPTH - self.TREE_SECTION_DEPTH) / self.WHOLE_TREE_DEPTH
+        scaleRatio = (self.wholeTreeTranslate[2] - self.treeSectionTranslate[2]) / self.wholeTreeTranslate[2]
         scale = mt.create_from_scale([self.TREE_SECTION_ASPECT * scaleRatio, scaleRatio, 1]) # aspect, 1, 1
         
-        moveX = -1 * (self.WHOLE_TREE_DEPTH * (self.TREE_SECTION_DX / self.TREE_SECTION_DEPTH))  # Ratio to shift should be the same as x/z for tree section
-        translation = np.transpose(mt.create_from_translation([moveX, 0, self.WHOLE_TREE_DEPTH])) # -1*self.TREE_SECTION_DX, -1*self.TREE_DY
+        # moveX = -1 * (self.WHOLE_TREE_DEPTH * (self.TREE_SECTION_DX / self.TREE_SECTION_DEPTH))  # Ratio to shift should be the same as x/z for tree section
+        moveX = -1 * (self.wholeTreeTranslate[2] * (self.treeSectionTranslate[0] / self.treeSectionTranslate[2]))
+        
+        # translation = np.transpose(mt.create_from_translation([moveX, 0, self.WHOLE_TREE_DEPTH])) # -1*self.TREE_SECTION_DX, -1*self.TREE_DY
+        translation = np.transpose(mt.create_from_translation([moveX, 0, self.wholeTreeTranslate[2]]))
         model = translation @ scale # for rotating the modelView only want to translate and scale but not rotate
 
         gl.glUseProgram(self.boundBoxProgram)
@@ -1336,14 +1420,18 @@ class Test(QOpenGLWidget):
             # SET THE LIGHT COLOR
             # treeTranslation = np.transpose(mt.create_from_translation([0, 0, self.TREE_SECTION_DEPTH])) # self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH
             if self.wholeView:
-                treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+                # treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+                treeTranslation = np.transpose(mt.create_from_translation(self.wholeTreeTranslate))
             else:
-                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]))
+                # treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]))
+                treeTranslation = np.transpose(mt.create_from_translation(self.treeSectionTranslate))
 
             cutTranslation = np.transpose(mt.create_from_translation([0, 0, 0]))
             # Compensate for different types of prunes
             x = self.meshTranslations[self.index][0] # -0.1, x value should be the same
-            y = self.meshTranslations[self.index][1] - self.TREE_DY # 0.18
+
+            # self.meshTranslations[self.index][1] - self.TREE_DY # 0.18
+            y = self.meshTranslations[self.index][1] - self.treeSectionTranslate[1] # 0.18
             z = self.meshTranslations[self.index][2] # 0 same z value
             
             color = [1, 0, 0]
@@ -1484,9 +1572,11 @@ class Test(QOpenGLWidget):
             cameraRotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
 
             if self.wholeView: # looking at the whole tree view
-                treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+                # treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+                treeTranslation = np.transpose(mt.create_from_translation(self.wholeTreeTranslate))
             else:
-                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH])) 
+                # treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]))
+                treeTranslation = np.transpose(mt.create_from_translation(self.treeSectionTranslate)) 
 
             
             for i in range(len(self.meshes)):
@@ -1494,7 +1584,8 @@ class Test(QOpenGLWidget):
                 # rotation = self.getMeshRotation(self.meshRotations[i], cameraRotation) 
                 # translation = self.getMeshTranslation(self.meshTranslations[i], treeTranslation)
                 dx = self.meshTranslations[i][0]
-                dy = self.meshTranslations[i][1] - self.TREE_DY # Need to compensate for the move up. We don't want the branch translated that far. 
+                # dy = self.meshTranslations[i][1] - self.TREE_DY
+                dy = self.meshTranslations[i][1] - self.treeSectionTranslate[1] # Need to compensate for the move up. We don't want the branch translated that far. 
                 dz = self.meshTranslations[i][2]
                 
                 branchTranslation = np.transpose(mt.create_from_translation([dx, dy, dz]))
@@ -1529,12 +1620,12 @@ class Test(QOpenGLWidget):
                 gl.glBindVertexArray(0) # unbind the vao
             # END FOR
             if drawing:
-                binLabelLocs = [(350, 250), (500, 215), (650, 200)] # (1100, 650), (1450, 600), (1800, 550)
+                binLabelLocs = [(0.26737, 0.30902), (0.38197, 0.26576), (0.49656, 0.24721)] # (1100, 650), (1450, 600), (1800, 550)
                 for i in range(3):
                     branch_label = f"{self.wantedFeature} Branch {i+1}"
                     x, y = binLabelLocs[i]
                     scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
-                    _ = self.renderText(branch_label, x, y, 0.3)
+                    _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.3)
         # END IF
 
         gl.glPopMatrix()
@@ -1606,9 +1697,11 @@ class Test(QOpenGLWidget):
             # SET THE LIGHT COLOR
             # treeTranslation = np.transpose(mt.create_from_translation([0, 0, self.TREE_SECTION_DEPTH])) # self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH
             if self.wholeView:
-                treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+                # treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+                treeTranslation = np.transpose(mt.create_from_translation(self.wholeTreeTranslate))
             else:
-                treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]))
+                # treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]))
+                treeTranslation = np.transpose(mt.create_from_translation(self.treeSectionTranslate))
 
             
             for i in range(len(self.meshes)):
@@ -1616,7 +1709,8 @@ class Test(QOpenGLWidget):
                 if self.pruneBranches[i] != "Don't Prune":
                     # Compensate for different types of prunes
                     x = self.meshTranslations[i][0] # -0.1, x value should be the same
-                    y = self.meshTranslations[i][1] - self.TREE_DY # 0.18
+                    # self.meshTranslations[i][1] - self.TREE_DY
+                    y = self.meshTranslations[i][1] - self.treeSectionTranslate[1] # 0.18
                     z = self.meshTranslations[i][2] # 0 same z value
                     
                     color = [1, 0, 0]
@@ -1798,6 +1892,179 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)
 
 
+    def initializePruningCutMesh(self):
+        vertexShader = Shader("vertex", "simple_shader.vert ").shader # pruning_cuts_shader.vert    
+        fragmentShader = Shader("fragment", "simple_shader.frag").shader # pruning_cuts_shader.frag 
+
+        self.pruningCutProgram = gl.glCreateProgram()
+        gl.glAttachShader(self.pruningCutProgram, vertexShader)
+        gl.glAttachShader(self.pruningCutProgram, fragmentShader)
+        gl.glLinkProgram(self.pruningCutProgram)
+
+        gl.glUseProgram(self.pruningCutProgram)
+        # print(gl.glGetError())
+       
+        # create and bind the vertex attribute array
+        
+        if self.vigorCutsMesh is not None:
+            self.vigorCutsVAO = gl.glGenVertexArrays(1)
+            gl.glBindVertexArray(self.vigorCutsVAO)
+
+            # bind the vertex buffer object
+            self.vigorCutsVBO = gl.glGenBuffers(1)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vigorCutsVBO)
+            
+            # Reshape the list for loading into the vbo 
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, self.vigorCutsVertices.nbytes, self.vigorCutsVertices, gl.GL_STATIC_DRAW)
+            # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
+            stride = self.vigorCutsVertices.itemsize * 8 # times 8 given there are 8 vertices across texture coords, color, normals, and vertex positions before next set
+
+            gl.glEnableVertexAttribArray(0) # SETTING THE VERTEX POSITIONS
+            gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
+            
+            # Reset the buffers 
+            gl.glBindVertexArray(0)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
+        if self.canopyCutsMesh is not None:
+            self.canopyCutsVAO = gl.glGenVertexArrays(1)
+            gl.glBindVertexArray(self.canopyCutsVAO)
+
+            # bind the vertex buffer object
+            self.canopyCutsVBO = gl.glGenBuffers(1)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.canopyCutsVBO)
+            
+            # Reshape the list for loading into the vbo 
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, self.canopyCutsVertices.nbytes, self.canopyCutsVertices, gl.GL_STATIC_DRAW)
+            # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
+
+            stride = self.canopyCutsVertices.itemsize * 8 # times 8 given there are 8 vertices across texture coords, color, normals, and vertex positions before next set
+            gl.glEnableVertexAttribArray(0) # SETTING THE VERTEX POSITIONS
+            gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
+            
+            # Reset the buffers 
+            gl.glBindVertexArray(0)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+    
+        
+        if self.budSpacingCutsMesh is not None:
+            self.budSpacingCutsVAO = gl.glGenVertexArrays(1)
+            gl.glBindVertexArray(self.budSpacingCutsVAO)
+
+            # bind the vertex buffer object
+            self.budSpacingCutsVBO = gl.glGenBuffers(1)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.budSpacingCutsVBO)
+            
+            # Reshape the list for loading into the vbo 
+            gl.glBufferData(gl.GL_ARRAY_BUFFER, self.budSpacingCutsVertices.nbytes, self.budSpacingCutsVertices, gl.GL_STATIC_DRAW)
+            # gl.glBufferData(gl.GL_ARRAY_BUFFER, vertex.nbytes, self.vertex, gl.GL_STATIC_DRAW)
+
+            stride = self.budSpacingCutsVertices.itemsize * 8 # times 8 given there are 8 vertices across texture coords, color, normals, and vertex positions before next set
+            gl.glEnableVertexAttribArray(0) # SETTING THE VERTEX POSITIONS
+            gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(20)) # starts at position 5 with size 4 --> 5*4
+            
+            # Reset the buffers 
+            gl.glBindVertexArray(0)
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
+
+
+    def drawPruningCutMesh(self):
+        # print("Drawing pruning cuts")
+        gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+
+        hAngle = self.angle_to_radians(self.turntable)
+        vAngle = self.angle_to_radians(self.vertical)
+
+        rotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
+
+        if self.wholeView:
+            # treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+            translation = np.transpose(mt.create_from_translation(self.wholeTreeTranslate))
+        else:
+            # treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]))
+            translation = np.transpose(mt.create_from_translation(self.treeSectionTranslate))
+        # scale = mt.create_from_scale([-4.344, 4.1425, -9.99])
+        scale = mt.create_from_scale([1, 1, 1])
+
+        self.model = mt.create_identity()
+        self.model = translation @ rotation @ scale
+
+        # CALCULATE NEW VIEW
+        self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0) 
+
+        # print("\n",self.pruningCutsVertices[:22])
+    
+        gl.glUseProgram(self.pruningCutProgram) 
+        
+        modelLoc = gl.glGetUniformLocation(self.pruningCutProgram, "model")
+        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, self.model) # self.rotation
+
+        projLoc = gl.glGetUniformLocation(self.pruningCutProgram, "projection")
+        gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
+
+        viewLoc = gl.glGetUniformLocation(self.pruningCutProgram, "view")
+        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
+
+        # # self.draw(self.vertices)
+        if self.vigorCutsMesh is not None:
+            gl.glBindVertexArray(self.vigorCutsVAO)
+            gl.glPointSize(2.0)
+            colorLoc = gl.glGetUniformLocation(self.pruningCutProgram, "color")
+            gl.glUniform3fv(colorLoc, 1, self.vigorColor)
+            gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vigorCutsVertices.size / 3)) 
+
+            gl.glBindVertexArray(0) # unbind the vao
+        
+
+        if self.canopyCutsMesh is not None:
+            gl.glBindVertexArray(self.canopyCutsVAO)
+            gl.glPointSize(2.0)
+            colorLoc = gl.glGetUniformLocation(self.pruningCutProgram, "color")
+            gl.glUniform3fv(colorLoc, 1, self.canopyColor)
+            gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.canopyCutsVertices.size / 3)) 
+
+            gl.glBindVertexArray(0) # unbind the vao
+
+        if self.budSpacingCutsMesh is not None:
+            gl.glBindVertexArray(self.budSpacingCutsVAO)
+            gl.glPointSize(2.0)
+            colorLoc = gl.glGetUniformLocation(self.pruningCutProgram, "color")
+            gl.glUniform3fv(colorLoc, 1, self.spacingColor)
+            gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.budSpacingCutsVertices.size / 3)) 
+
+            gl.glBindVertexArray(0) # unbind the vao
+
+
+
+        gl.glPopMatrix() 
+
+        gl.glUseProgram(0)
+
+        # load in the screen where the text should be:
+        for num, pos in enumerate(self.branchTextPoses):
+            branchNum = num+1
+            
+           # Poses are the ration between of width on the screen 
+           # If you click on the screen and then divide by the respective width or height
+
+            x = pos[0] * self.width
+            y = pos[1] * self.height
+            if not self.wholeView:
+                # print(f"Branch {branchNum} at {x}, {y}")
+                # x = ((uvd_pose[0] * 0.5) + 0.5) * self.width
+                # y = ((uvd_pose[1] * 0.5) + 0.5) * self.height
+                # print(f"FragCoords {branchNum} at {x}, {y}\n")
+                _ = self.renderText(str(branchNum), x, self.height-y, 0.5, color=[1, 1, 0])
+        
+        # if self.screenType == "draw_tutorial":
+        #     _ = self.renderText("A", x=200, y=250, scale=1, color=[1, 1, 0]) # 600, 550
+        #     _ = self.renderText("B", x=300, y=200, scale=1, color=[1, 1, 0]) # 600, 550
+
+
+
     def initializeTreeMesh(self):
         # TREE SHADER
         # gl.glUseProgram(0)
@@ -1869,7 +2136,7 @@ class Test(QOpenGLWidget):
 
 
 
-    def paintTree(self):
+    def drawTree(self):
         # set the perspective
         # PUT THE OBJECT IN THE CORRECT POSITION ON THE SCREEN WITH 0, 0, 0 BEING THE CENTER OF THE TREE
         # Specifically putting the object at x = 0, 0, -5.883 --> u = 0, v = 0, d = 0.5
@@ -1883,10 +2150,12 @@ class Test(QOpenGLWidget):
 
         rotation = mt.create_from_y_rotation(hAngle) @ mt.create_from_x_rotation(vAngle)
 
-        if self.wholeView: # looking at the whole tree view
-            translation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH])) # 0, -0, -5.883
+        if self.wholeView:
+            # treeTranslation = np.transpose(mt.create_from_translation([0, self.TREE_DY, self.WHOLE_TREE_DEPTH]))
+            translation = np.transpose(mt.create_from_translation(self.wholeTreeTranslate))
         else:
-            translation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]))
+            # treeTranslation = np.transpose(mt.create_from_translation([self.TREE_SECTION_DX, self.TREE_DY, self.TREE_SECTION_DEPTH]))
+            translation = np.transpose(mt.create_from_translation(self.treeSectionTranslate))
         # scale = mt.create_from_scale([-4.344, 4.1425, -9.99])
         scale = mt.create_from_scale([1, 1, 1])
 
@@ -1934,8 +2203,15 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0)
 
         if self.screenType == "draw_tutorial":
-            _ = self.renderText("A", x=200, y=250, scale=1, color=[1, 1, 0]) # 600, 550
-            _ = self.renderText("B", x=300, y=200, scale=1, color=[1, 1, 0]) # 600, 550
+            # ratio of where on the screen to the width we are
+            x1 = (0.20596 * self.width)
+            y1 = self.height - (0.67243 * self.height)
+
+            x2 = (0.30125 * self.width)
+            y2 = self.height - (0.74783 *self.height)
+
+            _ = self.renderText("A", x=x1, y=y1, scale=1, color=[1, 1, 0]) # 600, 550
+            _ = self.renderText("B", x=x2, y=y2, scale=1, color=[1, 1, 0]) # 600, 550
 
 
        
@@ -1958,6 +2234,8 @@ class Test(QOpenGLWidget):
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
          
         self.initializeTreeMesh()
+
+        self.initializePruningCutMesh()
 
         self.initializeLabels()
 
@@ -2026,7 +2304,10 @@ class Test(QOpenGLWidget):
         gl.glUseProgram(0) 
 
         # Paint the tree regardless of the view
-        self.paintTree()  
+        self.drawTree()  
+
+        if self.toExplain:
+            self.drawPruningCutMesh()
 
         if self.wholeView:
             self.drawBoundingBox()
@@ -2070,6 +2351,9 @@ class Test(QOpenGLWidget):
         self.press = QPoint(event.pos()) # returns the last position of the mouse when clicked
         self.startPose = QPoint(event.pos()) # returns the last position of the mouse when clicked
         self.pressTime = time.time()
+        print(f"\n{self.press.x() / self.width}, {self.press.y() / self.height}")
+        
+        # print(f"{self.width}, {self.height}")
     
 
     def mouseReleaseEvent(self, event) -> None:
@@ -2481,7 +2765,7 @@ class Test(QOpenGLWidget):
 
                 betweenCutTime = self.pressTime - self.endCutTime
                 print(f"Time Between Cuts {sequence-1} and {sequence}: {betweenCutTime}")
-                self.cutSequenceDict["Between Cut Time"].append(betweenCutTime)
+                self.cutSequenceDict["Between Time"].append(betweenCutTime)
 
                 dirPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
                 dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
@@ -2519,6 +2803,10 @@ class Test(QOpenGLWidget):
                     """
                     print(f"Vertices: {vertices}")
                     self.cutSequenceDict["Vertices"].append(vertices)
+                    self.cutSequenceDict["Rule"].append("Undecided")
+                    
+
+                    self.userDrawn = True
 
                     self.addDrawVertices(cubeVertices)
 
@@ -2644,6 +2932,30 @@ class Test(QOpenGLWidget):
         
         self.update() # update the GL Call
 
+
+    def resetCuts(self):
+        # Remove all the existing values in the 
+        self.userDrawn = False # no drawings anymore
+        self.crossYMenu = False # set to False to stop displaying the menu (if up)\
+        
+        self.userPruningCuts.append(self.cutSequenceDict) # Append the data for the current cut sequence
+        self.resetCutSequence()
+        
+        self.drawVertices[:self.drawCount] = np.zeros(self.drawCount)
+        self.drawCount = 0
+        gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
+        self.update() # update the GL Call
+
+
+    def getUserDrawn(self):
+        return self.userDrawn
+
+
+    def resetCutSequence(self):
+        for key in self.cutSequenceDict:
+            self.cutSequenceDict[key] = []
+
+
     def addLabels(self, checked=False):
         self.displayLabels = checked
         self.update()
@@ -2680,9 +2992,9 @@ class Test(QOpenGLWidget):
             self.penColor = self.spacingColor
             self.decision = "Spacing"
         
-        self.cutSequenceDict["Rule"].append(self.decision)
+        self.cutSequenceDict["Rule"][-1] = (self.decision) # replace the decision in the end with the true decision
         sequence = len(self.cutSequenceDict["Rule"])
-        print(f"Cut #{sequence}: {self.decision}")
+        # print(f"Cut #{sequence}: {self.decision}")
         self.cutSequenceDict["Sequence"].append(sequence) # what order of cuts are we using. 
         # self.update()s
 
@@ -2704,9 +3016,11 @@ class Window(QMainWindow):
     def __init__(self, parent=None, pid=None):
         QMainWindow.__init__(self, parent)
         # Practice loading in data
-        self.fname = "textureTree.obj"
+        self.fname = "proxyTree.obj"
         self.jsonData = JSONFile("objFileDescription.json", "o").data
         self.pid = pid
+
+        self.userData = {} # dictionary to store the person's data collected in the interface
 
         # QtOpenGL.QMainWindow.__init__(self)
         # self.resize(1000, 1000)
@@ -2744,6 +3058,8 @@ class Window(QMainWindow):
         self.binIndices = [0, 0, 0]
         self.branchCuts = ["Don't Prune"] * 3 # 3 branches to prune for the 6 inch rule
 
+        self.binIndex = 0
+
         self.treeMesh = None        # Load the tree and save it here
         self.skyBoxMesh = None      # save SkyBoxMesh
 
@@ -2762,12 +3078,14 @@ class Window(QMainWindow):
         self.drawTerms = [False] * 3
 
         
+        self.explanationsSequence = []
         
         # self.retry = False
 
         
         # Initial meshes to load
-        self.meshDictionary = self.load_mesh_files(treeFile=self.curTree, 
+        self.meshDictionary = self.load_mesh_files(tree=self.curTree, 
+                                                   treeData=self.jsonData["Tree Files"], 
                                                    branchFiles=self.jsonData["Manipulation Files"], 
                                                    manipDirectory=self.manipulationDir,            
                                                    skyBoxFile="skyBox.obj")
@@ -2775,7 +3093,7 @@ class Window(QMainWindow):
 
         self.skyBoxMesh = self.meshDictionary["SkyBox"]
 
-        self.loadScreen()   # LOAD THE SCREEN 
+        self.loadScreen()  # LOAD THE SCREEN 
         
 
     def loadScreen(self):
@@ -2801,19 +3119,32 @@ class Window(QMainWindow):
     #   - skyBoxFile: String of file name for skybox obj file
     #
     # OUTPUT:
-    #   - Mesh files for tree, branches, and skybox if file is loaded in
+    #   - Mesh files for tree, cuts, manipulation branches, and skybox if file is loaded in and their corresponding data
     ##########################################################################
-    def load_mesh_files(self, treeFile = None, branchFiles = None, manipDirectory = None, skyBoxFile = None):
+    def load_mesh_files(self, tree = None, treeData = None, branchFiles = None, manipDirectory = None, skyBoxFile = None):
         directory = "../obj_files/"
         # treeMesh = None
         # skyBoxMesh = None
-        branchMeshes = []
-        scales = []
-        rotations = []
-        translations = []
-        featureDescription = []
-        pruneDescription = []
+        """  TREE DATA  """
+        sectionTranslate = []       # translation for tree in the tree section view
+        wholeTranslate = []         # translation for tree in the whole view
+        branchCutDecisions = []     # get the decision/rule corresponding to each cut
+        branchExplanations = []     # Get the explanation for each branch cut
+        textPose = []               # get the position of where to place the text for each branch
+        vigorCutMesh = None
+        canopyCutMesh = None
+        budSpacingCutMesh = None
+
+
+        """ BRANCH MANIPULATION DATA """
+        branchMeshes = []           # Mesh files of branches 
+        scales = []                 # scaling arrays for branches
+        rotations = []              # rotation arrays for branches 
+        translations = []           # translations for branch manipulation files
+        featureDescription = []     # description of branch for each section 
+        pruneDescription = []       # pruning description for manipulation file branches (i.e., thinning, heading, don't prune)
         
+        # dictionary to store branch data
         branches = {
             "Meshes": branchMeshes, 
             "Description": featureDescription,
@@ -2824,9 +3155,30 @@ class Window(QMainWindow):
             "Answer": ""
         }
 
-        if treeFile is not None:
-            fname = directory + treeFile
+        if tree is not None:
+            file = treeData[tree]
+            path = directory + "tree_files/" + tree + "/"
+            fname = path + file["File"]
+            # print(fname)
             self.treeMesh = Mesh(fname)
+            sectionTranslate = file["Section Translate"]
+            wholeTranslate = file["Whole Translate"]
+
+            
+
+            if file["Vigor Cuts"] is not None:
+                vigorCutMesh = Mesh(path+file["Vigor Cuts"])
+            if file["Canopy Cuts"] is not None:
+                canopyCutMesh = Mesh(path+file["Canopy Cuts"])
+            if file["Bud Spacing Cuts"] is not None:
+                budSpacingCutMesh = Mesh(path+file["Bud Spacing Cuts"])
+
+            # get the poses of each of the branch labels for the explanation slide (if applicable)
+            for explanation in treeData[tree]["Explanations"]:
+                textPose.append(explanation["Screen Ratio"])
+                branchExplanations.append(explanation["Explanation"])
+                branchCutDecisions.append(explanation["Decision"])
+        
         
         if branchFiles is not None and manipDirectory is not None:
             for branch in branchFiles[manipDirectory]["Files"]:
@@ -2854,9 +3206,17 @@ class Window(QMainWindow):
             self.skyBoxMesh = Mesh(fname)
         
         meshDictionary = {
-            "Tree": self.treeMesh,
-            "SkyBox": self.skyBoxMesh,
-            "Branches": branches
+            "Tree": self.treeMesh,                  # the tree mesh
+            "Vigor Cuts": vigorCutMesh,
+            "Canopy Cuts": canopyCutMesh,
+            "Bud Spacing Cuts": budSpacingCutMesh,
+            "Section Translate": sectionTranslate,  # how to translate the tree in the section view
+            "Whole Translate": wholeTranslate,      # how to translate the tree in the whole view
+            "SkyBox": self.skyBoxMesh,              # skybox mesh
+            "Branches": branches,                   # Meshes for the manipulation branches
+            "Text Pose": textPose,                   # position of labels for branches
+            "Explanations": branchExplanations,     # branch explanations for cuts
+            "Decisions": branchCutDecisions
         }
 
         return meshDictionary
@@ -2894,6 +3254,9 @@ class Window(QMainWindow):
 
         elif self.screenType == "bin_features":
             self.binFeaturesScreen()
+
+        elif self.screenType == "explain_prune":
+            self.pruningExplanationScreen()
 
         else:
             self.loadTreeSectionScreen()
@@ -2996,7 +3359,7 @@ class Window(QMainWindow):
         self.nextButton.setStyleSheet("QPushButton {font-size: 25px;" "font:bold}\n"
                                       "QPushButton::pressed {background-color: #4F9153;}") # 
         self.nextButton.clicked.connect(self.nextPageButtonClicked)
-        if self.screenType == "end_section":
+        if self.screenType == "end_section" or self.screenType == "end" or self.screenType == "explain_prune":
             self.nextButton.setEnabled(True)
         else:
             self.nextButton.setEnabled(False)
@@ -3135,10 +3498,17 @@ class Window(QMainWindow):
             self.toBin = False
             self.toPrune = False
 
-        elif self.screenType == "draw_tutorial":
+        elif self.screenType == "draw_tutorial" or self.screenType == "prune":
             self.screen_width = 3
             self.glWidgetTree.setScreenProperties(screenType=self.screenType, drawLines=True)
             self.drawLines = True
+        
+        elif self.screenType == "explain_prune":
+            self.isCorrect = True
+            self.interacted = True
+            self.screen_width = 2
+            self.glWidgetTree.setScreenProperties(screenType=self.screenType, toExplain=True)
+            self.toExplain = True
         
         elif self.screenType == "tree_terms":
             self.screen_width = 2
@@ -3221,52 +3591,25 @@ class Window(QMainWindow):
 
             # UNDO BUTTON
         if self.screenType == "draw_tutorial" or self.screenType == "prune":
-            self.undoButton = QPushButton("Undo")
-            self.undoButton.setStyleSheet("font-size: 25px;" "font:bold")
-            self.undoButton.setFixedSize(150, 50) # 300, 100
-            self.undoButton.clicked.connect(self.glWidgetTree.undoDraw)
-            self.undoButton.clicked.connect(self.undoClicked)
-            self.hLayout.addWidget(self.undoButton)
-
-            # font = QFont()
-            # font.setPointSize(font.pointSize()+2)
-            # self.answerText = QLabel("")
-
-            # # create a dropdown menu with different color
-            # self.pruningRules = ["Vigor", "Canopy", "Spacing"]
-
-            # self.penLabel = QLabel("Pruning Cut:")
-            # self.penLabel.setStyleSheet("font-size: 25px;" "font:bold;" "color: white")
-            # self.hLayout.addWidget(self.penLabel)
-
-            # self.vigorRadio = QRadioButton("Branch Vigor")
-            # self.vigorRadio.setChecked(True)
-            # self.vigorRadio.setStyleSheet("font-size: 20px;" "color: #ff5f1f")
-            # self.vigorRadio.toggled.connect(lambda: self.radioButtonClicked("Branch Vigor"))
+            self.doneButton = QPushButton("Done")
+            self.doneButton.setStyleSheet("font-size: 25px;" "font:bold")
+            self.doneButton.setFixedSize(150, 50) # 300, 100
+            # self.doneButton.clicked.connect(self.glWidgetTree.resetCuts)
+            self.doneButton.clicked.connect(self.doneClicked)
+            self.hLayout.addWidget(self.doneButton)
             
-            # self.canopyRadio = QRadioButton("Canopy Cut")
-            # self.canopyRadio.setStyleSheet("font-size: 20px;" "color: #00f0ff")
-            # self.canopyRadio.toggled.connect(lambda: self.radioButtonClicked("Canopy Cut"))
-            
-            # self.spacingRadio = QRadioButton("Bud Spacing")
-            # self.spacingRadio.setStyleSheet("font-size: 20px;" "color: #21fc0d")
-            # self.spacingRadio.toggled.connect(lambda: self.radioButtonClicked("Bud Spacing"))
+            self.resetButton = QPushButton("Reset")
+            self.resetButton.setStyleSheet("font-size: 25px;" "font:bold")
+            self.resetButton.setFixedSize(150, 50) # 300, 100
+            self.resetButton.setEnabled(False)
+            self.resetButton.clicked.connect(self.glWidgetTree.resetCuts)
+            self.resetButton.clicked.connect(self.resetClicked)
+            self.hLayout.addWidget(self.resetButton)
 
-            # self.hLayout.addWidget(self.vigorRadio)
-            # self.hLayout.addWidget(self.canopyRadio)
-            # self.hLayout.addWidget(self.spacingRadio)
 
-            # self.radioButtonClicked("Branch Vigor")
+            self.submitText = QLabel("")
+            self.hLayout.addWidget(self.submitText)
 
-            
-
-            # self.dropDownPen = QComboBox()
-            # self.dropDownPen.setFixedSize(300, 50)
-            # self.dropDownPen.setFont(font)
-            # self.dropDownPen.addItems()
-            # self.dropDownPen.setCurrentIndex(self.binIndices[0])
-            # self.dropDownPen.activated.connect(self.dropDownTextSelected)
-            # self.binLayout.addWidget(self.dropDown, 2, 0, Qt.AlignTop | Qt.AlignCenter)
             
 
         
@@ -3289,6 +3632,30 @@ class Window(QMainWindow):
         self.hSlider.sliderReleased.connect(self.hCameraSliderReleased)
         self.glWidgetTree.turnTableRotation.connect(self.hSlider.setValue)
         self.layout.addWidget(self.hSlider, self.screen_width, 1, 1, 1) # 3 1 1 1
+
+
+    def doneClicked(self):
+        self.interacted = self.glWidgetTree.getUserDrawn()
+
+        if self.interacted:
+            self.nextButton.setEnabled(True)
+            self.resetButton.setEnabled(True)
+
+            self.submitText.setText("Click 'Next' for Solution or 'Reset' to undo all prunes")
+            if self.screenType == "draw_tutorial" or self.screenType == "prune":
+                self.isCorrect = True
+        else:
+            self.submitText.setText("Must Prune tree before clicking 'Done'")
+        
+        self.submitText.setStyleSheet("font-size: 20px;" "font:bold")
+
+
+    def resetClicked(self):
+        self.isCorrect = False
+        self.submitText.setText("")
+        self.resetButton.setEnabled(False)
+        self.nextButton.setEnabled(False) # next should disappear if there is no prunes on the branch
+
 
 
     def undoClicked(self):
@@ -3457,6 +3824,93 @@ class Window(QMainWindow):
 
 
 
+
+    """
+        PRUNING EXPLANATION SCREEN
+    """
+    def pruningExplanationScreen(self):
+        self.loadTreeSectionScreen()
+
+        self.explainFrame = QFrame(self.central_widget)
+        self.explainFrame.setFrameShape(QFrame.Shape.Box)
+        self.explainFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.explainFrame.setFixedHeight(300) # 500 
+        self.layout.addWidget(self.explainFrame, self.screen_width+1, 1, 1, 1) # Where on the screen we add
+        self.explainLayout = QGridLayout(self.explainFrame)
+
+        # Label on the screen
+        self.branchLabel = QLabel("Branch")
+        self.branchLabel.setStyleSheet("font-size: 25px;" "font:bold")
+        self.explainLayout.addWidget(self.branchLabel, 0, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        # Setting the font
+        font = QFont()
+        font.setPointSize(font.pointSize()+2)
+
+        branchList = np.arange(1, len(self.meshDictionary["Explanations"])+1) # need to go from 1 - num of explanations, but arange is exclusive on last value 
+        binValues = ["Select"]
+        binValues.extend([str(num) for num in branchList])
+        # print(binValues)
+
+        # Dropdown menu to select what branch
+        self.dropDown = QComboBox()
+        self.dropDown.setFixedSize(100, 50)
+        self.dropDown.setFont(font)
+        self.dropDown.addItems(binValues)
+        self.dropDown.setCurrentIndex(self.binIndex)
+        self.dropDown.activated.connect(self.dropDownTextSelected)
+        self.explainLayout.addWidget(self.dropDown, 0, 1, 1, 1, Qt.AlignBottom | Qt.AlignLeft)
+
+
+        # Set the label and the decision of whether to cut or not cut
+        self.decisionLabel = QLabel("Cut Decision:")
+        self.decisionLabel.setStyleSheet("font-size: 25px;" "font:bold")
+        self.explainLayout.addWidget(self.decisionLabel, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        self.decision = QLabel("")
+        self.explainLayout.addWidget(self.decision, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignLeft)
+
+        # set the explanation
+
+        self.explanationLabel = QLabel("Explanation:")
+        self.explanationLabel.setStyleSheet("font-size: 25px;" "font:bold")
+        self.explainLayout.addWidget(self.explanationLabel, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        self.explanation = QLabel("")
+        self.explainLayout.addWidget(self.explanation, 2, 1, 1, 3, Qt.AlignBottom | Qt.AlignLeft)
+
+
+
+
+    def dropDownTextSelected(self, _):
+        self.interacted = True
+        self.binIndex = self.dropDown.currentIndex()
+
+
+
+        if self.binIndex == 0:
+            self.decision.setText("")
+            self.explanation.setText("")
+        
+        else:
+            index = self.binIndex - 1 # 1 less than the bin values we have
+            self.decision.setText(self.meshDictionary["Decisions"][index])
+            self.decision.setStyleSheet("font-size: 20px;")
+
+            self.explanation.setText(self.meshDictionary["Explanations"][index])
+            self.explanation.setStyleSheet("font-size: 20px;")
+
+            explanation = {
+                "Decision": self.meshDictionary["Decisions"][index],
+                "Explanation": self.meshDictionary["Explanations"][index]
+            }
+
+            self.explanationsSequence.append(explanation) # add to the sequence of data that the user is looking at
+
+
+    """
+        RULE SCREEN DISPLAY
+    """
     def ruleScreen(self):
         self.loadTreeSectionScreen()
         
@@ -3934,7 +4388,7 @@ class Window(QMainWindow):
     """
         BIN SCREEN AND HELPER FUNCTIONS:
             - binScreen
-            - dropDownTextSelected
+            - dropDownBranchesTextSelected
             - setDropDownValues
     """
     def binScreen(self):
@@ -3963,7 +4417,7 @@ class Window(QMainWindow):
         self.dropDown.setFont(font)
         self.dropDown.addItems(self.binValues)
         self.dropDown.setCurrentIndex(self.binIndices[0])
-        self.dropDown.activated.connect(self.dropDownTextSelected)
+        self.dropDown.activated.connect(self.dropDownBranchesTextSelected)
         self.binLayout.addWidget(self.dropDown, 2, 0, Qt.AlignTop | Qt.AlignCenter)
 
         # Second dropdown box
@@ -3976,7 +4430,7 @@ class Window(QMainWindow):
         self.dropDown2.setFont(font)
         self.dropDown2.addItems(self.binValues)
         self.dropDown2.setCurrentIndex(self.binIndices[1])
-        self.dropDown2.activated.connect(self.dropDownTextSelected)
+        self.dropDown2.activated.connect(self.dropDownBranchesTextSelected)
         self.binLayout.addWidget(self.dropDown2, 2, 1, Qt.AlignTop | Qt.AlignCenter)
 
         # 3rd drop down
@@ -3989,10 +4443,10 @@ class Window(QMainWindow):
         self.dropDown3.setFont(font)
         self.dropDown3.addItems(self.binValues)
         self.dropDown3.setCurrentIndex(self.binIndices[2]) # SET THE VALUE TO PREVIOUS RESULTS
-        self.dropDown3.activated.connect(self.dropDownTextSelected)
+        self.dropDown3.activated.connect(self.dropDownBranchesTextSelected)
         self.binLayout.addWidget(self.dropDown3, 2, 2, Qt.AlignTop | Qt.AlignCenter)
        
-        self.dropDownTextSelected("") # grab the current text in the dropdown menus
+        self.dropDownBranchesTextSelected("") # grab the current text in the dropdown menus
 
         self.submitButton = QPushButton("Submit") # Make a blank button
         self.submitButton.setStyleSheet("QPushButton {font-size: 25px;" "font:bold}\n"
@@ -4008,7 +4462,7 @@ class Window(QMainWindow):
 
 
     
-    def dropDownTextSelected(self, _):
+    def dropDownBranchesTextSelected(self, _):
         self.interacted = True
         self.binAnswers[0] = self.dropDown.currentText()
         self.binIndices[0] = self.dropDown.currentIndex()
@@ -4064,19 +4518,30 @@ class Window(QMainWindow):
             # self.nextLabel.setText("Loading Next Page")
             self.pageIndex += 1 # increment the page by 1
 
-            treeName = self.curTree[:-4] # remove .obj from end
+            treeName = self.curTree
 
             # If the screenType is "prune" then we need to save the user's cutSequenceDict from the glWidget
             # save the values under the tree name 
             if self.screenType == "draw_tutorial" or self.screenType == "prune":
                 
                 print(f"\nUser's data: {treeName}")
-                cutData = self.glWidgetTree.cutSequenceDict
-                print(cutData)
+                userPruningCuts = self.glWidgetTree.userPruningCuts
 
-                self.treeMesh.write_mesh_file(treeName=treeName, pid=self.pid, cutDictionary=cutData)
+                finalCutSequence = self.glWidgetTree.cutSequenceDict
+                userPruningCuts.append(finalCutSequence)
+                # print(cutData)
+                self.userData[treeName] = userPruningCuts # store the data in a file
 
-            if self.screenType == "end":
+                self.treeMesh.write_mesh_file(treeName=treeName, pid=self.pid, pruningData=userPruningCuts)
+
+            if self.screenType == "explain_prune":
+                # Extract the explanations and save it under the files
+                keyName = treeName + "_Explanations"
+                self.userData[keyName] = self.explanationsSequence
+                print(self.userData)
+
+
+            if self.screenType == "end": # Write all the data to a file for analysis
                 JSONFile.write_file(self.userData, pid=self.pid)
             
 
@@ -4090,9 +4555,11 @@ class Window(QMainWindow):
             self.nextButton.setEnabled(False)
 
             # Change the tree file (if needed)
-            treeFile = self.curTree
-            if self.curTree == self.trees[self.pageIndex]:
-                treeFile = None
+            # treeFile = self.curTree
+            # if self.curTree == self.trees[self.pageIndex]:
+            #     treeFile = None
+
+            self.curTree = self.trees[self.pageIndex]
             
             # change the directory
             directory = self.directories[self.pageIndex]
@@ -4101,10 +4568,11 @@ class Window(QMainWindow):
                 directory = None
                 
             # Reload any new files as needed
-            self.meshDictionary = self.load_mesh_files(treeFile=treeFile, 
-                                                    branchFiles=self.jsonData["Manipulation Files"], 
-                                                    manipDirectory=directory,            
-                                                    skyBoxFile=None) # Only need to load the skybox once
+            self.meshDictionary = self.load_mesh_files(tree=self.curTree, 
+                                                       treeData=self.jsonData["Tree Files"],
+                                                       branchFiles=self.jsonData["Manipulation Files"], 
+                                                       manipDirectory=directory,            
+                                                       skyBoxFile=None) # Only need to load the skybox once
             
             self.glWidgetTree.loadNewMeshFiles(self.meshDictionary) # Load the new mesh directory values
             self.screenType = self.layouts[self.pageIndex] # Set the next page index
