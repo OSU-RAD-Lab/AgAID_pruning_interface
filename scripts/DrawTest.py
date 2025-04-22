@@ -2362,7 +2362,8 @@ class Test(QOpenGLWidget):
         self.lastPose = QPoint(event.pos()) # event.pos()
         self.releaseTime = time.time()
         if abs(self.lastPose.x() - self.startPose.x()) > 5 or abs(self.lastPose.y() - self.startPose.y()) > 5: # and
-            self.rayDraw()
+            if self.screenType == "prune" or self.screenType == "draw_tutorial":
+                self.rayDraw()
         else:
             # print(f"Crossy Menu on Click: {self.crossYMenu}")
             if self.crossYMenu:
@@ -3166,11 +3167,11 @@ class Window(QMainWindow):
 
             
 
-            if file["Vigor Cuts"] is not None:
+            if len(file["Vigor Cuts"]) > 0:
                 vigorCutMesh = Mesh(path+file["Vigor Cuts"])
-            if file["Canopy Cuts"] is not None:
+            if len(file["Canopy Cuts"]) > 0:
                 canopyCutMesh = Mesh(path+file["Canopy Cuts"])
-            if file["Bud Spacing Cuts"] is not None:
+            if len(file["Bud Spacing Cuts"]) > 0:
                 budSpacingCutMesh = Mesh(path+file["Bud Spacing Cuts"])
 
             # get the poses of each of the branch labels for the explanation slide (if applicable)
@@ -3227,7 +3228,7 @@ class Window(QMainWindow):
         self.viewGL = Test(wholeView=True, 
                            fname=self.fname, 
                            meshDictionary=self.meshDictionary,
-                           jsonData=self.jsonData["Tree Files"][self.fname],
+                           jsonData=self.jsonData["Tree Files"][self.curTree], # [self.fname]
                            manipulation=self.manipulation)
 
         # SET THE SCREEN SIZE BASED ON IF A MANIPULATION TASK OR NOT
@@ -3274,7 +3275,7 @@ class Window(QMainWindow):
         self.viewGL = Test(wholeView=True, 
                            fname=self.fname, 
                            meshDictionary=self.meshDictionary,
-                           jsonData=self.jsonData["Tree Files"][self.fname],
+                           jsonData=self.jsonData["Tree Files"][self.curTree], # self.fname
                            manipulation=self.manipulation)
         self.viewGL.setFixedSize(350, 300) # 900, 700
         self.layout.addWidget(self.viewGL, 0, 2, 1, 1) # 1, 2, 1, 1
@@ -3482,7 +3483,7 @@ class Window(QMainWindow):
         self.glWidgetTree = Test(wholeView=False, 
                                 fname=self.fname,
                                 meshDictionary=self.meshDictionary, 
-                                jsonData=self.jsonData["Tree Files"][self.fname],  # NEEd to change eventually
+                                jsonData=self.jsonData["Tree Files"][self.curTree],  # [self.fname]
                                 manipulation=self.manipulation,
                                 screenType=self.screenType)
         
@@ -4540,10 +4541,10 @@ class Window(QMainWindow):
                 self.userData[keyName] = self.explanationsSequence
                 print(self.userData)
 
-
-            if self.screenType == "end": # Write all the data to a file for analysis
+            # IF the next page is the end of everything, save the data
+            if self.layouts[self.pageIndex] == "end": # Write all the data to a file for analysis
                 JSONFile.write_file(self.userData, pid=self.pid)
-            
+             
 
 
             if self.isCorrect:

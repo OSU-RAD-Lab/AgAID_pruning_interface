@@ -1,29 +1,20 @@
 {
     "Test": [  
         
-        {
-            "Module": "Draw Tutorial", 
-            "Your Task": "Draw on the screen from points A to B to 'prune'\nthe tree. Click Undo to remove your draw\nline. Click 'Next' when finished",
-            "Layout": "draw_tutorial",
-            "Tree File": "textureTree",
-            "File Directory": ""
-        },
-        
-        
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "textureTree",
-            "File Directory": ""
-        },
-
         
         {
             "Module": "Camera Tutorial", 
             "Your Task": "Manipulate the (blue) Camera Sliders on the left\nside of the screen to move the camera view. You\ncan move the camera at any time.\nClick 'Next' when finished",
             "Layout": "normal",
-            "Tree File": "textureTree",
+            "Tree File": "proxyTree",
+            "File Directory": ""
+        },
+
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "MediumVigorCanopy",
             "File Directory": ""
         },
 
@@ -35,7 +26,17 @@
             "File Directory": ""
         },
 
+        {
+            "Module": "Draw Tutorial", 
+            "Your Task": "Draw on the screen from points A to B to 'prune'\nthe tree. Click Undo to remove your draw\nline. Click 'Next' when finished",
+            "Layout": "draw_tutorial",
+            "Tree File": "textureTree",
+            "File Directory": ""
+        },
         
+        
+        
+
         
         {
             "Module": "End of Interface Tutorial", 
