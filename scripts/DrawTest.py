@@ -158,7 +158,10 @@ class Test(QOpenGLWidget):
         self.mesh = meshDictionary["Tree"]
         self.treeSectionTranslate = meshDictionary["Section Translate"]
         self.wholeTreeTranslate = meshDictionary["Whole Translate"]
-        self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
+        self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices  
+        
+        _, self.normals, self.poses = self.divideVertices(self.vertices)
+
         self.texture = None
         self.vao = None
         self.vbo = None 
@@ -352,6 +355,24 @@ class Test(QOpenGLWidget):
         self.setFeatureLocations()
 
 
+    
+    def divideVertices(self, vertices):
+        counts = int(len(vertices) / 8) # stride of the vertices given 2T, 3NF, 3V
+        textures = []
+        normals = []
+        positions = []
+
+        for i in range(counts):
+            textures.append(vertices[8*i:8*i+2])
+            # normals
+            normals.append(vertices[8*i+2:8*i+5]) # extract the normal vector values
+            # positions
+            positions.append(vertices[8*i+5:8*i+8])
+
+        return np.array(textures), np.array(normals), np.array(positions)
+    
+    
+    
     def normalizeAngle(self, angle):
         while angle < 0:
             angle += 360
@@ -392,7 +413,9 @@ class Test(QOpenGLWidget):
         self.termDraw = termDraw
         self.toExplain = toExplain
         self.screenType = screenType
-
+    
+    
+    
     def loadNewJSONFile(self, jsonData):
         self.jsonData = jsonData
         self.setFeatureLocations()
@@ -411,6 +434,7 @@ class Test(QOpenGLWidget):
             self.treeSectionTranslate = meshDictionary["Section Translate"]
             self.wholeTreeTranslate = meshDictionary["Whole Translate"]
             self.vertices = np.array(self.mesh.vertices, dtype=np.float32) # contains texture coordinates, vertex normals, vertices      
+            _, self.normals, self.poses = self.divideVertices(self.vertices)
             self.texture = None
             self.vao = None
             self.vbo = None
@@ -2167,6 +2191,7 @@ class Test(QOpenGLWidget):
         self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0) 
 
         
+        
         # SET THE UNIFORMS FOR THE PROJECTION * CAMERA MOVEMENTS
         # projLoc = gl.glGetUniformLocation(self.program, "projection")
         gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
@@ -2351,29 +2376,232 @@ class Test(QOpenGLWidget):
         self.press = QPoint(event.pos()) # returns the last position of the mouse when clicked
         self.startPose = QPoint(event.pos()) # returns the last position of the mouse when clicked
         self.pressTime = time.time()
-        print(f"\n{self.press.x() / self.width}, {self.press.y() / self.height}")
+
+        self.origins = []
+        self.directions = []
+        # print(f"\n{self.press.x() / self.width}, {self.press.y() / self.height}")
+
+        # # u, v = self.convertXYtoUV(self.press.x(), self.press.y())
+        # origin = self.convertXYToWorld(self.press.x(), self.press.y())
+
+        # # origin = self.convertXYToWorld(self.press.x(), self.press.y())[:3] # don't need the end
+        # direction = self.rayDirection(self.press.x(), self.press.y())[:3]
+
+        # # print(f"{self.press.x()}, {self.press.y()} --> origin {origin}")
+        # distances = self.distanceToPlane(origin)
         
+        # intersect = self.calculateDistance(origin, distances, direction)
+        
+    
         # print(f"{self.width}, {self.height}")
     
 
+    def mouseMoveEvent(self, event):
+        point = QPoint(event.pos())
+        x = point.x()
+        y = point.y()
+
+        origin = self.convertXYToWorld(self.press.x(), self.press.y())[:3]
+        direction = self.rayDirection(self.press.x(), self.press.y())[:3]
+
+        self.origins.append(origin)
+        self.directions.append(direction)
+        # return super().mouseMoveEvent(event)
+
+
     def mouseReleaseEvent(self, event) -> None:
+
         self.release = QPoint(event.pos()) 
 
         self.lastPose = QPoint(event.pos()) # event.pos()
         self.releaseTime = time.time()
-        if abs(self.lastPose.x() - self.startPose.x()) > 5 or abs(self.lastPose.y() - self.startPose.y()) > 5: # and
-            if self.screenType == "prune" or self.screenType == "draw_tutorial":
-                self.rayDraw()
-        else:
-            # print(f"Crossy Menu on Click: {self.crossYMenu}")
-            if self.crossYMenu:
-                self.crossYDecision()
+
+        print("Mouse Released")
+        # boundedPts = self.getVerticesInBounds(self.press, self.release)
+        # # print("Bounded Pts", boundedPts[:10]) 
+        # minDepth = np.min(boundedPts[:, 2])
+        # maxDepth = np.max(boundedPts[:, 2])  
+
+        # # print(f"Min Depth: {minDepth}\nMax Depth: {maxDepth}")  
+
+        # cubeVertices, vertices = self.getDrawnCoords(self.press, self.release, minDepth, maxDepth)   
+
+        # print(vertices) 
+
+        # # look for the minimum and max values of the world
+        # origin = self.convertXYToWorld(self.press.x(), self.press.y())[:3]
+        
+        # u1, v1 = self.convertXYtoUV(self.press.x(), self.press.y())
+        
+        # origin[2] = minDepth
+        # print("Min Depth", self.convertWorldtoUVD(origin))
+
+        # origin[2] = maxDepth
+        # print("Max Depth", self.convertWorldtoUVD(origin))
+    
+
+        # midX = (self.press.x() + self.release.x())/2
+        # midY = (self.press.y() + self.release.y())/2
+
+        # origin = self.convertXYToWorld(midX, midY)[:3]
+        # direction = self.rayDirection(midX, midY)[:3]
+
+
+        # distances = self.distanceToPlane(origin, boundedNormals, boundedPts)
+        # self.calculateDistance(origin, distances, direction, boundedNormals, boundedPts)
+
+
+        if self.screenType == "prune" or self.screenType == "draw_tutorial":
+            if abs(self.lastPose.x() - self.startPose.x()) > 5 or abs(self.lastPose.y() - self.startPose.y()) > 5: # and
+                    self.rayDraw()
+                    # self.drawPrunes()
             else:
-                print("Do Nothing")        
+                # print(f"Crossy Menu on Click: {self.crossYMenu}")
+                if self.crossYMenu:
+                    self.crossYDecision()
+                else:
+                    print("Do Nothing")        
         # _ = self.rayDirection(self.lastPose.x(), self.lastPose.y())
         # self.update()
 
-   
+    
+    def getDrawnCoords(self, startPose, endPose, minZ, maxZ):
+        # look for the minimum and max values of the world
+        start = self.convertXYToWorld(startPose.x(), startPose.y())[:3]
+        end = self.convertXYToWorld(endPose.x(), endPose.y())[:3]
+        
+        start[2] = minZ
+        minD = self.convertWorldtoUVD(start)[2]
+
+        end[2] = maxZ
+        maxD = self.convertWorldtoUVD(end)[2]
+
+        # Convert from XYZ to UVD
+        u1, v1 = self.convertXYtoUV(startPose.x(), startPose.y())
+        u2, v2 = self.convertXYtoUV(endPose.x(), endPose.y())
+
+        u3 = 0
+        v3 = 0
+        u4 = 0
+        v4 = 0
+        deltaY = endPose.y() - startPose.y()
+        deltaX = endPose.x() - startPose.x()
+        # Assuming the line is horizontal
+        if abs(deltaY) < 20:
+            u3 = u1
+            v3 = v1 - 0.005
+            u4 = u2
+            v4 = v2 - 0.005
+        # vertical line  
+        elif abs(deltaX) < 20:
+            u3 = u1 - 0.005
+            v3 = v1
+            u4 = u2 - 0.005
+            v4 = v2
+
+        # line slanted down
+        elif deltaY / deltaX < 0:
+            angle = math.atan2(deltaY, deltaX) # in radians
+            u3 = u1 - (0.005)*math.sin(angle)
+            v3 = v1 + (0.005)*math.cos(angle)
+            u4 = u2 - (0.005)*math.sin(angle)
+            v4 = v2 + (0.005)*math.cos(angle)
+        
+        else:
+            angle = math.atan2(deltaY, deltaX) # in radians
+            u3 = u1 - (0.005)*math.sin(angle)
+            v3 = v1 - (0.005)*math.cos(angle)
+            u4 = u2 - (0.005)*math.sin(angle)
+            v4 = v2 - (0.005)*math.cos(angle)
+
+
+        # remember that x increases as you go right and y increases as you go down
+        # convert coordinates from u,v and world to local coordinates abd arrange in a cube
+        #  2________4
+        #  /|      /|
+        # /_|_____/ |
+        # 1       3 |
+        # | |____|__|
+        # | 6    |  8
+        # | /    | /
+        # |/_____|/
+        # 5       7
+
+        drawPt1 = self.convertUVDtoXYZ(u1, v1, minD)[:3]
+        drawPt2 = self.convertUVDtoXYZ(u1, v1, maxD)[:3]
+        drawPt3 = self.convertUVDtoXYZ(u2, v2, maxD)[:3]
+        drawPt4 = self.convertUVDtoXYZ(u2, v2, minD)[:3]
+        drawPt5 = self.convertUVDtoXYZ(u3, v3, minD)[:3]
+        drawPt6 = self.convertUVDtoXYZ(u3, v3, maxD)[:3]
+        drawPt7 = self.convertUVDtoXYZ(u4, v4, minD)[:3]
+        drawPt8 = self.convertUVDtoXYZ(u4, v4, maxD)[:3]
+
+        # drawPt1 = self.get_drawn_coords(u1, v1, minZ) # returns a length 3 array
+        # drawPt2 = self.get_drawn_coords(u1, v1, maxZ)
+        # drawPt3 = self.get_drawn_coords(u2, v2, maxZ)
+        # drawPt4 = self.get_drawn_coords(u2, v2, minZ)
+        # drawPt5 = self.get_drawn_coords(u3, v3, minZ)
+        # drawPt6 = self.get_drawn_coords(u3, v3, maxZ)
+        # drawPt7 = self.get_drawn_coords(u4, v4, minZ)
+        # drawPt8 = self.get_drawn_coords(u4, v4, maxZ)
+
+        vertices = [drawPt1, drawPt2, drawPt3, drawPt4, drawPt5, drawPt6, drawPt7, drawPt8]
+
+        
+        cubeVertices = [drawPt1, drawPt2, drawPt3, drawPt4,
+                        drawPt5, drawPt8, drawPt7, drawPt6, 
+                        drawPt1, drawPt5, drawPt6, drawPt2,
+                        drawPt2, drawPt6, drawPt7, drawPt3,
+                        drawPt3, drawPt7, drawPt8, drawPt4,
+                        drawPt5, drawPt1, drawPt4, drawPt8]
+
+        return cubeVertices, vertices
+
+
+
+
+    def getVerticesInBounds(self, start, end):
+        print("Calculating Bounded Points")
+        startX = start.x()
+        startY = start.y()
+        endX = end.x()
+        endY = end.y()
+
+        if abs(startX - endX) < 20:
+            endX += 20
+        if abs(startY - endY) < 20:
+            endY += 20
+
+        u1, v1 = self.convertXYtoUV(startX, startY)
+        u2, v2 = self.convertXYtoUV(endX, endY)
+
+        self.poses = np.array([self.convertXYZtoWorld(pose)[:3] for pose in self.poses])
+
+        self.uvdPoses = np.array([self.convertWorldtoUVD(pose) for pose in self.poses])
+        # print(self.uvdPoses[:10])
+        # give me my box
+        minU = np.min([u1, u2])
+        maxU = np.max([u1, u2])
+        minV = np.min([v1, v2])
+        maxV = np.max([v1, v2])
+
+        uRows = self.uvdPoses[:, 0]
+        vRows = self.uvdPoses[:, 1]
+
+        xBound = np.where(uRows >= minU, True, False) & np.where(uRows <= maxU, True, False)
+        yBound = np.where(vRows >= minV, True, False) & np.where(vRows <= maxV, True, False)
+
+        inBound = xBound & yBound
+        # print(inBound.shape)
+        # print(self.poses.shape)
+        boundedPoints = self.poses[inBound]
+
+        print(f"Number of vertices in bounds {boundedPoints.shape}")
+
+        return boundedPoints
+
+        # print(boundedPoints.shape)
+        
 
 
     def updateCutColorToDecision(self):
@@ -2414,7 +2642,7 @@ class Test(QOpenGLWidget):
             # intersect = self.lineInTextBounds(start=(startX, startY), end=(endX, endY), bounds=bound)
 
             if intersect:
-                # print("Intersect detected!")
+                print("Intersect detected!")
                 self.setPenColor(decision=decision)
                 self.crossYMenu = False # only reset the crossYMenue when you have successfully set the decision to a new value
                 
@@ -2439,57 +2667,6 @@ class Test(QOpenGLWidget):
        
         return eX >= minX and eX <= maxX and eY >= minY and eY <= maxY
 
-
-
-    # def lineInTextBounds(self, start, end, bounds):
-    #     # check if the values are in the bounds
-    #     # Bounds is a list of floats from [minX, maxX, minY, maxY] of the text
-
-    #     # IF STARTING AND END POINTS DON'T INTERSECT TO START
-    #     # shift everything to make it appear the start point is x=0 and end point y = 0
-    #     sX = 0
-    #     sY = start[1] - end[1]
-
-    #     eX = end[0] - start[0]
-    #     eY = 0
-
-    #     print(f"({sX}, {sY}) to ({eX}, {eY})")
-
-    #     # get the bounds in the shifted space
-    #     minX = bounds[0] - start[0]
-    #     maxX = bounds[1] - start[0]
-    #     minY = bounds[2] - end[1]
-    #     maxY = bounds[3] - end[1]
-
-    #     print(f"Bounds: ({minX}, {maxX}, {minY}, {maxY})")
-
-    #     # line completely encompassed in the bounds
-    #     if sX >= minX and sX <= maxX and sY >= minY and sY <= maxY:
-    #         return True
-    #     elif eX >= minX and eX <= maxX and eY >= minY and eY <= maxY:
-    #         return True
-
-    #     # get the slope of the line
-    #     if eX - sX > 0:
-    #         slope = (eY - sY) / (eX - sX)
-    #     else:
-    #         slope = (eY - sY) / 1e-13 # ensure no divide by 0
-
-    #     # looking for the values in the slope to see if it intersects the square before it exits the region between min and max X
-    #     yStart = slope * minX + sY
-    #     print(f"Intersect value minX: {yStart}")
-    #     # check if the point is inside the bounds of 
-    #     if yStart >= minY and yStart <=maxY:
-    #         return True
-        
-    #     yEnd = slope * maxX + sY 
-    #     print(f"Intersect value maxX: {yEnd}")
-    #     if yEnd >= minY and yEnd <=maxY:
-    #         return True
-
-    #     else:
-    #         return False 
-
     
     
 
@@ -2505,6 +2682,17 @@ class Test(QOpenGLWidget):
         x = ((u + 1) * self.width) / 2
         y = ((1.0 - v) * self.height) / 2
         return x, y
+
+
+
+    def convertXYZtoWorld(self, vertex):
+        local = np.ones(4)
+        local[:3] = vertex
+
+        return self.model @ local
+
+
+
 
     
     def convertUVDtoXYZ(self, u=0, v=0, d=0):
@@ -2539,6 +2727,7 @@ class Test(QOpenGLWidget):
 
         return mvp
 
+    
     def convertUVDtoWorld(self, pt):
         clip = np.ones(4)
         clip[:3] = pt
@@ -2547,6 +2736,68 @@ class Test(QOpenGLWidget):
         world /= world[3]
         return world[:3]
 
+
+
+    def distanceToPlane(self, origin, normals, points):
+        # d = |(P - P₀) · n| / ||n||
+        # P is point --> origin point on screen
+        # P0 is point on the plane (grab the vertex that makes up the face)
+        # n is the normal vector
+        # || n || is the Euclidean norm (magnitude)
+
+        # # calculate new normals to accommodate for the rotations
+        # normals = [self.convertXYZtoWorld(normal)[:3] for normal in self.normals]
+        # # print(f"Number of normals: {normals[:10]}")
+        # points = [self.convertXYZtoWorld(pose)[:3] for pose in self.poses]
+
+        # calculate new normals to accommodate for the rotations
+        self.normals = [self.convertXYZtoWorld(normal)[:3] for normal in normals]
+        # print(f"Number of normals: {normals[:10]}")
+        
+        difference = np.array(origin - points)
+        # print(difference)
+        magnitudes = np.linalg.norm(normals, axis=1)
+        # print(f"Number of magnitudes: {magnitudes[:10]}")
+        # print(magnitudes)
+
+        numerators = [ abs(np.dot(diff, norm)) for diff, norm in zip(difference, normals)]
+        distances = np.array(numerators / magnitudes)
+
+        print(f"Number of distances {distances.shape}")
+        return distances
+
+
+
+    def calculateDistance(self, origin, distances, direction, normals, points):
+        # O: Origin point --> point on screen in world space
+        # n: Normal vector
+        # d: distance
+        # D: Direction vector
+        # .: dot product
+        
+        # t = (O . n + d) / (D . n) 
+        print(normals.shape)
+
+        originNormal = np.array([np.dot(norm, origin) for norm in normals])
+        numerator = -1 * (originNormal + distances)
+        denominator = np.array([np.dot(direction, norm) for norm in normals])
+        print("Numerator", numerator.shape)
+        print("Denominator", denominator.shape)
+        # print("Poses", self.poses.shape)
+        nonZero = denominator != 0
+        print(nonZero.shape)
+
+        nonZeroPt = points[nonZero][0]
+        nonZeroDist = distances[nonZero][0]
+        t = np.array(numerator[nonZero] / denominator[nonZero])[0]
+        # print("T Shape", t.shape)
+
+        intersected = t > 0
+        # print("Intersected", intersected.shape)
+        # print("Non-zero Distance", nonZeroDist.shape)
+
+        intersect = nonZeroPt[intersected]
+        print(len(intersect))
 
     
     ##############################################################################################
@@ -2770,10 +3021,15 @@ class Test(QOpenGLWidget):
 
                 dirPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
                 dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
+
+                # origin = self.convertXYZtoWorld(self.camera_pos)[:3]
+                # print(origin)
                 depth, intercept = self.interception(origin=self.camera_pos, rayDirection=dir, faces=intersectFaces)
+                # depth, intercept = self.interception(origin=origin, rayDirection=dir, faces=intersectFaces)
                 # Need to pass in the vertices to the code
                 if len(intercept) == 0:
                     print("No intercept detected")
+                    self.crossYMenu = False
                 else:
                     # Now I need to find the min and max z but max their value slightly larger for the rectangle
                     # Depth given in world space
@@ -2804,18 +3060,16 @@ class Test(QOpenGLWidget):
                     """
                     print(f"Vertices: {vertices}")
                     self.cutSequenceDict["Vertices"].append(vertices)
-                    self.cutSequenceDict["Rule"].append("Undecided")
+                    # self.cutSequenceDict["Rule"].append("Undecided")
                     
 
-                    self.userDrawn = True
-
                     self.addDrawVertices(cubeVertices)
-
+                    self.crossYMenu = True
                     # UPDATE VBO TO INCORPORATE THE NEW VERTICES
                     gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
 
             # print(f"Total time for draw: {time.time() - start}\n")
-            self.crossYMenu = True
+            
             self.update()              
                              
 
@@ -2869,11 +3123,11 @@ class Test(QOpenGLWidget):
        
         denominator = np.dot(rayDirection, normal)
         
-        if denominator <= 1e-8: # close to 0 emaning it is almost parallel
+        if denominator <= 1e-8: # close to 0 meaning it is almost parallel to the face
             return None # no intersect due to plane and ray being parallel
         
         # dist = origin - plane[0] # change from A to center point of the plane
-        dist = np.dot(-normal, v1)
+        dist = np.dot(-normal, v1) # np.dot(-normal, v1)
         numerator = -(np.dot(normal, origin) + dist)
         # numerator = np.dot(origin, normal) + plane[0] # to the distance of pt1 on the plane
         t = numerator / denominator
@@ -2890,23 +3144,29 @@ class Test(QOpenGLWidget):
         pEdgeA = pt - v1 # vector between possible intercept point and pt A of the triangle
         perp = np.cross(edgeBA, pEdgeA) # vector perpendicular to triangle's plane
         u = np.dot(normal, perp)
-        if abs(u) > delta:
+        if u < 0:
             return None
+        # if abs(u) > delta:
+        #     return None
         
 
         edgeCB = v3 - v2
         pEdgeB = pt - v2
         perp = np.cross(edgeCB, pEdgeB)
         v = np.dot(normal, perp)
-        if abs(v) > delta:
+        if v < 0:
             return None
-        
+        # if abs(v) > delta:
+        #     return None
+
         edgeAC = v1 - v3
         pEdgeC = pt - v3
         perp = np.cross(edgeAC, pEdgeC)
         w = np.dot(normal, perp)
-        if abs(w) > delta:
+        if w < 0:
             return None
+        # if abs(w) > delta:
+        #     return None
         
         return pt
 
@@ -2993,11 +3253,12 @@ class Test(QOpenGLWidget):
             self.penColor = self.spacingColor
             self.decision = "Spacing"
         
-        self.cutSequenceDict["Rule"][-1] = (self.decision) # replace the decision in the end with the true decision
+        self.cutSequenceDict["Rule"].append(self.decision) # replace the decision in the end with the true decision
         sequence = len(self.cutSequenceDict["Rule"])
+        self.userDrawn = True
         # print(f"Cut #{sequence}: {self.decision}")
         self.cutSequenceDict["Sequence"].append(sequence) # what order of cuts are we using. 
-        # self.update()s
+        # self.update()
 
 
     #############################################
@@ -3646,7 +3907,7 @@ class Window(QMainWindow):
             if self.screenType == "draw_tutorial" or self.screenType == "prune":
                 self.isCorrect = True
         else:
-            self.submitText.setText("Must Prune tree before clicking 'Done'")
+            self.submitText.setText("Require one complete pruning decision before 'Done'")
         
         self.submitText.setStyleSheet("font-size: 20px;" "font:bold")
 

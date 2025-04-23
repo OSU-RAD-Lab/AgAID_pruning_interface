@@ -1,11 +1,10 @@
 {
     "Test": [  
         
-        
         {
             "Module": "Camera Tutorial", 
             "Your Task": "Manipulate the (blue) Camera Sliders on the left\nside of the screen to move the camera view. You\ncan move the camera at any time.\nClick 'Next' when finished",
-            "Layout": "normal",
+            "Layout": "prune",
             "Tree File": "proxyTree",
             "File Directory": ""
         },
@@ -199,9 +198,11 @@
         },
 
 
+
+
         {
             "Module": "End of Pilot Study", 
-            "Your Task": "Thank you for participating!",
+            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.!",
             "Layout": "end",
             "Tree File": "textureTree",
             "File Directory": ""
