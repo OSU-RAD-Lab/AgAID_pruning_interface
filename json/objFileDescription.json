@@ -852,8 +852,8 @@
                 "Vigor Cuts": "VigorCuts.obj",
                 "Canopy Cuts": "",
                 "Bud Spacing Cuts": "BudSpacingCuts.obj",
-                "Section Translate": [0, -2.2, -1.8],
-                "Whole Translate": [0, -2.2, -5],
+                "Section Translate": [0, -2.25, -1.8],
+                "Whole Translate": [0, -2.25, -5],
                 "Features": 
                 {
                     "Trunk": [0.0, 0.0, 2.146], 

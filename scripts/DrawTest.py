@@ -9,7 +9,7 @@ import argparse
 
 from PySide6 import QtCore, QtGui, QtOpenGL
 
-from PySide6.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QComboBox, QProgressBar, QRadioButton
+from PySide6.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QComboBox, QProgressBar, QLineEdit
     # QOpenGLWidget
 
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
@@ -1371,11 +1371,12 @@ class Test(QOpenGLWidget):
         scaleRatio = (self.wholeTreeTranslate[2] - self.treeSectionTranslate[2]) / self.wholeTreeTranslate[2]
         scale = mt.create_from_scale([self.TREE_SECTION_ASPECT * scaleRatio, scaleRatio, 1]) # aspect, 1, 1
         
+        
         # moveX = -1 * (self.WHOLE_TREE_DEPTH * (self.TREE_SECTION_DX / self.TREE_SECTION_DEPTH))  # Ratio to shift should be the same as x/z for tree section
         moveX = -1 * (self.wholeTreeTranslate[2] * (self.treeSectionTranslate[0] / self.treeSectionTranslate[2]))
         
         # translation = np.transpose(mt.create_from_translation([moveX, 0, self.WHOLE_TREE_DEPTH])) # -1*self.TREE_SECTION_DX, -1*self.TREE_DY
-        translation = np.transpose(mt.create_from_translation([moveX, 0, self.wholeTreeTranslate[2]]))
+        translation = np.transpose(mt.create_from_translation([moveX * scaleRatio, 0, self.wholeTreeTranslate[2]]))
         model = translation @ scale # for rotating the modelView only want to translate and scale but not rotate
 
         gl.glUseProgram(self.boundBoxProgram)
@@ -2970,7 +2971,7 @@ class Test(QOpenGLWidget):
         drawPt7 = self.get_drawn_coords(u4, v4, minZ)
         drawPt8 = self.get_drawn_coords(u4, v4, maxZ)
 
-        vertices = [drawPt1, drawPt2, drawPt3, drawPt4, drawPt5, drawPt6, drawPt7, drawPt8]
+        vertices = [list(drawPt1), list(drawPt2), list(drawPt3), list(drawPt4), list(drawPt5), list(drawPt6), list(drawPt7), list(drawPt8)]
 
         # cubeVertices = [drawPt1, drawPt2, drawPt3, drawPt4,
         #                 drawPt1, drawPt2, drawPt6, drawPt5, 
@@ -3007,18 +3008,7 @@ class Test(QOpenGLWidget):
             intersectFaces = self.mesh.intersect_faces(u1=u1, v1=v1, u2=u2, v2=v2, projection=self.projection, view=self.view, model=self.model)
             # intersectFaces = None
             if intersectFaces is not None:
-                # Determine faces in a given region
-                self.cutReleaseTime = self.releaseTime
-                cutTime = self.cutReleaseTime - self.pressTime
-                self.cutSequenceDict["Cut Time"].append(cutTime)
-                sequence = len(self.cutSequenceDict["Cut Time"])
-                print(f"\nCut #{sequence} Time: {cutTime}")
-
-
-                betweenCutTime = self.pressTime - self.endCutTime
-                print(f"Time Between Cuts {sequence-1} and {sequence}: {betweenCutTime}")
-                self.cutSequenceDict["Between Time"].append(betweenCutTime)
-
+                
                 dirPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
                 dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
 
@@ -3030,9 +3020,25 @@ class Test(QOpenGLWidget):
                 if len(intercept) == 0:
                     print("No intercept detected")
                     self.crossYMenu = False
+                    # self.cutSequenceDict["Vertices"].append(vertices)
+                    # self.cutSequenceDict["Rule"].append("Undecided")
+                    
+
                 else:
                     # Now I need to find the min and max z but max their value slightly larger for the rectangle
                     # Depth given in world space
+
+                    # Determine faces in a given region
+                    self.cutReleaseTime = self.releaseTime
+                    cutTime = self.cutReleaseTime - self.pressTime
+                    self.cutSequenceDict["Cut Time"].append(cutTime)
+                    sequence = len(self.cutSequenceDict["Cut Time"])
+                    print(f"\nCut #{sequence} Time: {cutTime}")
+
+
+                    betweenCutTime = self.pressTime - self.endCutTime
+                    print(f"Time Between Cuts {sequence-1} and {sequence}: {betweenCutTime}")
+                    self.cutSequenceDict["Between Time"].append(betweenCutTime)
 
                     # TURN THE DRAWLINES TO TRUE SO IT DRAWS ON SCREEN
                     if self.screenType == "draw_tutorial" or self.screenType == "prune":
@@ -3058,7 +3064,7 @@ class Test(QOpenGLWidget):
                     """
                     TODO: See if I need to translate the points back to world frame for  storing before writing to a mesh file
                     """
-                    print(f"Vertices: {vertices}")
+                    # print(f"Vertices: {vertices}")
                     self.cutSequenceDict["Vertices"].append(vertices)
                     # self.cutSequenceDict["Rule"].append("Undecided")
                     
@@ -3279,10 +3285,16 @@ class Window(QMainWindow):
         QMainWindow.__init__(self, parent)
         # Practice loading in data
         self.fname = "proxyTree.obj"
-        self.jsonData = JSONFile("objFileDescription.json", "o").data
+
+        self.jsonReader = JSONFile()
+        self.jsonData = self.jsonReader.read_file("objFileDescription.json") #JSONFile("objFileDescription.json", "o").data
         self.pid = pid
 
         self.userData = {} # dictionary to store the person's data collected in the interface
+        self.participantCuts = None
+        self.treeLoaded = time.time()
+        print("\nRESETTING USER DATA\n")
+        self.treeNum = 0
 
         # QtOpenGL.QMainWindow.__init__(self)
         # self.resize(1000, 1000)
@@ -3293,6 +3305,7 @@ class Window(QMainWindow):
         self.index = 0
         self.correctFeature = False
         self.pageIndex = 0
+        self.reset = False
 
         self.modules, self.labels, self.layouts, self.directories, self.trees = self.loadJSONWorkflow()
 
@@ -3520,6 +3533,9 @@ class Window(QMainWindow):
         elif self.screenType == "explain_prune":
             self.pruningExplanationScreen()
 
+        elif self.screenType == "question":
+            self.questionScreen()
+
         else:
             self.loadTreeSectionScreen()
             # self.viewGL.setScreenProperties(screenType=self.screenType)
@@ -3740,7 +3756,6 @@ class Window(QMainWindow):
     #   - sliders to control the camera
     #######################################################################
     def loadTreeSectionScreen(self):
-      
         self.glWidgetTree = Test(wholeView=False, 
                                 fname=self.fname,
                                 meshDictionary=self.meshDictionary, 
@@ -3827,6 +3842,15 @@ class Window(QMainWindow):
             self.toPrune = True # TO CHANGE
             self.toPruneBin = True
 
+        elif self.screenType == "question":
+            self.screen_width = 2
+            self.glWidgetTree.setScreenProperties(screenType=self.screenType)
+            self.toManipulate = False
+            self.toBin = False 
+            self.toPrune = False # TO CHANGE
+            self.toPruneBin = False
+            self.toExplain = False
+
         else: # submit should use previous manipulation value
             self.screen_width = 2
             self.glWidgetTree.setScreenProperties(screenType=self.screenType, toManipulate=self.toManipulate, toBin=self.toBin, toPrune=self.toPrune)
@@ -3871,6 +3895,7 @@ class Window(QMainWindow):
 
             self.submitText = QLabel("")
             self.hLayout.addWidget(self.submitText)
+            self.treeLoaded = time.time()
 
             
 
@@ -3907,13 +3932,14 @@ class Window(QMainWindow):
             if self.screenType == "draw_tutorial" or self.screenType == "prune":
                 self.isCorrect = True
         else:
-            self.submitText.setText("Require one complete pruning decision before 'Done'")
+            self.submitText.setText("Require one complete prune before clicking 'Done'")
         
-        self.submitText.setStyleSheet("font-size: 20px;" "font:bold")
+        self.submitText.setStyleSheet("font-size: 20px;" "font:bold;" "color: yellow")
 
 
     def resetClicked(self):
         self.isCorrect = False
+        self.reset = True
         self.submitText.setText("")
         self.resetButton.setEnabled(False)
         self.nextButton.setEnabled(False) # next should disappear if there is no prunes on the branch
@@ -4030,8 +4056,9 @@ class Window(QMainWindow):
         text = self.checkAnswer()
         self.answerText.setText(text)
         self.answerText.setStyleSheet("font-size: 25px;")
-        
-
+    
+    
+    
     def pruneButtonClicked(self):
 
         self.interacted = True
@@ -4163,12 +4190,63 @@ class Window(QMainWindow):
             self.explanation.setStyleSheet("font-size: 20px;")
 
             explanation = {
+                "Branch Num": self.binIndex,
                 "Decision": self.meshDictionary["Decisions"][index],
                 "Explanation": self.meshDictionary["Explanations"][index]
             }
 
             self.explanationsSequence.append(explanation) # add to the sequence of data that the user is looking at
 
+
+    """
+        QUESTION SCREEN
+    """
+    def questionScreen(self):
+        self.loadTreeSectionScreen()
+
+        self.questionFrame = QFrame(self.central_widget)
+        self.questionFrame.setFrameShape(QFrame.Shape.Box)
+        self.questionFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.questionFrame.setFixedHeight(300) # 500 
+        self.layout.addWidget(self.questionFrame, self.screen_width+1, 1, 1, 1) # Where on the screen we add
+        self.questionLayout = QVBoxLayout(self.questionFrame)
+
+        self.questionLabel = QLabel("Why did you reset your pruning cuts?")
+        self.questionLabel.setStyleSheet("font-size: 25px;" "font:bold")
+        self.questionLayout.addWidget(self.questionLabel)
+        
+        # Add the question:
+        self.questionBox = QLineEdit("")
+        self.questionBox.setPlaceholderText("Answer")
+        self.questionBox.setFont(QFont("Arial", 15))
+        self.questionBox.textChanged.connect(self.textChanged)
+        self.questionLayout.addWidget(self.questionBox)
+
+        self.submitTextButton = QPushButton("Submit")
+        self.submitTextButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
+                                            "QPushButton::pressed {background-color: #4F9153;}")
+        
+        self.submitTextButton.setFixedSize(150, 50) # 300, 100
+        self.submitTextButton.clicked.connect(self.submitQuestion)
+        self.questionLayout.addWidget(self.submitTextButton)
+        self.submitTextButton.setEnabled(False)
+    
+
+    def submitQuestion(self):
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+        print(f"User answer:\n{self.questionAnswer}")
+
+
+    def textChanged(self, text):
+        self.questionAnswer = text
+        if len(text) > 0:
+            self.submitTextButton.setEnabled(True)
+            self.nextButton.setEnabled(False)
+        else:
+            self.submitTextButton.setEnabled(False)
+            
 
     """
         RULE SCREEN DISPLAY
@@ -4782,37 +4860,76 @@ class Window(QMainWindow):
 
             treeName = self.curTree
 
+            if self.layouts[self.pageIndex] == "question" and not self.reset:
+                self.pageIndex += 1
+                # self.userData["Reset Answer"] = "" # they don't have the answer
+
+
             # If the screenType is "prune" then we need to save the user's cutSequenceDict from the glWidget
             # save the values under the tree name 
-            if self.screenType == "draw_tutorial" or self.screenType == "prune":
+            if self.screenType == "prune":
+                self.treeNum += 1
                 
-                print(f"\nUser's data: {treeName}")
+                # print(f"\nUser's data: {treeName}")
+                self.userData["Pruning Time"] = time.time() - self.treeLoaded
                 userPruningCuts = self.glWidgetTree.userPruningCuts
 
                 finalCutSequence = self.glWidgetTree.cutSequenceDict
                 userPruningCuts.append(finalCutSequence)
+
                 # print(cutData)
-                self.userData[treeName] = userPruningCuts # store the data in a file
+                # self.userData = {}
+                
+                self.participantCuts = self.copyCutData(userPruningCuts)
+                # self.writeUserData("Cut Data", userPruningCuts)
+                self.userData["Cut Data"] = self.participantCuts
+                # print(self.userData["Cut Data"])
+
+                if self.reset == False:
+                    self.userData["Reset Answer"] = ""
 
                 self.treeMesh.write_mesh_file(treeName=treeName, pid=self.pid, pruningData=userPruningCuts)
 
+            if self.screenType == "question":
+                # print(self.userData)
+                
+                self.userData["Reset Answer"] = self.questionAnswer
+                # self.writeUserData("Reset Answer", self.questionAnswer)
+                # print(self.userData["Reset Answer"])
+                self.reset = False
+
+
+
             if self.screenType == "explain_prune":
+                # print("User Cut Data:", self.userData["Cut Data"])
+                # print("Participant Cuts:", self.participantCuts)
+                # print(self.userData)
+                
                 # Extract the explanations and save it under the files
-                keyName = treeName + "_Explanations"
-                self.userData[keyName] = self.explanationsSequence
-                print(self.userData)
+                self.userData["Explanations"] = self.explanationsSequence
+                # self.writeUserData("Explanations", self.explanationsSequence)
+                # print(self.userData["Explanations"])
+
+                self.jsonReader.write_file(self.userData, treeName, self.treeNum, self.pid)
+                # self.resetUserData()
+                self.userData = {}
+                self.explanationsSequence = [] # reset the sequence of explanations the user used
+
 
             # IF the next page is the end of everything, save the data
-            if self.layouts[self.pageIndex] == "end": # Write all the data to a file for analysis
-                JSONFile.write_file(self.userData, pid=self.pid)
+            # if self.layouts[self.pageIndex] == "end": # Write all the data to a file for analysis
+            #     self.jsonReader.write_file(self.userData, self.pid)
+                # JSONFile.write_file(self.userData, pid=self.pid)
              
-
 
             if self.isCorrect:
                 self.isCorrect = False
 
             if self.interacted:
                 self.interacted = False
+            
+            if self.reset:
+                self.reset = False
             
             self.nextButton.setEnabled(False)
 
@@ -4840,6 +4957,7 @@ class Window(QMainWindow):
             self.screenType = self.layouts[self.pageIndex] # Set the next page index
             self.index = 0 # set index to 0
             self.loadScreen()
+        
         else:
             text = "Cannot continue until 'Your Task' is completed"
             self.nextLabel.setText(text)
@@ -4852,6 +4970,18 @@ class Window(QMainWindow):
                 return False 
         return True
     
+
+    def copyCutData(self, cutData):
+        participantCuts = []
+        data = {}
+        for cuts in cutData:
+            for key in cuts:
+                data[key] = list(cuts[key])
+
+            participantCuts.append(data)
+        return participantCuts
+
+
 
     def labelButtonClicked(self):
         checked = True
@@ -4868,12 +4998,13 @@ class Window(QMainWindow):
             self.labelButton.setText("Labels On")
             checked = False
         self.glWidgetTree.addLabels(checked) # activate the label check
-        
+
+
 
     def loadJSONWorkflow(self):
-        workflowDict = JSONFile("workflow.json", "o").data
+        workflowDict = self.jsonReader.read_file("workflow.json") # JSONFile("workflow.json", "o").data
         
-        # Get the different components
+        # REPLACE BY WHAT WE ENTER ON THE SCREEN
         testWorkflow = workflowDict["Test"]
         modules = []
         labels = []
@@ -4903,15 +5034,17 @@ if __name__ == '__main__':
 
     # Create the flags needed to get the pid 
 
-    parser = argparse.ArgumentParser(description="Participant ID")
-    parser.add_argument('--pid', help="participant identification")
+    pid = input("Participant ID:\n")
 
-    args = parser.parse_args()
-    if args.pid:
-        pid = args.pid
-    else:
-        pid = "unknown"
+    # parser = argparse.ArgumentParser(description="Participant ID")
+    # parser.add_argument('--pid', help="participant identification")
 
+    # args = parser.parse_args()
+    # if args.pid:
+    #     pid = args.pid
+    # else:
+    #     pid = "unknown"
+    
     window = Window(pid=pid) # GLDemo()
     # window = MainWindow()
     window.show()
