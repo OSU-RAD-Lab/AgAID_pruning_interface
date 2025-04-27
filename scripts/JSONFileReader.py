@@ -43,7 +43,7 @@ class JSONFile:
         return self.data
 
     
-    def write_file(self, userData, treeName, treeNum, pid):
+    def write_file(self, userData, pid, treeName=None, treeNum=None):
 
         # Need to write to the user's folder
         # fname = "PID_" + str(pid) + "_data.json"
@@ -55,7 +55,12 @@ class JSONFile:
         if not os.path.exists(pid_directory):
             os.makedirs(pid_directory)
 
-        fname = pid_directory + f"/Tree_{treeNum}_" + str(treeName) + ".json"
+
+        if treeName is not None and treeNum is not None:
+            fname = pid_directory + f"/Tree_{treeNum}_" + str(treeName) + ".json"
+        else:
+            fname = pid_directory + f"/Evalatuations.json"
+
         
         with open(fname, "w") as file:
             data = json.dumps(userData, indent=4)

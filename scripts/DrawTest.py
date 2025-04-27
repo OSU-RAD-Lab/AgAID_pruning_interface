@@ -36,7 +36,7 @@ import time
 import math
 from freetype import * # allows us to display text on the screen
 from JSONFileReader import *
-
+from datetime import datetime
 
 
 
@@ -724,8 +724,8 @@ class Test(QOpenGLWidget):
                     pruneText = f"Pruning Description: {self.pruneFeature}"
 
 
-                    _ = self.renderText(vigorText, x=(0.43310 * self.width), y=self.height - (0.24721 * self.height), scale=0.35, color=[1, 0.27, 0]) # 1400, 650  [1, 0.477, 0.706]
-                    _ = self.renderText(pruneText, x=(0.43310 * self.width), y=self.height - (0.21013 * self.height), scale=0.35, color=[1, 0.27, 0]) # 1400, 650
+                    _ = self.renderText(vigorText, x=(0.53320 * self.width), y=self.height - (0.80516 * self.height), scale=0.35, color=[1, 0.27, 0]) # 1400, 650  [1, 0.477, 0.706]
+                    _ = self.renderText(pruneText, x=(0.53320 * self.width), y=self.height - (0.76808 * self.height), scale=0.35, color=[1, 0.27, 0]) # 1400, 650
 
                 # elif self.screenType = "bin" and not self.wholeView:s
                 #     self.renderText("Branch", x=1200, y=820, scale=0.85, color=[1, 0, 0])
@@ -888,7 +888,7 @@ class Test(QOpenGLWidget):
                 gl.glBindVertexArray(0) # unbind the vao
             
             # ADD LABELS:
-            binLabelLocs = [(0.34377, 0.30902), (0.45836, 0.26576), (0.57295, 0.24721)] # 
+            binLabelLocs = [(0.3801732435033686, 0.3558648111332008), (0.5495668912415784, 0.36182902584493043), (0.6891241578440809, 0.29025844930417494)] # 
             for i in range(len(self.meshes)):
                 branch_label = f"Branch {i+1}"
                 x, y = binLabelLocs[i]
@@ -1373,10 +1373,13 @@ class Test(QOpenGLWidget):
         
         
         # moveX = -1 * (self.WHOLE_TREE_DEPTH * (self.TREE_SECTION_DX / self.TREE_SECTION_DEPTH))  # Ratio to shift should be the same as x/z for tree section
-        moveX = -1 * (self.wholeTreeTranslate[2] * (self.treeSectionTranslate[0] / self.treeSectionTranslate[2]))
+        # moveX = -1 * (self.wholeTreeTranslate[2] * (self.treeSectionTranslate[0] / self.treeSectionTranslate[2]))
         
         # translation = np.transpose(mt.create_from_translation([moveX, 0, self.WHOLE_TREE_DEPTH])) # -1*self.TREE_SECTION_DX, -1*self.TREE_DY
-        translation = np.transpose(mt.create_from_translation([moveX * scaleRatio, 0, self.wholeTreeTranslate[2]]))
+        # translation = np.transpose(mt.create_from_translation([moveX * scaleRatio, 0, self.wholeTreeTranslate[2]]))
+
+        translation = np.transpose(mt.create_from_translation([0, 0, self.wholeTreeTranslate[2]+0.1]))
+
         model = translation @ scale # for rotating the modelView only want to translate and scale but not rotate
 
         gl.glUseProgram(self.boundBoxProgram)
@@ -1470,19 +1473,23 @@ class Test(QOpenGLWidget):
             branchRotation = mt.create_from_x_rotation(xRad) @ mt.create_from_y_rotation(yRad) @ mt.create_from_z_rotation(zRad) 
 
 
-            BRANCH = 0.15 # how much you need to translate branches to sit on the secondary branch next to the trunk
-
             if self.pruneDescription[self.index] == "Heading Cut":
                 # translate = self.meshTranslations[self.index]
                         
                 # adjust for where the heading cut is based on the location of the secondary branch
                 # How much to translate in the y direction
-                if xRad == 0:
-                    dy = (0.175 - self.meshTranslations[self.index][1] + (BRANCH - self.meshTranslations[self.index][1])) # *math.sin(xRad)
-                else:
-                    dy = (0.175 - self.meshTranslations[self.index][1] - (BRANCH - self.meshTranslations[self.index][1])*math.sin(xRad))
+                # if xRad == 0:
+                #     # dy = (0.175 - self.meshTranslations[self.index][1]) # + (BRANCH - self.meshTranslations[self.index][1])) # *math.sin(xRad)
+                #     # print("xRad is 0")
+                #     dy = 0.13 # Value that works for branch
+                #     # dy = (0.05 - self.meshTranslations[self.index][1]) + (BRANCH - self.meshTranslations[self.index][1])
+                # else:
+                #     # dy = (0.175 - self.meshTranslations[self.index][1]) # - (BRANCH - self.meshTranslations[self.index][1])*math.sin(xRad))
+                #     # print("xRad is not 0")
+                #     dy = 0.13*math.sin(np.pi - xRad)
+                    # dy = (0.05 - self.meshTranslations[self.index][1]) - (BRANCH - self.meshTranslations[self.index][1])*math.sin(xRad) # - (BRANCH - self.meshTranslations[self.index][1])*math.sin(xRad))
 
-                cut_pos = [0, dy, 0, 1] 
+                cut_pos = [0, 0.13, 0, 1] # [0, dy, 0, 1]
                 dx, dy, dz, _ = branchRotation @ np.transpose(cut_pos)
 
                 # need it to be the same y direction 
@@ -1498,17 +1505,19 @@ class Test(QOpenGLWidget):
                 # else:
                 #     dy = (0.08 - self.meshTranslations[self.index][1] - (BRANCH - self.meshTranslations[self.index][1])*math.sin(xRad))
 
-                cut_pos = [0, 0.08 - self.meshTranslations[self.index][1], 0, 1]
+                cut_pos = [0.0, 0.02, 0, 1] # [0.005, -0.075 - self.meshTranslations[self.index][1], 0, 1]
+                # cut_pos = [0, 0.08 - self.meshTranslations[self.index][1], 0, 1]
                 color = [0, 1, 0]
                 dx, dy, dz, _ = branchRotation @ np.transpose(cut_pos)
 
-                # print(f"{x} / math.tan({zRad}) = {x} / {math.tan(zRad)} = {z / math.tan(zRad)}")
-                dx -= ((z * math.tan(np.pi - zRad)) + 0.01)
-                # dx += (1.4*z / math.tan(zRad)) # 0.75*z
-                # dx += x * math.tan(xRad)
-                dz += 0.03 * math.tan(np.pi - zRad)
+                # # print(f"{x} / math.tan({zRad}) = {x} / {math.tan(zRad)} = {z / math.tan(zRad)}")
+                # dx -= ((z * math.tan(np.pi - zRad)) + 0.01)
+                # # dx += (1.4*z / math.tan(zRad)) # 0.75*z
+                # # dx += x * math.tan(xRad)
+                # dz += 0.03 * math.tan(np.pi - zRad)
                 # dz -= (0.075 / math.tan(zRad)) # Want around -0.05 for z when angled in 90 degree rotation
 
+            # print(f"Translation: {[x + dx, y + dy, z + dz]}")
 
             cutTranslation = np.transpose(mt.create_from_translation([x + dx, y + dy, z + dz]))
 
@@ -1571,7 +1580,7 @@ class Test(QOpenGLWidget):
         gl.glLoadIdentity()
         gl.glPushMatrix()
 
-        print("Inside Bin Features")
+        # print("Inside Bin Features")
         drawing = False
         if len(self.meshes) > 0: # check I have values just in case
             # Bind the texture and link the program
@@ -1645,9 +1654,9 @@ class Test(QOpenGLWidget):
                 gl.glBindVertexArray(0) # unbind the vao
             # END FOR
             if drawing:
-                binLabelLocs = [(0.26737, 0.30902), (0.38197, 0.26576), (0.49656, 0.24721)] # (1100, 650), (1450, 600), (1800, 550)
+                binLabelLocs = [(0.3551491819056785, 0.3220675944333996), (0.53609239653513, 0.3220675944333996), (0.6746871992300288, 0.3220675944333996)] # (1100, 650), (1450, 600), (1800, 550)
                 for i in range(3):
-                    branch_label = f"{self.wantedFeature} Branch {i+1}"
+                    branch_label = f"{self.wantedFeature}" #  Branch {i+1}
                     x, y = binLabelLocs[i]
                     scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
                     _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.3)
@@ -1751,27 +1760,21 @@ class Test(QOpenGLWidget):
 
                     if self.pruneDescription[i] == "Heading Cut":
                         # translate = self.meshTranslations[self.index]
-                        BRANCH = 0.15 # how much you need to translate branches to sit on the secondary branch next to the trunk
+                        # BRANCH = self.treeSectionTranslate[0] # how much you need to translate branches to sit on the secondary branch next to the trunk
                         
                         # adjust for where the heading cut is based on the location of the secondary branch
                         # How much to translate in the y direction
-                        if xRad == 0:
-                            dy = (0.175 - self.meshTranslations[i][1] + (BRANCH - self.meshTranslations[i][1])) # *math.sin(xRad)
-                        else:
-                            dy = (0.175 - self.meshTranslations[i][1] - (BRANCH - self.meshTranslations[i][1])*math.sin(xRad))
-                        # ((self.meshTranslations[i][1] - BRANCH)/math.cos(xRad))
-                        # print(f"Branch {i+1}: {dy}")
-
-                        cut_pos = [0, dy, 0, 1]
+                        cut_pos = [0, 0.13, 0, 1] # [0, dy, 0, 1]
                         dx, dy, dz, _ = branchRotation @ np.transpose(cut_pos)
 
                     else:
-                        cut_pos = [0, 0.08 - self.meshTranslations[i][1], 0, 1]
+                        cut_pos = [0.0, 0.02, 0, 1] # -0.075 - self.meshTranslations[i][1]
                         color = [0, 1, 0]
                         dx, dy, dz, _ = branchRotation @ np.transpose(cut_pos)
 
-                        dx -= ((z * math.tan(np.pi - zRad)) + 0.01)
-                        dz += 0.03 * math.tan(np.pi - zRad)
+                        # dx -= ((z * math.tan(np.pi - zRad)) + 0.01)
+                        # # dz += 0.03 * math.tan(np.pi - zRad)
+                        # dz += 0.13 * math.tan(np.pi - zRad)
                     
                     # print(f"Branch {i}: {cut_pos}") 
                     cutTranslation = np.transpose(mt.create_from_translation([x + dx, y + dy, z + dz]))
@@ -2380,7 +2383,8 @@ class Test(QOpenGLWidget):
 
         self.origins = []
         self.directions = []
-        # print(f"\n{self.press.x() / self.width}, {self.press.y() / self.height}")
+        print(f"{self.width}, {self.height}")
+        print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
 
         # # u, v = self.convertXYtoUV(self.press.x(), self.press.y())
         # origin = self.convertXYToWorld(self.press.x(), self.press.y())
@@ -3281,7 +3285,7 @@ class Test(QOpenGLWidget):
 # QtOpenGL.QMainWindow 
 class Window(QMainWindow):
 
-    def __init__(self, parent=None, pid=None):
+    def __init__(self, parent=None, pid=None, guideline=None, sequence=None):
         QMainWindow.__init__(self, parent)
         # Practice loading in data
         self.fname = "proxyTree.obj"
@@ -3289,10 +3293,22 @@ class Window(QMainWindow):
         self.jsonReader = JSONFile()
         self.jsonData = self.jsonReader.read_file("objFileDescription.json") #JSONFile("objFileDescription.json", "o").data
         self.pid = pid
+        self.guideline = guideline
+        self.sequence = sequence
 
         self.userData = {} # dictionary to store the person's data collected in the interface
+        self.userTests = {}
+        
+
+        self.submits = {
+            "Total Time": None,
+            "Answers": [],
+            "Submit Times": []
+        }
+
         self.participantCuts = None
         self.treeLoaded = time.time()
+        self.lastSubmit = time.time()
         print("\nRESETTING USER DATA\n")
         self.treeNum = 0
 
@@ -3307,7 +3323,7 @@ class Window(QMainWindow):
         self.pageIndex = 0
         self.reset = False
 
-        self.modules, self.labels, self.layouts, self.directories, self.trees = self.loadJSONWorkflow()
+        self.modules, self.labels, self.layouts, self.directories, self.trees = self.loadJSONWorkflow(guideline, sequence)
 
         # LIST OF MESH FILES AND SCREEN TYPES FOR THE PAGE
         self.curLabels = self.labels[self.pageIndex]
@@ -3350,7 +3366,7 @@ class Window(QMainWindow):
         self.skyBoxMesh = None # skybox is the same for every window
         self.interacted = False
 
-        self.drawTerms = [False] * 3
+        self.drawTerms = [False] * 4
 
         
         self.explanationsSequence = []
@@ -3963,7 +3979,7 @@ class Window(QMainWindow):
     def manipulationScreen(self):
         
         self.loadTreeSectionScreen() # LOAD THE TREE SECTION
-
+        self.lastSubmit = time.time()
         self.manipulationFrame = QFrame(self.central_widget) # self.central_widget
         self.manipulationFrame.setFrameShape(QFrame.Shape.Box)
         self.manipulationFrame.setFrameShadow(QFrame.Shadow.Sunken)
@@ -4017,31 +4033,64 @@ class Window(QMainWindow):
 
     def checkAnswer(self):
         text = ""
+
+        directory = self.jsonData["Manipulation Files"][self.manipulationDir]
         if self.screenType == "manipulation": # self.glWidgetTree.toManipulate
             if self.correctFeature:
                 # print("IS THE CORRECT FEATURE")
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"]
+                # text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"]
+                text = directory["Correct"]
                 self.isCorrect = True
                 self.nextButton.setEnabled(True)
                 # self.submitButton = QPushButton("Next") 
                 # self.submitButton.clicked.connect(self.nextPageButtonClicked)
+
+                self.submits["Total Time"] = time.time() - self.treeLoaded
+                self.submits["Submit Times"].append(time.time() - self.lastSubmit)
+                self.lastSubmit = time.time()
+                self.submits["Answers"].append(self.meshDictionary["Branches"]["Description"][self.index])
+
             else:
                 # print("NOT THE CORRECT FEATURE")
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
+                # Get the timing
+                self.submits["Submit Times"].append(time.time() - self.lastSubmit)
+                self.lastSubmit = time.time()
+
+                # text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
+                text = directory["Incorrect"]
                 self.nextButton.setEnabled(False)
+                self.submits["Answers"].append(self.meshDictionary["Branches"]["Description"][self.index])
+                
                 
         elif self.screenType == "bin": # CHECK THE BIN ANSWERS
-            correct = self.jsonData["Manipulation Files"][self.manipulationDir]["Answer"]
+            # correct = self.jsonData["Manipulation Files"][self.manipulationDir]["Answer"]
+            correct = directory["Answer"]
             if self.compareBinAnswers(correct, self.binAnswers):
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"]
+                # text = self.jsonData["Manipulation Files"][self.manipulationDir]["Correct"]
+                text = directory["Correct"]
                 self.isCorrect = True
                 self.nextButton.setEnabled(True)
                 # self.submitButton = QPushButton("Next") 
                 # self.submitButton.clicked.connect(self.nextPageButtonClicked)
+                self.submits["Total Time"] = time.time() - self.treeLoaded
+                self.submits["Submit Times"].append(time.time() - self.lastSubmit)
+                self.lastSubmit = time.time()
+
+                self.submits["Answers"].append(correct)
+
             else:
-                text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
+                # text = self.jsonData["Manipulation Files"][self.manipulationDir]["Incorrect"]
+                text = directory["Incorrect"]
                 self.nextButton.setEnabled(False)
+
+                # Add data to the json files
+                self.submits["Submit Times"].append(time.time() - self.lastSubmit)
+                self.lastSubmit = time.time()
+
+                self.submits["Answers"].append(self.binAnswers)
+
         return text
+
 
 
     def scaleIndex(self, value):
@@ -4328,7 +4377,7 @@ class Window(QMainWindow):
 
         self.descriptionLabel = QLabel("")
         self.descriptionLabel.setStyleSheet("font-size: 25px;")
-        self.treeTermLayout.addWidget(self.descriptionLabel, 0, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
+        self.treeTermLayout.addWidget(self.descriptionLabel, 0, 1, 1, 3, Qt.AlignBottom | Qt.AlignCenter)
 
         # make the 3 labels and buttons for the individual branches that should be pruned when clicked
         self.trunkLabel = QLabel("Trunk")
@@ -4370,6 +4419,19 @@ class Window(QMainWindow):
         self.tertiaryButton.clicked.connect(self.tertiaryButtonClicked)
         self.treeTermLayout.addWidget(self.tertiaryButton, 2, 2, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
+        # BRANCH 3
+        self.budLabel = QLabel("Buds")
+        self.budLabel.setStyleSheet("font-size: 20px;" "font:bold")
+        self.treeTermLayout.addWidget(self.budLabel, 1, 3, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+        self.budButton = QPushButton("Show") 
+        self.budButton.setCheckable(True)
+        self.budButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+                                              "QPushButton::pressed {background-color: #4F9153;}")
+        self.budButton.setFixedSize(150, 50)
+        self.budButton.clicked.connect(self.budButtonClicked)
+        self.treeTermLayout.addWidget(self.budButton, 2, 3, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
 
     def trunkButtonClicked(self):
         self.interacted = True
@@ -4377,16 +4439,17 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.trunkButton.isChecked():
             self.descriptionLabel.setText("Trunk, primary branch, or leader is the main structure that connects to the roots")
-            self.descriptionLabel.setStyleSheet("font-size: 20px;")
+            self.descriptionLabel.setStyleSheet("font-size: 18px;")
 
             self.trunkButton.setText("Hide")
-            self.trunkButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+            self.trunkButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
                                             "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[0] = True
             # Don't highlight anything else until the branches are clicked
             # self.trunkButton.setEnabled(False)
             self.secondaryButton.setEnabled(False)
             self.tertiaryButton.setEnabled(False)
+            self.budButton.setEnabled(False)
             # TO DO: Call function in GLWidget to prune the branch
 
         else:
@@ -4397,6 +4460,7 @@ class Window(QMainWindow):
             # self.trunkButton.setEnabled(True)
             self.secondaryButton.setEnabled(True)
             self.tertiaryButton.setEnabled(True)
+            self.budButton.setEnabled(True)
         
         self.glWidgetTree.toDrawTerms(self.drawTerms)
     
@@ -4407,15 +4471,16 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.secondaryButton.isChecked():
             self.descriptionLabel.setText("Secondary Branches are wired down support branches growing out from the trunk")
-            self.descriptionLabel.setStyleSheet("font-size: 20px;")
+            self.descriptionLabel.setStyleSheet("font-size: 18px;")
             self.secondaryButton.setText("Hide")
-            self.secondaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+            self.secondaryButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
                                             "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[1] = True
             # Don't highlight anything else until the branches are clicked
             self.trunkButton.setEnabled(False)
             # self.secondaryButton.setEnabled(False)
             self.tertiaryButton.setEnabled(False)
+            self.budButton.setEnabled(True)
             # TO DO: Call function in GLWidget to prune the branch
 
         else:
@@ -4426,6 +4491,7 @@ class Window(QMainWindow):
             self.trunkButton.setEnabled(True)
             # self.secondaryButton.setEnabled(True)
             self.tertiaryButton.setEnabled(True)
+            self.budButton.setEnabled(True)
         
         self.glWidgetTree.toDrawTerms(self.drawTerms)
   
@@ -4437,14 +4503,15 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
         if self.tertiaryButton.isChecked():
             self.descriptionLabel.setText("Tertiary branches grow from secondary branches and produce fruit and leaves.")
-            self.descriptionLabel.setStyleSheet("font-size: 20px;")
+            self.descriptionLabel.setStyleSheet("font-size: 18px;")
             self.tertiaryButton.setText("Hide")
-            self.tertiaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+            self.tertiaryButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
                                             "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[2] = True
             # Don't highlight anything else until the branches are clicked
             self.trunkButton.setEnabled(False)
             self.secondaryButton.setEnabled(False)
+            self.budButton.setEnabled(False)
             # self.tertiaryButton.setEnabled(False)
             # TO DO: Call function in GLWidget to prune the branch
 
@@ -4454,12 +4521,40 @@ class Window(QMainWindow):
             self.drawTerms[2] = False
             self.trunkButton.setEnabled(True)
             self.secondaryButton.setEnabled(True)
+            self.budButton.setEnabled(True)
             # self.tertiaryButton.setEnabled(True)
         
         self.glWidgetTree.toDrawTerms(self.drawTerms)
 
 
 
+    def budButtonClicked(self):
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+        if self.budButton.isChecked():
+            self.descriptionLabel.setText("Buds are locations that can produce fruit or new shoots or branches")
+            self.descriptionLabel.setStyleSheet("font-size: 18px;")
+            self.budButton.setText("Hide")
+            self.budButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
+                                            "QPushButton::pressed {background-color: #4F9153;}")
+            self.drawTerms[3] = True
+            # Don't highlight anything else until the branches are clicked
+            self.trunkButton.setEnabled(False)
+            self.secondaryButton.setEnabled(False)
+            self.tertiaryButton.setEnabled(False)
+            # TO DO: Call function in GLWidget to prune the branch
+
+        else:
+            self.descriptionLabel.setText("")
+            self.secondaryButton.setText("Show")
+            self.drawTerms[3] = False
+
+            self.trunkButton.setEnabled(True)
+            self.secondaryButton.setEnabled(True)
+            self.tertiaryButton.setEnabled(True)
+        
+        self.glWidgetTree.toDrawTerms(self.drawTerms)
 
 
     
@@ -4733,7 +4828,7 @@ class Window(QMainWindow):
     """
     def binScreen(self):
         self.loadTreeSectionScreen()
-
+        self.lastSubmit = time.time()
         # self.binFrame
         self.binFrame = QFrame(self.central_widget) # self.central_widget
         self.binFrame.setFrameShape(QFrame.Shape.Box)
@@ -4865,6 +4960,19 @@ class Window(QMainWindow):
                 # self.userData["Reset Answer"] = "" # they don't have the answer
 
 
+            if self.screenType == "manipulation" or self.screenType == "bin":
+                module = self.modules[self.pageIndex - 1]
+                self.userTests[module] = self.submits
+
+                self.submits = {
+                    "Total Time": None,
+                    "Answers": [],
+                    "Submit Times": []
+                }
+
+                print(self.userTests)
+
+
             # If the screenType is "prune" then we need to save the user's cutSequenceDict from the glWidget
             # save the values under the tree name 
             if self.screenType == "prune":
@@ -4910,11 +5018,14 @@ class Window(QMainWindow):
                 # self.writeUserData("Explanations", self.explanationsSequence)
                 # print(self.userData["Explanations"])
 
-                self.jsonReader.write_file(self.userData, treeName, self.treeNum, self.pid)
+                self.jsonReader.write_file(userData=self.userData, pid=self.pid, treeName=treeName, treeNum=self.treeNum)
                 # self.resetUserData()
                 self.userData = {}
                 self.explanationsSequence = [] # reset the sequence of explanations the user used
 
+
+            if self.layouts[self.pageIndex] == "end":
+                self.jsonReader.write_file(userData=self.userTests, pid=self.pid)
 
             # IF the next page is the end of everything, save the data
             # if self.layouts[self.pageIndex] == "end": # Write all the data to a file for analysis
@@ -5001,11 +5112,21 @@ class Window(QMainWindow):
 
 
 
-    def loadJSONWorkflow(self):
+    def loadJSONWorkflow(self, guideline, sequence):
         workflowDict = self.jsonReader.read_file("workflow.json") # JSONFile("workflow.json", "o").data
         
-        # REPLACE BY WHAT WE ENTER ON THE SCREEN
         testWorkflow = workflowDict["Test"]
+        # REPLACE BY WHAT WE ENTER ON THE SCREEN
+        if guideline == "s" and sequence == "a":
+            testWorkflow = workflowDict["Spatial At End"]
+        elif guideline == "s" and sequence == "b":
+            testWorkflow = workflowDict["Spatial Build Off"]
+        elif guideline == "r" and sequence == "a":
+            testWorkflow = workflowDict["Rule At End"]
+        elif guideline == "r" and sequence == "b":
+            testWorkflow = workflowDict["Rule Build Off"]
+
+
         modules = []
         labels = []
         layout = []
@@ -5035,6 +5156,24 @@ if __name__ == '__main__':
     # Create the flags needed to get the pid 
 
     pid = input("Participant ID:\n")
+    if len(pid) == 0:
+        pid = datetime.now()
+
+
+    sequence = input("What ordering: (A)t End or (B)uild Off\n").lower()
+    # print(sequence == "test")
+    while sequence != "a" and sequence != "b" and sequence != "test":
+        sequence = input("Enter A for At End or B for Build Off")
+
+    guideline = input("What guideline: (S)patial or (R)ule\n").lower()
+    # print(guideline == "test")
+    while guideline != "s" and guideline != "r" and guideline != "test":
+        guideline = input("Enter S for Spatial or R for Rule\n").lower()
+    
+
+
+
+
 
     # parser = argparse.ArgumentParser(description="Participant ID")
     # parser.add_argument('--pid', help="participant identification")
