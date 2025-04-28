@@ -1,6 +1,14 @@
 {
     "Spatial At End": [
         {
+            "Module": "Conductor demo", 
+            "Your Task": "Click 'Next' to start participant study.",
+            "Layout": "draw_tutorial",
+            "Tree File": "proxyTree",
+            "File Directory": ""
+        },
+
+        {
             "Module": "Camera Tutorial", 
             "Your Task": "Manipulate the (blue) Camera Sliders on the left\nside of the screen to move the camera view. You\ncan move the camera at any time.\nClick 'Next' when finished",
             "Layout": "normal",
@@ -313,6 +321,7 @@
             "File Directory": ""
         },
 
+
         {
             "Module": "Tree Pruning", 
             "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
@@ -343,6 +352,8 @@
             "Tree File": "EasyBudSpacing",
             "File Directory": ""
         },
+
+
         {
             "Module": "Reset Question", 
             "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
@@ -440,6 +451,14 @@
 
 
     "Spatial Build Off": [
+        {
+            "Module": "Conductor demo", 
+            "Your Task": "Click 'Next' to start participant study.",
+            "Layout": "draw_tutorial",
+            "Tree File": "proxyTree",
+            "File Directory": ""
+        },
+
         {
             "Module": "Camera Tutorial", 
             "Your Task": "Manipulate the (blue) Camera Sliders on the left\nside of the screen to move the camera view. You\ncan move the camera at any time.\nClick 'Next' when finished",
@@ -593,8 +612,6 @@
         },
 
 
-
-
         {
             "Module": "6 inch rule", 
             "Your Task": "Select each button to explore how to apply\nthe '6 inch rule' to the labeled branches.\nYou may need to move the camera to see.\nClick 'Next' when finished.",
@@ -610,6 +627,7 @@
             "Tree File": "proxyTree",
             "File Directory": "canopy_spacing"
         },
+
         {
             "Module": "Canopy Spacing Manipulation", 
             "Your Task": "Move the Branch Manipulation Slider until the\nspacing between branches is 'Too Close' and\nneeds a 'Thinning Cut'.\nClick 'Submit' to check your answer.",
@@ -626,6 +644,8 @@
             "Tree File": "proxyTree",
             "File Directory": "canopy_rotation"
         },
+
+
         {
             "Module": "Canopy Rotation Manipulation", 
             "Your Task": "Move the Branch Manipulation Slider until you\ndo not need to prune the branch with a\n'Thinning Cut'. You may need to move the camera\nto see the branch. Click 'Next' when finished.",
@@ -688,9 +708,6 @@
             "Tree File": "HardVigorCanopy",
             "File Directory": ""
         },
-
-
-
 
 
         {
@@ -888,6 +905,13 @@
     ],
 
     "Rule At End": [
+            {
+                "Module": "Conductor demo", 
+                "Your Task": "Click 'Next' to start participant study.",
+                "Layout": "draw_tutorial",
+                "Tree File": "proxyTree",
+                "File Directory": ""
+            },
 
             {
                 "Module": "Camera Tutorial", 
@@ -1334,6 +1358,13 @@
 
 
     "Rule Build Off": [
+            {
+                "Module": "Conductor demo", 
+                "Your Task": "Click 'Next' to start participant study.",
+                "Layout": "draw_tutorial",
+                "Tree File": "proxyTree",
+                "File Directory": ""
+            },
         
             {
                 "Module": "Camera Tutorial", 
@@ -1781,6 +1812,14 @@
 
 
     "Test": [  
+
+        {
+            "Module": "Conductor demo", 
+            "Your Task": "Click 'Next' to start participant study.",
+            "Layout": "draw_tutorial",
+            "Tree File": "proxyTree",
+            "File Directory": ""
+        },
 
         {
             "Module": "Canopy Spacing Manipulation", 

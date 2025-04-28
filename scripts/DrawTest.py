@@ -2233,11 +2233,11 @@ class Test(QOpenGLWidget):
 
         if self.screenType == "draw_tutorial":
             # ratio of where on the screen to the width we are
-            x1 = (0.20596 * self.width)
-            y1 = self.height - (0.67243 * self.height)
+            x1 = (0.25601539942252166 * self.width)
+            y1 = self.height - (0.6674907292954264 * self.height)
 
-            x2 = (0.30125 * self.width)
-            y2 = self.height - (0.74783 *self.height)
+            x2 = (0.36092396535129934* self.width)
+            y2 = self.height - (0.7404202719406675 * self.height)
 
             _ = self.renderText("A", x=x1, y=y1, scale=1, color=[1, 1, 0]) # 600, 550
             _ = self.renderText("B", x=x2, y=y2, scale=1, color=[1, 1, 0]) # 600, 550
@@ -2383,8 +2383,8 @@ class Test(QOpenGLWidget):
 
         self.origins = []
         self.directions = []
-        print(f"{self.width}, {self.height}")
-        print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
+        # print(f"{self.width}, {self.height}")
+        # print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
 
         # # u, v = self.convertXYtoUV(self.press.x(), self.press.y())
         # origin = self.convertXYToWorld(self.press.x(), self.press.y())
@@ -4971,7 +4971,6 @@ class Window(QMainWindow):
                 }
 
                 print(self.userTests)
-
 
             # If the screenType is "prune" then we need to save the user's cutSequenceDict from the glWidget
             # save the values under the tree name 
