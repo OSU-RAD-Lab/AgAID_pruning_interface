@@ -30,7 +30,7 @@
             "Module": "Draw Tutorial", 
             "Your Task": "Draw from points A to B to 'prune' the tree. Then\nselect from the three choices to label your cut.\nYou must label your cut before you continue.\n\nIf no cut appears, draw with the branch centered.\nClick 'Done' to submit or enable reseting ALL cuts.",
             "Layout": "draw_tutorial",
-            "Tree File": "textureTree",
+            "Tree File": "proxyTree",
             "File Directory": ""
         },
         
@@ -481,7 +481,7 @@
             "Module": "Draw Tutorial", 
             "Your Task": "Draw from points A to B to 'prune' the tree. Then\nselect from the three choices to label your cut.\nYou must label your cut before you continue.\n\nIf no cut appears, draw with the branch centered.\nClick 'Done' to submit or enable reseting ALL cuts.",
             "Layout": "draw_tutorial",
-            "Tree File": "textureTree",
+            "Tree File": "proxyTree",
             "File Directory": ""
         },
         
@@ -935,7 +935,7 @@
                 "Module": "Draw Tutorial", 
                 "Your Task": "Draw from points A to B to 'prune' the tree. Then\nselect from the three choices to label your cut.\nYou must label your cut before you continue.\n\nIf no cut appears, draw with the branch centered.\nClick 'Done' to submit or enable reseting ALL cuts.",
                 "Layout": "draw_tutorial",
-                "Tree File": "textureTree",
+                "Tree File": "proxyTree",
                 "File Directory": ""
             },
             
@@ -1388,7 +1388,7 @@
                 "Module": "Draw Tutorial", 
                 "Your Task": "Draw from points A to B to 'prune' the tree. Then\nselect from the three choices to label your cut.\nYou must label your cut before you continue.\n\nIf no cut appears, draw with the branch centered.\nClick 'Done' to submit or enable reseting ALL cuts.",
                 "Layout": "draw_tutorial",
-                "Tree File": "textureTree",
+                "Tree File": "proxyTree",
                 "File Directory": ""
             },
             
