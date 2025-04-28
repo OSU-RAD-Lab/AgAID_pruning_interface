@@ -4384,10 +4384,9 @@ class Window(QMainWindow):
         self.trunkLabel.setStyleSheet("font-size: 20px;" "font:bold")
         self.treeTermLayout.addWidget(self.trunkLabel, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
 
-        
         self.trunkButton = QPushButton("Show")
         self.trunkButton.setCheckable(True)
-        self.trunkButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+        self.trunkButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
         self.trunkButton.setFixedSize(150, 50) # 150, 50
         self.trunkButton.clicked.connect(self.trunkButtonClicked)
@@ -4400,7 +4399,7 @@ class Window(QMainWindow):
 
         self.secondaryButton = QPushButton("Show") 
         self.secondaryButton.setCheckable(True)
-        self.secondaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+        self.secondaryButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
         self.secondaryButton.setFixedSize(150, 50) # 300, 100
         self.secondaryButton.clicked.connect(self.secondaryButtonClicked)
@@ -4413,7 +4412,7 @@ class Window(QMainWindow):
 
         self.tertiaryButton = QPushButton("Show") 
         self.tertiaryButton.setCheckable(True)
-        self.tertiaryButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+        self.tertiaryButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
         self.tertiaryButton.setFixedSize(150, 50)
         self.tertiaryButton.clicked.connect(self.tertiaryButtonClicked)
@@ -4426,7 +4425,7 @@ class Window(QMainWindow):
 
         self.budButton = QPushButton("Show") 
         self.budButton.setCheckable(True)
-        self.budButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+        self.budButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
                                               "QPushButton::pressed {background-color: #4F9153;}")
         self.budButton.setFixedSize(150, 50)
         self.budButton.clicked.connect(self.budButtonClicked)
@@ -4455,6 +4454,8 @@ class Window(QMainWindow):
         else:
             self.descriptionLabel.setText("")
             self.trunkButton.setText("Show")
+            self.trunkButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
+                                            "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[0] = False
 
             # self.trunkButton.setEnabled(True)
@@ -4486,6 +4487,8 @@ class Window(QMainWindow):
         else:
             self.descriptionLabel.setText("")
             self.secondaryButton.setText("Show")
+            self.secondaryButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
+                                            "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[1] = False
 
             self.trunkButton.setEnabled(True)
@@ -4518,6 +4521,8 @@ class Window(QMainWindow):
         else:
             self.descriptionLabel.setText("")
             self.tertiaryButton.setText("Show")
+            self.tertiaryButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
+                                            "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[2] = False
             self.trunkButton.setEnabled(True)
             self.secondaryButton.setEnabled(True)
@@ -4548,6 +4553,8 @@ class Window(QMainWindow):
         else:
             self.descriptionLabel.setText("")
             self.secondaryButton.setText("Show")
+            self.budButton.setStyleSheet("QPushButton {font-size: 20px;" "font:bold}\n"
+                                            "QPushButton::pressed {background-color: #4F9153;}")
             self.drawTerms[3] = False
 
             self.trunkButton.setEnabled(True)
@@ -4557,7 +4564,6 @@ class Window(QMainWindow):
         self.glWidgetTree.toDrawTerms(self.drawTerms)
 
 
-    
     """
         TERM CUTS SCREEN AND HELPER FUNCTIONS:
             - termCutsScreen
@@ -5040,6 +5046,9 @@ class Window(QMainWindow):
             
             if self.reset:
                 self.reset = False
+
+            self.binIndex = 0
+            self.binIndices = [0, 0, 0]
             
             self.nextButton.setEnabled(False)
 
@@ -5158,11 +5167,15 @@ if __name__ == '__main__':
     if len(pid) == 0:
         pid = datetime.now()
 
+    # pid = "kyler_test"
+
 
     sequence = input("What ordering: (A)t End or (B)uild Off\n").lower()
     # print(sequence == "test")
     while sequence != "a" and sequence != "b" and sequence != "test":
         sequence = input("Enter A for At End or B for Build Off")
+
+    # sequence = "b"
 
     guideline = input("What guideline: (S)patial or (R)ule\n").lower()
     # print(guideline == "test")
@@ -5170,6 +5183,7 @@ if __name__ == '__main__':
         guideline = input("Enter S for Spatial or R for Rule\n").lower()
     
 
+    # guideline = "s"
 
 
 
@@ -5183,7 +5197,7 @@ if __name__ == '__main__':
     # else:
     #     pid = "unknown"
     
-    window = Window(pid=pid) # GLDemo()
+    window = Window(pid=pid, sequence=sequence, guideline=guideline) # GLDemo()
     # window = MainWindow()
     window.show()
     # sys.exit(app.exec_())

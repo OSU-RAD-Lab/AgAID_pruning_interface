@@ -175,7 +175,7 @@
 
         {
             "Module": "Bud Spacing Bins", 
-            "Your Task": "Select the different 'Bud Spacing' Buttons to\nlearn different 'Bud Spacing' examples.\nClick 'Next' when finished",
+            "Your Task": "Identify the correct bud spcaing using the\nrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
             "Layout": "bin",
             "Tree File": "proxyTree",
             "File Directory": "bud_spacing_bin"
@@ -440,7 +440,7 @@
 
         {
             "Module": "End of Pilot Study", 
-            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.!",
+            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.",
             "Layout": "end",
             "Tree File": "proxyTree",
             "File Directory": ""
@@ -720,7 +720,7 @@
 
         {
             "Module": "Bud Spacing Bins", 
-            "Your Task": "Select the different 'Bud Spacing' Buttons to\nlearn different 'Bud Spacing' examples.\nClick 'Next' when finished",
+            "Your Task": "Identify the correct bud spcaing using the\nrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
             "Layout": "bin",
             "Tree File": "proxyTree",
             "File Directory": "bud_spacing_bin"
@@ -894,7 +894,7 @@
 
         {
             "Module": "End of Pilot Study", 
-            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.!",
+            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.",
             "Layout": "end",
             "Tree File": "proxyTree",
             "File Directory": ""
@@ -995,7 +995,7 @@
     
             {
                 "Module": "Bud Spacing Bins", 
-                "Your Task": "Select the different 'Bud Spacing' Buttons to\nlearn different 'Bud Spacing' examples.\nClick 'Next' when finished",
+                "Your Task": "Identify the correct bud spcaing using the\nrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
                 "Layout": "bin",
                 "Tree File": "proxyTree",
                 "File Directory": "bud_spacing_bin"
@@ -1348,7 +1348,7 @@
     
             {
                 "Module": "End of Pilot Study", 
-                "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.!",
+                "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.",
                 "Layout": "end",
                 "Tree File": "proxyTree",
                 "File Directory": ""
@@ -1448,7 +1448,7 @@
     
             {
                 "Module": "Bud Spacing Bins", 
-                "Your Task": "Select the different 'Bud Spacing' Buttons to\nlearn different 'Bud Spacing' examples.\nClick 'Next' when finished",
+                "Your Task": "Identify the correct bud spcaing using the\nrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
                 "Layout": "bin",
                 "Tree File": "proxyTree",
                 "File Directory": "bud_spacing_bin"
@@ -1800,7 +1800,7 @@
     
             {
                 "Module": "End of Pilot Study", 
-                "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.!",
+                "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.",
                 "Layout": "end",
                 "Tree File": "proxyTree",
                 "File Directory": ""
@@ -1839,7 +1839,7 @@
 
         {
             "Module": "End of Pilot Study", 
-            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.!",
+            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.",
             "Layout": "end",
             "Tree File": "proxyTree",
             "File Directory": ""
@@ -2195,7 +2195,7 @@
 
         {
             "Module": "End of Pilot Study", 
-            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.!",
+            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.",
             "Layout": "end",
             "Tree File": "proxyTree",
             "File Directory": ""

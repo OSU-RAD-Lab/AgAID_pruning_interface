@@ -42,6 +42,9 @@ class JSONFile:
                 print(f"Could not find the file at {self.pname}")
         return self.data
 
+
+
+
     
     def write_file(self, userData, pid, treeName=None, treeNum=None):
 
@@ -59,7 +62,7 @@ class JSONFile:
         if treeName is not None and treeNum is not None:
             fname = pid_directory + f"/Tree_{treeNum}_" + str(treeName) + ".json"
         else:
-            fname = pid_directory + f"/Evalatuations.json"
+            fname = pid_directory + f"/Evaluations.json"
 
         
         with open(fname, "w") as file:
