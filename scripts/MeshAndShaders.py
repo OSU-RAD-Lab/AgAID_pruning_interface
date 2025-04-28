@@ -297,7 +297,7 @@ class Mesh(QWidget):
             vertices = []
             for vertex in face:
                 vertices.append(self.mesh.vertices[vertex]) # extracts the vertex at the position in the obj file
-            center = self.center_of_face(vertices)
+            center = self.center_of_face(vertices) # all of these are in local space
             centers.append(center) # get the center of all vertices
             faces.append(vertices) # get all the faces
         return np.array(faces, dtype=np.float32), np.array(centers, dtype=np.float32)
@@ -316,7 +316,7 @@ class Mesh(QWidget):
         # need to find points that are in between pts 1 and 2
         # pts will be in world spaces
 
-        start = time.time()
+        # start = time.time()
         # Check which is the minimum 
         minX = np.min([x1, x2])
         maxX = np.max([x1, x2])
@@ -331,6 +331,7 @@ class Mesh(QWidget):
             maxX += 0.1
 
         # print(f"Bounded u,v area: ({minX}, {minY}), ({minX}, {maxY}), ({maxX}, {maxY}), ({maxX}, {minY})")  
+
 
         xRows = self.centerFaces[:, 0]
         yRows = self.centerFaces[:, 1]
@@ -353,19 +354,16 @@ class Mesh(QWidget):
         
         # print(f"Intersect with local vertices time: {time.time() - start}")
         return np.array(intersect, dtype=np.float32)
-
-   
-
    
 
     def intersect_faces(self, u1, v1, u2, v2, projection, view, model): 
         # need to find the set of faces that are 
-        #   A) within the bounded bowx given by (x1, y1) (x1, y2) (x2, y2) (x2, y1)
+        #   A) within the bounded box given by (x1, y1) (x1, y2) (x2, y2) (x2, y1)
         #   b) faces that contain either the point (x1, y1) or (x2, y2)
         
         # check if the line is near vertical or horizontal
         # if so, add a little more area to the surrounding area
-        start = time.time()
+        # start = time.time()
         # self.intersectFaces = [] # reset to empty
         # self.intersectCount = 0
         
@@ -1219,72 +1217,21 @@ if __name__ == "__main__":
     # window.show()
     # sys.exit(app.exec_())
 
-    circle = Mesh("../obj_files/circle.obj", circle=True)
+    # circle = Mesh("../obj_files/circle.obj", circle=True)
     # print(vertices)
 
+    # d = |(P - P₀) · n| / ||n||
+    normals = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+    point_origin = np.array([1, 1, 1])
+    point = np.array([[2, 1, 1], [1, 3, 5], [5, 1, 2]])
 
-    # failY = [0.0, 1.1, 0.0, 1]
-    # failY2 = [0.0, -1.1, 0.0, 1]
-    # failX = [1.1, 0.0, 0.0, 1]
-    # failX2 = [-1.1, 0.0, 0.0, 1]
-    # failZ = [0.0, 0.0, 1.1, 1]
-    # failZ2 = [0.0, 0.0, -0.1, 1]
-    # passVal = [0.5, 0.5, 0.5, 1]
-    # passVal2 = [0.0, 0.0, 0.0, 1]
-    # passVal3 = [1.0, 1.0, 1.0, 1]
-    # passVal4 = [-1.0, -1.0, 1.0, 1]
+    difference = np.array(point_origin - point)
+    # print(difference)
+    magnitudes = np.linalg.norm(normals, axis=0)
+    # print(magnitudes)
 
-    # face1 = np.array([passVal, failX, failX2, passVal2, failY, failY2, passVal3, failZ, failZ2], dtype=np.float32)
-    # projection = np.array([[2.41421366, 0, 0, 0],
-    #                         [0, 2.41421366, 0, 0],
-    #                         [0, 0, -1.02020204, -0.2020202],
-    #                         [0, 0, -1, 0]], dtype=np.float32)
     
-    # model = np.array([[1, 0, 0, -0.25],
-    #                 [0, 1, 0, -2],
-    #                 [0, 0, 1, -1.5],
-    #                 [0, 0, 0, 1]], dtype=np.float32)
-
-
-
-    # # print(faces.shape)
-    # xRows = face1[:, 0]
-    # yRows = face1[:, 1]
-    # zRows = face1[:, 2]
-
-
-    # yBound1 = np.where(yRows <= 1, True, False)
-    # yBound2 = np.where(yRows >= -1, True, False)
-    # zBound1 = np.where(yRows <= 1, True, False)
-    # zBound2 = np.where(yRows >= 0, True, False)
-
-
-    # xBound = np.where(xRows <= 1, True, False) & np.where(xRows >= -1, True, False)
-    # yBound = np.where(yRows <= 1, True, False) & np.where(yRows >= -1, True, False)
-    # zBound = np.where(zRows <= 1, True, False) & np.where(zRows >= 0.0, True, False)
-    
-    # # inBound = np.logical_and(zBound, np.logical_and(xBound, yBound, dtype=bool))
-    # inBound = xBound & yBound & zBound
-
-    # print(inBound)
-    # if np.any(inBound):
-    #     print("Face in bound")
-
-    # print(np.transpose(face1[inBound]))
-    # test = projection @ model @ np.transpose(face1[inBound])
-
-    # print(test)
-    # print(test / test[3])
-    # test = np.any(faces, axis = 2, where = faces < -1)
-    # test2 = np.any(faces, axis=2, where=faces > 1)
-
-    # for i, face in enumerate(faces):
-    #     for vertex in face:
-    #         if np.any(vertex > 1) or np.any(vertex < -1) or vertex[2] < 0:
-    #             print(f"vertex {vertex} not in clip range")
-    #         else:
-    #             print(f"Vertex {vertex} in clip range")
-
+   
     
 
 

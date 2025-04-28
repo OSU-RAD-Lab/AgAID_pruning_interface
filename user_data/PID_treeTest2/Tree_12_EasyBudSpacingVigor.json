@@ -1,0 +1,535 @@
+{
+    "Pruning Time": 70.36800122261047,
+    "Cut Data": [
+        {
+            "Rule": [
+                "Vigor",
+                "Spacing",
+                "Vigor",
+                "Vigor"
+            ],
+            "Sequence": [
+                1,
+                2,
+                3,
+                4
+            ],
+            "Vertices": [
+                [
+                    [
+                        0.23812270727228263,
+                        1.2604853821216127,
+                        0.005382020084997214
+                    ],
+                    [
+                        0.2468833837878499,
+                        1.2735159565932428,
+                        0.055382020084997624
+                    ],
+                    [
+                        0.35573216755143666,
+                        1.2602021790267954,
+                        0.055382020084997624
+                    ],
+                    [
+                        0.35073888093676175,
+                        1.2467107983852452,
+                        0.005382020084997214
+                    ],
+                    [
+                        0.23812270727228263,
+                        1.25738992705419,
+                        0.005382020084997214
+                    ],
+                    [
+                        0.2468833837878499,
+                        1.2705240549123382,
+                        0.055382020084997624
+                    ],
+                    [
+                        0.35073888093676175,
+                        1.2436153433178225,
+                        0.005382020084997214
+                    ],
+                    [
+                        0.35573216755143666,
+                        1.257210277345891,
+                        0.055382020084997624
+                    ]
+                ],
+                [
+                    [
+                        0.3878054360924679,
+                        1.9579961517652738,
+                        -0.0068862179501414525
+                    ],
+                    [
+                        0.392414977157549,
+                        1.9477304143131646,
+                        0.043040938613472836
+                    ],
+                    [
+                        0.45310746818815917,
+                        1.967034630702547,
+                        0.04198154724187835
+                    ],
+                    [
+                        0.45059060273927953,
+                        1.9779659770667628,
+                        -0.007982137110490428
+                    ],
+                    [
+                        0.3878054360924679,
+                        1.9548893077904845,
+                        -0.0068862179501414525
+                    ],
+                    [
+                        0.392414977157549,
+                        1.9447271237248938,
+                        0.043040938613472836
+                    ],
+                    [
+                        0.45059060273927953,
+                        1.9748591330919738,
+                        -0.007982137110490428
+                    ],
+                    [
+                        0.45310746818815917,
+                        1.964031340114276,
+                        0.04198154724187835
+                    ]
+                ],
+                [
+                    [
+                        0.42212776668644697,
+                        1.8607349953520766,
+                        -0.004045131730093181
+                    ],
+                    [
+                        0.4256012838455902,
+                        1.853694901089408,
+                        0.04590185420456082
+                    ],
+                    [
+                        0.39792195623595,
+                        1.8211037169151025,
+                        0.046384998665156565
+                    ],
+                    [
+                        0.3934917873665432,
+                        1.8270173960957443,
+                        -0.003545288851781088
+                    ],
+                    [
+                        0.41747889441873126,
+                        1.8607349953520766,
+                        -0.003963985362817155
+                    ],
+                    [
+                        0.4211077180039627,
+                        1.853694901089408,
+                        0.04598028968808571
+                    ],
+                    [
+                        0.38884291509882757,
+                        1.8270173960957443,
+                        -0.0034641424845050627
+                    ],
+                    [
+                        0.3934283903943225,
+                        1.8211037169151025,
+                        0.046463434148681454
+                    ]
+                ],
+                [
+                    [
+                        0.5110438699326746,
+                        1.8137667431031987,
+                        0.10645381602933493
+                    ],
+                    [
+                        0.5115876412291357,
+                        1.8078530639225572,
+                        0.156451940868245
+                    ],
+                    [
+                        0.5530832818123383,
+                        1.7764191204574593,
+                        0.15572763176762724
+                    ],
+                    [
+                        0.5540940695450556,
+                        1.7811551838705273,
+                        0.10570237199992813
+                    ],
+                    [
+                        0.5081942188303308,
+                        1.811618852872542,
+                        0.10650355687434919
+                    ],
+                    [
+                        0.5088408921084561,
+                        1.8057827348224367,
+                        0.15649988555248803
+                    ],
+                    [
+                        0.5512444184427118,
+                        1.7790072936398704,
+                        0.10575211284494239
+                    ],
+                    [
+                        0.5503365326916588,
+                        1.7743487913573388,
+                        0.1557755764518703
+                    ]
+                ]
+            ],
+            "Cut Time": [
+                0.6718180179595947,
+                0.5205113887786865,
+                0.3917727470397949,
+                0.4935147762298584
+            ],
+            "Rule Time": [
+                0.8043563365936279,
+                1.1228573322296143,
+                4.070151090621948,
+                0.6480121612548828
+            ],
+            "Between Time": [
+                20.602685689926147,
+                17.256364107131958,
+                6.992141485214233,
+                0.9201109409332275
+            ]
+        }
+    ],
+    "Reset Answer": "",
+    "Explanations": [
+        {
+            "Branch Num": 1,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading"
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading"
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading"
+        },
+        {
+            "Branch Num": 4,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches to keep buds"
+        },
+        {
+            "Branch Num": 9,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 7,
+            "Decision": "Don't Prune",
+            "Explanation": "6 inch rule satisfied."
+        },
+        {
+            "Branch Num": 10,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading"
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Don't Prune",
+            "Explanation": "Keeping buds and branch within 6 inches of secondary branch"
+        },
+        {
+            "Branch Num": 7,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 6,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 4,
+            "Decision": "Don't Prune",
+            "Explanation": "Keeping buds. Branch within 6 inches of secondary branch"
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Don't Prune",
+            "Explanation": "Keeping buds. Branch within 6 inches of secondary branch"
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches to keep buds"
+        },
+        {
+            "Branch Num": 4,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading."
+        },
+        {
+            "Branch Num": 8,
+            "Decision": "Branch Vigor",
+            "Explanation": "The branch is vigorous but pruned back to keep buds and prevent shading"
+        },
+        {
+            "Branch Num": 7,
+            "Decision": "Canopy Cut",
+            "Explanation": "Branch too long. Pruned back to ~6 inches"
+        },
+        {
+            "Branch Num": 6,
+            "Decision": "Don't Prune",
+            "Explanation": "Keeping buds and branch within 6 inches of secondary branch"
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Bud Spacing",
+            "Explanation": "Bud is too close together to another bud and pruned back."
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed due to placement and shading."
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is strong vigor and removed to prevent shading."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed for lighting"
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Branch Vigor",
+            "Explanation": "The branch is vigorous but pruned back to keep buds"
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Branch Vigor",
+            "Explanation": "This branch is pruned back to keep buds"
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Branch Vigor",
+            "Explanation": "This branch is removed completely to prevent shading."
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Branch Vigor",
+            "Explanation": "This branch is pruned back to keep buds."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Branch Vigor",
+            "Explanation": "This branch is strong and pruned back to keep buds."
+        },
+        {
+            "Branch Num": 4,
+            "Decision": "Branch Vigor",
+            "Explanation": "Pruned back to keep more buds given no immediate tertiary branches above"
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Branch Vigor",
+            "Explanation": "The branch is vigorous but pruned back to keep buds and prevent shading"
+        },
+        {
+            "Branch Num": 6,
+            "Decision": "Branch Vigor",
+            "Explanation": "The branch is vigorous but pruned back to keep more buds"
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Bud Spacing",
+            "Explanation": "Buds are too close together and pruned back."
+        },
+        {
+            "Branch Num": 4,
+            "Decision": "Bud Spacing",
+            "Explanation": "Bud cluster is too close together to other buds and pruned back to keep bud count."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Bud Spacing",
+            "Explanation": "Bud is too close together to another bud and pruned back for bud count."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Bud Spacing",
+            "Explanation": "Bud is too close together to another bud and pruned back for bud count."
+        },
+        {
+            "Branch Num": 4,
+            "Decision": "Bud Spacing",
+            "Explanation": "Buds prune back to ensure enough space and maintain bud count."
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Bud Spacing",
+            "Explanation": "Buds prune back to ensure enough space."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Bud Spacing",
+            "Explanation": "Bud cluster is too close together to another bud and removed completely."
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Bud Spacing",
+            "Explanation": "Buds are too close together and pruned back."
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Bud Spacing",
+            "Explanation": "Only one bud removed to maintain bud count"
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Bud Spacing",
+            "Explanation": "Bud cluster is too close together and removed."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Don't Prune",
+            "Explanation": "There is enough space between buds and requires no pruning."
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading"
+        },
+        {
+            "Branch Num": 4,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous but pruned back to keep bud counts"
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous but pruned back to keep bud counts"
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous but pruned back to keep bud counts"
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous but pruned back to keep bud counts"
+        },
+        {
+            "Branch Num": 6,
+            "Decision": "Bud Spacing",
+            "Explanation": "Buds on branch are too close together to another bud and pruned back."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Bud Spacing",
+            "Explanation": "Bud too close to secondary branch."
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Bud Spacing",
+            "Explanation": "Buds are too close together. Pruned to keep the most buds"
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous but pruned back to keep bud counts for missing branch"
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Bud Spacing",
+            "Explanation": "Bud cluster is too close together and removed."
+        },
+        {
+            "Branch Num": 4,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading"
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous but pruned back to keep bud counts"
+        },
+        {
+            "Branch Num": 6,
+            "Decision": "Bud Spacing",
+            "Explanation": "Buds are too close together. Pruned to keep the most buds"
+        },
+        {
+            "Branch Num": 7,
+            "Decision": "Branch Vigor",
+            "Explanation": "Buds are too close together. Pruned to keep the most buds"
+        },
+        {
+            "Branch Num": 8,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous but pruned back to keep bud counts"
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Bud Spacing",
+            "Explanation": "Buds too close together. Pruned back to keep bud count."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading."
+        },
+        {
+            "Branch Num": 4,
+            "Decision": "Bud Spacing",
+            "Explanation": "Bud cluster is too close together and removed."
+        },
+        {
+            "Branch Num": 5,
+            "Decision": "Don't Prune",
+            "Explanation": "Buds have enough space."
+        }
+    ]
+}
