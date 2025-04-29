@@ -2342,10 +2342,10 @@ class Test(QOpenGLWidget):
             self.drawBoundingBox()
 
         if not self.wholeView and self.displayLabels:
-            screenPose = [(350, 300), # trunk (950, 300)
-                          (50, 400), # Secondary (250, 650)
-                          (820, 250), # Tertiary branch (2200, 600)
-                          (650, 95)] # bud TO CHANGE (2000, 1000)
+            screenPose = [(0.48411934552454283 * self.width, (1-0.4326328800988875) * self.height), # trunk (950, 300)
+                          (0.31376323387872956 * self.width, (1-0.5995055624227441) * self.height), # Secondary (250, 650)
+                          (0.11838306063522618 * self.width, (1-0.34610630407911) * self.height), # Tertiary branch (2200, 600)
+                          (0.5707410972088547 * self.width, (1-0.6205191594561187) * self.height)] # bud TO CHANGE (2000, 1000)
             self.drawLabels(screenPose)
             
         if self.toManipulate: #  and not self.wholeView
@@ -2384,7 +2384,7 @@ class Test(QOpenGLWidget):
         self.origins = []
         self.directions = []
         # print(f"{self.width}, {self.height}")
-        # print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
+        print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
 
         # # u, v = self.convertXYtoUV(self.press.x(), self.press.y())
         # origin = self.convertXYToWorld(self.press.x(), self.press.y())
