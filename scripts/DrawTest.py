@@ -5,6 +5,7 @@ sys.path.append('../')
 import os
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
+import random
 import argparse
 
 from PySide6 import QtCore, QtGui, QtOpenGL
@@ -3296,6 +3297,8 @@ class Window(QMainWindow):
         self.guideline = guideline
         self.sequence = sequence
 
+        random.seed(time.time())
+
         self.userData = {} # dictionary to store the person's data collected in the interface
         self.userTests = {}
         
@@ -3322,6 +3325,17 @@ class Window(QMainWindow):
         self.correctFeature = False
         self.pageIndex = 0
         self.reset = False
+
+
+        self.treeLevels = {
+            "Vigor": ["Easy", "Hard"],
+            "VigorCanopy": ["Easy", "Hard"],
+            "AllCuts": ["Easy", "Hard"],
+            "BudSpacing": ["Easy", "Hard"],
+            "BudSpacingVigor": ["Easy", "Hard"]
+        }
+        self.curLevel = "Easy"
+
 
         self.modules, self.labels, self.layouts, self.directories, self.trees = self.loadJSONWorkflow(guideline, sequence)
 
@@ -3446,29 +3460,64 @@ class Window(QMainWindow):
             "Answer": ""
         }
 
+        # Need to check what module we are on. Shouldn't click different ones until we are on the tree
+        
+
         if tree is not None:
-            file = treeData[tree]
-            path = directory + "tree_files/" + tree + "/"
-            fname = path + file["File"]
-            # print(fname)
-            self.treeMesh = Mesh(fname)
-            sectionTranslate = file["Section Translate"]
-            wholeTranslate = file["Whole Translate"]
+            if tree == "proxyTree":
+            # check if the pruning data is the file
+                file = treeData[tree] # Data from objFileDescription.json
+                path = directory + "tree_files/" + tree + "/"
+                fname = path + file["File"]
+                # print(fname)
+                self.treeMesh = Mesh(fname)
+                sectionTranslate = file["Section Translate"]
+                wholeTranslate = file["Whole Translate"]
 
+
+                if len(file["Vigor Cuts"]) > 0:
+                    vigorCutMesh = Mesh(path+file["Vigor Cuts"])
+                if len(file["Canopy Cuts"]) > 0:
+                    canopyCutMesh = Mesh(path+file["Canopy Cuts"])
+                if len(file["Bud Spacing Cuts"]) > 0:
+                    budSpacingCutMesh = Mesh(path+file["Bud Spacing Cuts"])
+
+                # get the poses of each of the branch labels for the explanation slide (if applicable)
+                for explanation in treeData[tree]["Explanations"]:
+                    textPose.append(explanation["Screen Ratio"])
+                    branchExplanations.append(explanation["Explanation"])
+                    branchCutDecisions.append(explanation["Decision"])
             
+            else:
+                # Pick a random level ONLY IF the current layout is "prune"
+                if self.screenType == "prune":
+                    self.curLevel = random.choice(self.treeLevels[tree]) # get the dictionary value
+                    self.treeLevels[tree].remove(self.curLevel)
+                    print(f"SELECTING {self.curLevel}")
+                
+                treeName = self.curLevel + tree # give back EasyVigor or EasyBudSpacing
+                self.curTree = treeName
+                file = treeData[treeName]
+                path = directory + "tree_files/" + tree + "/" + self.curLevel + "/"
 
-            if len(file["Vigor Cuts"]) > 0:
-                vigorCutMesh = Mesh(path+file["Vigor Cuts"])
-            if len(file["Canopy Cuts"]) > 0:
-                canopyCutMesh = Mesh(path+file["Canopy Cuts"])
-            if len(file["Bud Spacing Cuts"]) > 0:
-                budSpacingCutMesh = Mesh(path+file["Bud Spacing Cuts"])
+                fname = path + file["File"]
+                self.treeMesh = Mesh(fname)
+                sectionTranslate = file["Section Translate"]
+                wholeTranslate = file["Whole Translate"]
 
-            # get the poses of each of the branch labels for the explanation slide (if applicable)
-            for explanation in treeData[tree]["Explanations"]:
-                textPose.append(explanation["Screen Ratio"])
-                branchExplanations.append(explanation["Explanation"])
-                branchCutDecisions.append(explanation["Decision"])
+
+                if len(file["Vigor Cuts"]) > 0:
+                    vigorCutMesh = Mesh(path+file["Vigor Cuts"])
+                if len(file["Canopy Cuts"]) > 0:
+                    canopyCutMesh = Mesh(path+file["Canopy Cuts"])
+                if len(file["Bud Spacing Cuts"]) > 0:
+                    budSpacingCutMesh = Mesh(path+file["Bud Spacing Cuts"])
+
+                # get the poses of each of the branch labels for the explanation slide (if applicable)
+                for explanation in treeData[treeName]["Explanations"]:
+                    textPose.append(explanation["Screen Ratio"])
+                    branchExplanations.append(explanation["Explanation"])
+                    branchCutDecisions.append(explanation["Decision"])
         
         
         if branchFiles is not None and manipDirectory is not None:

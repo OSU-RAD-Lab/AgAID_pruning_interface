@@ -1813,30 +1813,52 @@
 
     "Test": [  
 
+        
         {
-            "Module": "Conductor demo", 
-            "Your Task": "Click 'Next' to start participant study.",
-            "Layout": "draw_tutorial",
-            "Tree File": "proxyTree",
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "AllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "AllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "AllCuts",
             "File Directory": ""
         },
 
         {
-            "Module": "Canopy Spacing Manipulation", 
-            "Your Task": "Move the Branch Manipulation Slider until the\nspacing between branches is 'Too Close' and\nneeds a 'Thinning Cut'.\nClick 'Submit' to check your answer.",
-            "Layout": "manipulation",
-            "Tree File": "proxyTree",
-            "File Directory": "canopy_spacing"
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "AllCuts",
+            "File Directory": ""
         },
-
         {
-            "Module": "Vigor Bins", 
-            "Your Task": "Identify the correct cut using the\ndrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
-            "Layout": "bin",
-            "Tree File": "proxyTree",
-            "File Directory": "vigor_bins"
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "AllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "AllCuts",
+            "File Directory": ""
         },
 
+        
         {
             "Module": "End of Pilot Study", 
             "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.",
