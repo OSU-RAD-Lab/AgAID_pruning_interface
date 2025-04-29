@@ -84,15 +84,23 @@ class Vec3:
             raise TypeError("Unsupported operand type(s) for /: '{}' and 'Vec3'".format(type(other).__name__))
 
     def __getitem__(self, index: int) -> float:
-        match index:
-            case 0:
-                return self.x
-            case 1:
-                return self.y
-            case 2:
-                return self.z
-            case _:
-                raise IndexError(f"Index {index} out of range of Vec3")
+        if index == 0:
+            return self.x
+        elif index == 1:
+            return self.y
+        elif index == 2:
+            return self.z
+        else:
+            raise IndexError(f"Index {index} out of range Vec3")
+        # match index:
+        #     case 0:
+        #         return self.x
+        #     case 1:
+        #         return self.y
+        #     case 2:
+        #         return self.z
+        #     case _:
+        #         raise IndexError(f"Index {index} out of range of Vec3")
         
     def __len__(self) -> int:
         return 3

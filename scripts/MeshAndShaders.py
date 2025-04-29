@@ -2,15 +2,22 @@
 
 import sys
 sys.path.append('../')
+import os
 
+from PySide6 import QtCore, QtGui, QtOpenGL
 
-from PySide2 import QtCore, QtGui
-from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget
-from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint
-from PySide2.QtOpenGL import QGLWidget
-from PySide2.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4
-from shiboken2 import VoidPtr
-# from PySide2.shiboken2 import VoidPtr
+from PySide6.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QComboBox, QProgressBar
+    # QOpenGLWidget
+
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
+
+from PySide6.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint, QCoreApplication, QPoint
+
+# from PySide6.QtOpenGL import QGLWidget, QGLContext
+
+from PySide6.QtGui import QFont
+# from PySide6.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4, QSurfaceFormat, QPainter,
+from OpenGL.GL.shaders import compileShader, compileProgram
 
 # from PyQt6 import QtCore      # core Qt functionality
 # from PyQt6 import QtGui       # extends QtCore with GUI functionality
@@ -26,12 +33,12 @@ import pywavefront
 import numpy as np
 import ctypes                 # to communicate with c code under the hood
 import pyrr.matrix44 as mt
-from threading import Thread
+# from threading import Thread
 import time
 
-from multiprocessing import Process, Value, Array
-from freetype.raw import * # allows us to display text on the screen
-from freetype import *
+# from multiprocessing import Process, Value, Array
+# from freetype.raw import * # allows us to display text on the screen
+# from freetype import *
 
 #########################################
 #
@@ -73,14 +80,14 @@ class Shader:
 
 
 class Mesh(QWidget):
-    def __init__(self, load_obj = None):
+    def __init__(self, load_obj = None, color=False):
         if load_obj is None:
             load_obj = "/obj_files/testMonkey.obj"
         else:
             self.load_obj = load_obj
         
         self.mesh = None
-        self.vertices = None
+        self.vertices = []
         self.faces = None
         self.mesh_list = None
         self.normals = None
@@ -91,14 +98,15 @@ class Mesh(QWidget):
         self.faceCount = 0
         self.clipFaces = []
         self.centerFaces = None
+        self.color = color
         # Load and set the vertices
+        
         self.load_mesh(self.load_obj)
         self.vertexFaces, self.centerFaces = self.get_mesh_vertex() # all vertices grouped by their faces
         # print(self.vertexFaces.size)
-
         # self.normals, self.vertexPos, self.vertexFaces = self.split_vertices()
         # self.set_vertices()
-
+    
     def load_mesh(self, fname = None):
         if fname is None:
             self.load_obj = self.init_obj
@@ -109,8 +117,128 @@ class Mesh(QWidget):
         self.faces = self.mesh_list[0].faces
         # self.normals = self.mesh_list[0].normals
         # print(self.mesh_list[0].materials[0].vertices[:10])
-        self.vertices = self.mesh_list[0].materials[0].vertices # gets the vertices in [nx, ny, nz, x, y, z] format
+        # testVertices = []
+        # for name, material in self.mesh.materials.items():
+        #     # print(f"Vertices of {self.load_obj}: {material.vertices[:8]}\n")
+        #     # testVertices.extend(material.vertices[:8])
+        #     verticesWithColor = material.vertices
+        #     if self.color:
+        #         # print(f"Diffuse color for {self.load_obj}: {material.diffuse}")
+        #         color = material.diffuse[:3]
+        #         verticesWithColor = self.add_color_vertices(color, material.vertices)
+
+        # self.vertices.extend(verticesWithColor)
+        # if self.color:
+        #     print(self.vertices[:22])
+        
+        # gets the vertices in [tx, ty, nx, ny, nz, x, y, z] format or in
+        # OR get the vertices in [tx, ty, r, g, b, nx, ny, nz, x, y, z] T2, C3, N3, V3
+        
+        self.vertices = self.mesh_list[0].materials[0].vertices 
         self.count = len(self.mesh.vertices)
+        # self.count = len(self.vertices)
+
+
+    def add_color_vertices(self, color, vertices):
+        # loop over all the vertices
+        counts = len(vertices) / 8 # 8 for 2T, 3NF, 3V
+        colorVertices = np.zeros(int(counts * 11)) # 11 for 2T, 3C, 2NF, 3V
+        stride = 11
+        for i in range(int(counts)):
+            cStart = i*stride
+            vStart = 1*8
+            # get the texture coordinate
+            colorVertices[cStart:cStart+2] = vertices[vStart:vStart+2]
+            colorVertices[cStart+2:cStart+5] = color
+            # print(colorVertices[cStart+5:cStart+11])
+            colorVertices[cStart+5:cStart+11] = vertices[vStart+2:vStart+8]
+
+        return colorVertices
+
+
+    #############################################
+    # DESCRIPTION: write the participant's cuts to a mesh file 
+    #   - save mesh file of cuts as PID_#_treeName.obj in a folder under PID_#
+    #
+    # INPUT:
+    #   - treeName: a String representing the name of the .obj tree file participants interacted with (excluding .obj)
+    #   - pid: an Int representing the participant's ID number 
+    #   - cutDictionary: a List of dictionaries containing the sequence of cuts, a participant's cut decision,
+    #                and vertices of the cut.
+    # OUTPUT: None        
+    #############################################
+    def write_mesh_file(self, treeName, pid, pruningData):
+        # Loop through dictionary containing: Cut decision (in order) and their vertices
+        # Write the objects to the same mesh file 
+        fname = "PID_" + str(pid) + "_" + treeName 
+        
+        # loop over all the cuts and through their vertices to add the files
+        # create the directory if it doesn't exist for the participant
+        pid_directory = f"../user_data/PID_{pid}"
+
+        # Create a directory for the PID if it doesn't exist
+        if not os.path.exists(pid_directory):
+            os.makedirs(pid_directory)
+        
+
+        for attempt, cutDictionary in enumerate(pruningData):
+            file = pid_directory + "/" + fname + "_Attempt_" + str(attempt+1) + ".obj"
+
+            with open(file, "a") as mesh:
+                
+                for idx in range(len(cutDictionary["Rule"])):
+                    objName = "Cut_" + str(idx+1) + "_" + cutDictionary["Rule"][idx]
+
+                    # loop over the vertices to generate the mesh file.
+                    # always 8 vertices in the data!!
+
+                    mesh.write(f"o {objName}\n") # tell what object it is first
+                    
+
+                    # vertices first obj has vertices 1-8
+                    for v in cutDictionary["Vertices"][idx]:
+                        mesh.write(f"v {v[0]} {v[1]} {v[2]}\n")
+
+                    # modify face value by shifting it 8 for each new object in the mesh
+                    mesh.write(f"f {(1 + idx * 8)} {(2 + idx * 8)} {(3 + idx * 8)} {(4 + idx * 8)}\n")
+                    mesh.write(f"f {(5 + idx * 8)} {(8 + idx * 8)} {(7 + idx * 8)} {(6 + idx * 8)}\n")
+                    mesh.write(f"f {(1 + idx * 8)} {(5 + idx * 8)} {(6 + idx * 8)} {(2 + idx * 8)}\n")
+                    mesh.write(f"f {(2 + idx * 8)} {(6 + idx * 8)} {(7 + idx * 8)} {(3 + idx * 8)}\n")
+                    mesh.write(f"f {(3 + idx * 8)} {(7 + idx * 8)} {(8 + idx * 8)} {(4 + idx * 8)}\n")
+                    mesh.write(f"f {(5 + idx * 8)} {(1 + idx * 8)} {(4 + idx * 8)} {(8 + idx * 8)}\n")
+                    
+        
+                    """ 
+                    Start object line with o Name
+                    Uses the same VN for all vertices
+                    vn 0.0000 -1.0000 0.0000
+                    vn 0.0000 1.0000 0.0000
+                    vn 1.0000 0.0000 0.0000
+                    vn -0.0000 -0.0000 1.0000
+                    vn -1.0000 -0.0000 -0.0000
+                    vn 0.0000 0.0000 -1.0000
+
+                    Cube Faces: v//vn
+
+                    2________4
+                    /|      /|
+                    /_|_____/ |
+                    1       3 |
+                    | |____|__|
+                    | 6    |  8
+                    | /    | /
+                    |/_____|/
+                    5       7
+                    
+                    # I DON'T INCLUDE NORMALS
+                    f 1//1 2//1 3//1 4//1
+                    f 5//2 8//2 7//2 6//2
+                    f 1//3 5//3 6//3 2//3
+                    f 2//4 6//4 7//4 3//4
+                    f 3//5 7//5 8//5 4//5
+                    f 5//6 1//6 4//6 8//6
+                    """
+
 
     def split_vertices(self):
         # print(self.vertices.size)
@@ -169,7 +297,7 @@ class Mesh(QWidget):
             vertices = []
             for vertex in face:
                 vertices.append(self.mesh.vertices[vertex]) # extracts the vertex at the position in the obj file
-            center = self.center_of_face(vertices)
+            center = self.center_of_face(vertices) # all of these are in local space
             centers.append(center) # get the center of all vertices
             faces.append(vertices) # get all the faces
         return np.array(faces, dtype=np.float32), np.array(centers, dtype=np.float32)
@@ -188,7 +316,7 @@ class Mesh(QWidget):
         # need to find points that are in between pts 1 and 2
         # pts will be in world spaces
 
-        start = time.time()
+        # start = time.time()
         # Check which is the minimum 
         minX = np.min([x1, x2])
         maxX = np.max([x1, x2])
@@ -203,6 +331,7 @@ class Mesh(QWidget):
             maxX += 0.1
 
         # print(f"Bounded u,v area: ({minX}, {minY}), ({minX}, {maxY}), ({maxX}, {maxY}), ({maxX}, {minY})")  
+
 
         xRows = self.centerFaces[:, 0]
         yRows = self.centerFaces[:, 1]
@@ -225,19 +354,16 @@ class Mesh(QWidget):
         
         # print(f"Intersect with local vertices time: {time.time() - start}")
         return np.array(intersect, dtype=np.float32)
-
-   
-
    
 
     def intersect_faces(self, u1, v1, u2, v2, projection, view, model): 
         # need to find the set of faces that are 
-        #   A) within the bounded bowx given by (x1, y1) (x1, y2) (x2, y2) (x2, y1)
+        #   A) within the bounded box given by (x1, y1) (x1, y2) (x2, y2) (x2, y1)
         #   b) faces that contain either the point (x1, y1) or (x2, y2)
         
         # check if the line is near vertical or horizontal
         # if so, add a little more area to the surrounding area
-        start = time.time()
+        # start = time.time()
         # self.intersectFaces = [] # reset to empty
         # self.intersectCount = 0
         
@@ -414,8 +540,7 @@ class Mesh(QWidget):
             worldFaces.append(f)
         
         return np.array(worldFaces, dtype=np.float32)
-    
-             
+                 
 
 
     def set_translate(self, x, y, z):
@@ -435,6 +560,7 @@ class Character:
         self.size = size  # a tuple storing the size of the glyph
         self.bearing = bearing # a tuple describing the bearing of the glyph
         self.advance = advance
+
 
 
 class TestMeshOpenGL(QOpenGLWidget):
@@ -572,7 +698,6 @@ class TestMeshOpenGL(QOpenGLWidget):
         }
         """
 
-        
 
     def calculatePos(self):
         # print(self.projection)
@@ -1040,87 +1165,8 @@ class TestMeshOpenGL(QOpenGLWidget):
         self.view = mt.create_identity() # want to keep the camera at the origin (0, 0, 0) 
 
         gl.glUseProgram(0)
-        color = [1.0, 0.0, 0.0]
-        self.renderText("Testing", 0.0, 0.0, 1.0, color) 
-
-        # gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
-        # gl.glUseProgram(self.program) 
-        # gl.glBindVertexArray(self.vao)
-
-        # modelLoc = gl.glGetUniformLocation(self.program, "model")
-        # gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, self.model) # self.rotation
-
-        # projLoc = gl.glGetUniformLocation(self.program, "projection")
-        # gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
-
-        # viewLoc = gl.glGetUniformLocation(self.program, "view")
-        # gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view)
-
-        # gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vertices.size / 3)) # int(self.vertices.size / 3)
-        # gl.glBindVertexArray(0) # unbind the vao
-        # gl.glPopMatrix()
-
-        # self.drawSkyBox()
-
-
-    # def paintGL(self):
-    #     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-    #     gl.glDisable(gl.GL_DEPTH_TEST)
-    #     gl.glDisable(gl.GL_CULL_FACE)
-
-    #     gl.glLoadIdentity()
-    #     gl.glPushMatrix()
-
-    #     gl.glUseProgram(0)
-
-    #     # set last row and column to 0 so it doesn't affect translations but only rotations
-    #     model = mt.create_identity()
-    #     # model = mt.create_from_scale([41.421, 41.421, -100])
-    #     model = mt.create_from_scale([0, 0, -5.3888])
-
-    #     self.view = mt.create_identity()
-    #     # view[:,3] = np.zeros(4)
-    #     # view[3, :] = np.zeros(4)
-    #     # view = np.zeros((4, 4))
-    #     # view[:-1, :-1] = mt.create_identity()[:-1, :-1]
-
-    #     # projection = np.transpose(mt.create_perspective_projection_matrix(45.0, self.width / float(self.height), 0.1, 100.0))
-
-    #     # set the depth function to equal
-    #     # oldDepthFunc = gl.glGetIntegerv(gl.GL_DEPTH_FUNC)
-    #     gl.glDepthFunc(gl.GL_LEQUAL)
-    #     gl.glDepthMask(gl.GL_FALSE)
-
-    #     gl.glUseProgram(self.skyProgram)
-    #     gl.glBindTexture(gl.GL_TEXTURE_CUBE_MAP, self.skyTexture)
-    #     gl.glBindVertexArray(self.skyVAO)
-
-    #     modelLoc = gl.glGetUniformLocation(self.skyProgram, "model")
-    #     gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
-
-    #     projLoc = gl.glGetUniformLocation(self.skyProgram, "projection")
-    #     gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection) # use the same projection values
-    #     # print(np.transpose(mt.create_perspective_projection_matrix(45.0, self.width / float(self.height), 0.1, 10.0)))
-
-    #     viewLoc = gl.glGetUniformLocation(self.skyProgram, "view")
-    #     gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) # use the same location view values
-
-    #     # self.calculatePos()
-
-
-    #     # gl.glDrawArrays(gl.GL_LINES, 0, int(self.skyVertices.size))
-    #     gl.glDrawElements(gl.GL_QUADS, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
-    #     # gl.glDrawElements(gl.GL_POINTS, 0, int(self.skyVertices.size), gl.GL_UNSIGNED_INT, 0)
-
-    #     gl.glBindVertexArray(0) # unbind the vao
-    #     gl.glPopMatrix()
-
-    #     gl.glDepthFunc(gl.GL_LESS)
-    #     # gl.glDepthFunc(oldDepthFunc) # set back to default value
-    #     gl.glDepthMask(gl.GL_TRUE)
-    #     gl.glUseProgram(0)
-    #     gl.glEnable(gl.GL_DEPTH_TEST)
-    #     gl.glEnable(gl.GL_CULL_FACE)
+        # color = [1.0, 0.0, 0.0]
+        
 
 
     def getGlInfo(self):
@@ -1166,73 +1212,26 @@ class Window(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = Window() # GLDemo()
-    window.show()
-    sys.exit(app.exec_())
+    # app = QApplication(sys.argv)
+    # window = Window() # GLDemo()
+    # window.show()
+    # sys.exit(app.exec_())
 
-    # failY = [0.0, 1.1, 0.0, 1]
-    # failY2 = [0.0, -1.1, 0.0, 1]
-    # failX = [1.1, 0.0, 0.0, 1]
-    # failX2 = [-1.1, 0.0, 0.0, 1]
-    # failZ = [0.0, 0.0, 1.1, 1]
-    # failZ2 = [0.0, 0.0, -0.1, 1]
-    # passVal = [0.5, 0.5, 0.5, 1]
-    # passVal2 = [0.0, 0.0, 0.0, 1]
-    # passVal3 = [1.0, 1.0, 1.0, 1]
-    # passVal4 = [-1.0, -1.0, 1.0, 1]
+    # circle = Mesh("../obj_files/circle.obj", circle=True)
+    # print(vertices)
 
-    # face1 = np.array([passVal, failX, failX2, passVal2, failY, failY2, passVal3, failZ, failZ2], dtype=np.float32)
-    # projection = np.array([[2.41421366, 0, 0, 0],
-    #                         [0, 2.41421366, 0, 0],
-    #                         [0, 0, -1.02020204, -0.2020202],
-    #                         [0, 0, -1, 0]], dtype=np.float32)
+    # d = |(P - P₀) · n| / ||n||
+    normals = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+    point_origin = np.array([1, 1, 1])
+    point = np.array([[2, 1, 1], [1, 3, 5], [5, 1, 2]])
+
+    difference = np.array(point_origin - point)
+    # print(difference)
+    magnitudes = np.linalg.norm(normals, axis=0)
+    # print(magnitudes)
+
     
-    # model = np.array([[1, 0, 0, -0.25],
-    #                 [0, 1, 0, -2],
-    #                 [0, 0, 1, -1.5],
-    #                 [0, 0, 0, 1]], dtype=np.float32)
-
-
-
-    # # print(faces.shape)
-    # xRows = face1[:, 0]
-    # yRows = face1[:, 1]
-    # zRows = face1[:, 2]
-
-
-    # yBound1 = np.where(yRows <= 1, True, False)
-    # yBound2 = np.where(yRows >= -1, True, False)
-    # zBound1 = np.where(yRows <= 1, True, False)
-    # zBound2 = np.where(yRows >= 0, True, False)
-
-
-    # xBound = np.where(xRows <= 1, True, False) & np.where(xRows >= -1, True, False)
-    # yBound = np.where(yRows <= 1, True, False) & np.where(yRows >= -1, True, False)
-    # zBound = np.where(zRows <= 1, True, False) & np.where(zRows >= 0.0, True, False)
-    
-    # # inBound = np.logical_and(zBound, np.logical_and(xBound, yBound, dtype=bool))
-    # inBound = xBound & yBound & zBound
-
-    # print(inBound)
-    # if np.any(inBound):
-    #     print("Face in bound")
-
-    # print(np.transpose(face1[inBound]))
-    # test = projection @ model @ np.transpose(face1[inBound])
-
-    # print(test)
-    # print(test / test[3])
-    # test = np.any(faces, axis = 2, where = faces < -1)
-    # test2 = np.any(faces, axis=2, where=faces > 1)
-
-    # for i, face in enumerate(faces):
-    #     for vertex in face:
-    #         if np.any(vertex > 1) or np.any(vertex < -1) or vertex[2] < 0:
-    #             print(f"vertex {vertex} not in clip range")
-    #         else:
-    #             print(f"Vertex {vertex} in clip range")
-
+   
     
 
 

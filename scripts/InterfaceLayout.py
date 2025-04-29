@@ -9,12 +9,20 @@ import sys
 sys.path.append('../')
 
 
-from PySide2 import QtCore, QtGui
-from PySide2.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QOpenGLWidget, QProgressBar, QSpacerItem, QSizePolicy, QSplitter, QAction, QMenu
-from PySide2.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint
-from PySide2.QtOpenGL import QGLWidget
-from PySide2.QtGui import QPixmap, QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4
-# from shiboken2 import VoidPtr
+from PySide6 import QtCore, QtGui, QtOpenGL
+
+from PySide6.QtWidgets import QApplication, QSlider, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMainWindow, QFrame, QGridLayout, QPushButton, QComboBox, QProgressBar
+    # QOpenGLWidget
+
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
+
+from PySide6.QtCore import Qt, Signal, SIGNAL, SLOT, QPoint, QCoreApplication, QPoint
+
+# from PySide6.QtOpenGL import QGLWidget, QGLContext
+
+from PySide6.QtGui import QFont
+# from PySide6.QtGui import QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLShaderProgram, QOpenGLShader, QOpenGLContext, QVector4D, QMatrix4x4, QSurfaceFormat, QPainter,
+from OpenGL.GL.shaders import compileShader, compileProgram
 
 from scripts.MeshAndShaders import Mesh
 from scripts.BranchGeometry import BranchGeometry
@@ -439,22 +447,37 @@ class MainWindow(QMainWindow):
         build_off.setCheckable(True)
         spatial.setCheckable(True)
         rule.setCheckable(True)
+        
+        if actualCourse.quizMode == QuizMode.AT_THE_END:
+            at_the_end.setChecked(True)
+            at_the_end.setDisabled(True)
+        if actualCourse.quizMode == QuizMode.BUILD_OFF:
+            build_off.setChecked(True)
+            build_off.setDisabled(True)
 
-        match actualCourse.quizMode:
-            case QuizMode.AT_THE_END:
-                at_the_end.setChecked(True)
-                at_the_end.setDisabled(True)
-            case QuizMode.BUILD_OFF:
-                build_off.setChecked(True)
-                build_off.setDisabled(True)
+        if actualCourse.moduleOrder == ModuleOrder.SPATIAL:
+            spatial.setChecked(True)
+            spatial.setDisabled(True)
+        if actualCourse.moduleOrder == ModuleOrder.RULE:
+            rule.setChecked(True)
+            rule.setDisabled(True)
 
-        match actualCourse.moduleOrder:
-            case ModuleOrder.SPATIAL:
-                spatial.setChecked(True)
-                spatial.setDisabled(True)
-            case ModuleOrder.RULE:
-                rule.setChecked(True)
-                rule.setDisabled(True)
+
+        # match actualCourse.quizMode:
+        #     case QuizMode.AT_THE_END:
+        #         at_the_end.setChecked(True)
+        #         at_the_end.setDisabled(True)
+        #     case QuizMode.BUILD_OFF:
+        #         build_off.setChecked(True)
+        #         build_off.setDisabled(True)
+
+        # match actualCourse.moduleOrder:
+        #     case ModuleOrder.SPATIAL:
+        #         spatial.setChecked(True)
+        #         spatial.setDisabled(True)
+        #     case ModuleOrder.RULE:
+        #         rule.setChecked(True)
+        #         rule.setDisabled(True)
 
         at_the_end.triggered.connect(self.switchToAtTheEnd)
         build_off.triggered.connect(self.switchToBuildOff)

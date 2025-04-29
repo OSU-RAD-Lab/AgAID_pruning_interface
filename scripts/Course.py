@@ -95,51 +95,52 @@ class Course(ListLearningStructure):
         raise TypeError("Course can not have children added to it with the addChildren method")
 
     def updateOrder(self) -> None:
-        match (self.quizMode, self.moduleOrder) :
-            case (QuizMode.BUILD_OFF, ModuleOrder.SPATIAL):
-                self.children = [
-                    self.introductionModule,
-                    self.introductionQuiz,
-                    self.spacingModule,
-                    self.spacingQuiz,
-                    self.vigorModule,
-                    self.spacingVigorQuiz,
-                    self.canopyModule,
-                    self.spacingVigorCanopyQuiz,
-                    self.vigorCanopySpacingFinal
-                ]
-            case (QuizMode.AT_THE_END, ModuleOrder.SPATIAL):
-                self.children = [
-                    self.introductionModule,
-                    self.introductionQuiz,
-                    self.spacingModule,
-                    self.vigorModule,
-                    self.canopyModule,
-                    self.spacingVigorCanopyQuiz,
-                    self.vigorCanopySpacingFinal
-                ]
-            case (QuizMode.BUILD_OFF, ModuleOrder.RULE):
-                self.children = [
-                    self.introductionModule,
-                    self.introductionQuiz,
-                    self.vigorModule,
-                    self.vigorQuiz,
-                    self.canopyModule,
-                    self.vigorCanopyQuiz,
-                    self.spacingModule,
-                    self.vigorCanopySpacingQuiz,
-                    self.spacingVigorCanopyFinal
-                ]
-            case (QuizMode.AT_THE_END, ModuleOrder.RULE):
-                self.children = [
-                    self.introductionModule,
-                    self.introductionQuiz,
-                    self.vigorModule,
-                    self.canopyModule,
-                    self.spacingModule,
-                    self.vigorCanopySpacingQuiz,
-                    self.spacingVigorCanopyFinal
-                ]
+        # changed from match/case
+        if self.quizMode == QuizMode.BUILD_OFF and self.moduleOrder == ModuleOrder.SPATIAL :
+            
+            self.children = [
+                self.introductionModule,
+                self.introductionQuiz,
+                self.spacingModule,
+                self.spacingQuiz,
+                self.vigorModule,
+                self.spacingVigorQuiz,
+                self.canopyModule,
+                self.spacingVigorCanopyQuiz,
+                self.vigorCanopySpacingFinal
+            ]
+        if self.quizMode == QuizMode.AT_THE_END and self.moduleOrder == ModuleOrder.SPATIAL:
+            self.children = [
+                self.introductionModule,
+                self.introductionQuiz,
+                self.spacingModule,
+                self.vigorModule,
+                self.canopyModule,
+                self.spacingVigorCanopyQuiz,
+                self.vigorCanopySpacingFinal
+            ]
+        if self.quizMode == QuizMode.BUILD_OFF and self.moduleOrder == ModuleOrder.RULE:
+            self.children = [
+                self.introductionModule,
+                self.introductionQuiz,
+                self.vigorModule,
+                self.vigorQuiz,
+                self.canopyModule,
+                self.vigorCanopyQuiz,
+                self.spacingModule,
+                self.vigorCanopySpacingQuiz,
+                self.spacingVigorCanopyFinal
+            ]
+        if self.quizMode == QuizMode.AT_THE_END and self.moduleOrder == ModuleOrder.RULE:
+            self.children = [
+                self.introductionModule,
+                self.introductionQuiz,
+                self.vigorModule,
+                self.canopyModule,
+                self.spacingModule,
+                self.vigorCanopySpacingQuiz,
+                self.spacingVigorCanopyFinal
+            ]
         self.lengthDirty = True
 
 # here are a lot of method that Course calls in its constructor to make all of its children
