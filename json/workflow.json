@@ -541,7 +541,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "EasyVigorCanopy",
             "File Directory": ""
@@ -564,7 +564,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "HardVigorCanopy",
             "File Directory": ""
@@ -624,7 +624,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "EasyAllCuts",
             "File Directory": ""
@@ -646,7 +646,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "HardAllCuts",
             "File Directory": ""
@@ -890,7 +890,7 @@
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyBudSpacing",
                 "File Directory": ""
@@ -913,7 +913,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "HardBudSpacing",
                 "File Directory": ""
@@ -929,7 +929,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyBudSpacingVigor",
                 "File Directory": ""
@@ -951,7 +951,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "HardBudSpacingVigor",
                 "File Directory": ""
@@ -967,7 +967,7 @@
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyAllCuts",
                 "File Directory": ""
@@ -989,7 +989,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "HardAllCuts",
                 "File Directory": ""
@@ -1134,7 +1134,7 @@
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyBudSpacing",
                 "File Directory": ""
@@ -1157,7 +1157,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "HardBudSpacing",
                 "File Directory": ""
@@ -1208,7 +1208,7 @@
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyBudSpacingVigor",
                 "File Directory": ""
@@ -1230,7 +1230,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "HardBudSpacingVigor",
                 "File Directory": ""
@@ -1303,7 +1303,7 @@
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyAllCuts",
                 "File Directory": ""
@@ -1325,7 +1325,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
                 "Tree File": "HardAllCuts",
                 "File Directory": ""
@@ -1353,14 +1353,6 @@
 
     "Test": [ 
 
-    {
-        "Module": "Draw Tutorial", 
-        "Your Task": "Draw from points A to B to 'prune' the tree. To\ncomplete a cut, select 1 of the 3 rules.\n\nIf no cut appears, draw with the branch centered.\n\nClick 'Done' to contiue or enable 'Reset'.",
-        "Layout": "draw_tutorial",
-        "Tree File": "proxyTree",
-        "File Directory": ""
-    },
-
         {
             "Module": "Canopy Spacing Examples", 
             "Your Task": "Select the different 'Branch Spacing' Buttons to\nsee examples of different 'Branch Spacing'.\nClick 'Next' when finished",
@@ -1369,6 +1361,63 @@
             "File Directory": "spacing_features"
         },
 
+        {
+            "Module": "Canopy Spacing", 
+            "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
+            "Layout": "scale",
+            "Tree File": "proxyTree",
+            "File Directory": "canopy_spacing"
+        },
+
+        {
+            "Module": "Labels Tutorial", 
+            "Your Task": "Select the 'Labels On' button to turn on tree\nterminology. To turn off the labels, select the\n'Labels Off' button. You can choose to turn on\nthe labels at any time.\nClick 'Next' when finished",
+            "Layout": "normal",
+            "Tree File": "proxyTree",
+            "File Directory": ""
+        },
+
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
+            "Layout": "prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        
+        
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
+            "Layout": "prune",
+            "Tree File": "HardAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "HardAllCuts",
+            "File Directory": ""
+        },
+   
+
+    
+        
         {
             "Module": "Branch Vigor Terminology", 
             "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three levels of Branch Vigor.\nClick 'Next' when finished",
@@ -1394,42 +1443,15 @@
         },
 
         
-        {
-            "Module": "Canopy Spacing", 
-            "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
-            "Layout": "scale",
-            "Tree File": "proxyTree",
-            "File Directory": "canopy_spacing"
-        },
+        
 
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-            
+        
         
 
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "EasyAllCuts",
             "File Directory": ""
@@ -1451,7 +1473,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "MediumAllCuts",
             "File Directory": ""
@@ -1472,32 +1494,12 @@
         },
         
 
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
+        
 
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "EasyVigor",
             "File Directory": ""
@@ -1520,7 +1522,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "MediumVigor",
             "File Directory": ""
@@ -1547,7 +1549,7 @@
         
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "EasyAllCuts",
             "File Directory": ""
@@ -1569,7 +1571,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "HardAllCuts",
             "File Directory": ""
@@ -1596,7 +1598,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "MediumVigorCanopy",
             "File Directory": ""
@@ -1620,7 +1622,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "EasyVigorCanopy",
             "File Directory": ""
@@ -1643,7 +1645,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "HardVigorCanopy",
             "File Directory": ""
@@ -1666,7 +1668,7 @@
         
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "HardVigor",
             "File Directory": ""
@@ -1690,7 +1692,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "HardBudSpacing",
             "File Directory": ""
@@ -1712,7 +1714,7 @@
         
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "MediumBudSpacing",
             "File Directory": ""
@@ -1735,7 +1737,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
             "Layout": "prune",
             "Tree File": "EasyBudSpacing",
             "File Directory": ""

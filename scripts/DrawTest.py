@@ -908,7 +908,7 @@ class Test(QOpenGLWidget):
                 #                                     translation=treeTranslation,           # where in the tree
                 #                                     rotation=cameraRotation,               # just where is the camera location
                 #                                     scale=scale)              # how much to scale the branch by
-                _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.3, color=[0, 1, 0])
+                _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.3, color=[1, 1, 0])
 
 
         gl.glPopMatrix()
@@ -1255,10 +1255,12 @@ class Test(QOpenGLWidget):
         # self.getLabelPoints(screenPose) # get where to draw and update (if necessary)
         
         # render text on the screen
+        screenPose = [(0.4879692011549567, 1 - 0.46600741656365885), (0.5178055822906641, 1-0.5822002472187886), (0.11549566891241578, 1 - 0.29913473423980225), (0.05004812319538017, 1 - 0.39555006180469715)]
+
         for i, label in enumerate(self.jsonData["Features"]):
             x, y = screenPose[i]
             # print(f"Label {label}: {screenPose[i]}")
-            _ = self.renderText(label, x, y, 0.5)
+            _ = self.renderText(label, x*self.width, y*self.height, 0.5)
         
         gl.glUseProgram(0)
         gl.glUseProgram(self.labelProgram)
@@ -1675,7 +1677,7 @@ class Test(QOpenGLWidget):
                     branch_label = f"{self.wantedFeature} Branch {i+1}" #  Branch {i+1}
                     x, y = binLabelLocs[i]
                     scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
-                    _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.3, [0, 1, 0])
+                    _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.3, [1, 1, 0])
         # END IF
 
         gl.glPopMatrix()
@@ -2478,7 +2480,7 @@ class Test(QOpenGLWidget):
         self.pressTime = time.time()
 
         # print(f"{self.width}, {self.height}")
-        print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
+        # print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
 
         self.origins = []
         self.directions = []
@@ -3111,8 +3113,8 @@ class Test(QOpenGLWidget):
             if intersectFaces is not None:
                 
                 # loop through bins of the branch to determine when stuff intersects
-                for i in range(20): # divide the branch into 10 buckets
-                    dirPt = [( (i+1) * (self.startPose.x() + self.lastPose.x()) ) / 20, ( (i+1) * (self.startPose.y() + self.lastPose.y()) ) / 20]
+                for i in range(50): # divide the branch into 10 buckets
+                    dirPt = [( (i+1) * (self.startPose.x() + self.lastPose.x()) ) / 50, ( (i+1) * (self.startPose.y() + self.lastPose.y()) ) / 50]
                     dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
 
                     # origin = self.convertXYZtoWorld(self.camera_pos)[:3]
@@ -5005,7 +5007,7 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
     
     def spaceButtonClicked(self):
-        self.descriptionLabel.setText("Buds are have more than 2-3 inches apart")
+        self.descriptionLabel.setText("Buds are more than 2-3 inches apart")
         self.descriptionLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setWantedFeature("Enough Space")
         self.interacted = True
@@ -5016,6 +5018,7 @@ class Window(QMainWindow):
     """
         SCALE SCREEN FOR MANIPULATION TASKS
     """    
+
     def scaleScreen(self):
         self.loadTreeSectionScreen()
 
@@ -5240,10 +5243,12 @@ class Window(QMainWindow):
                 self.userData["Cut Data"] = self.participantCuts
                 # print(self.userData["Cut Data"])
 
+                self.userData["Explanations"] = []
                 if self.reset == False:
                     self.userData["Reset Answer"] = ""
 
                 self.treeMesh.write_mesh_file(treeName=treeName, pid=self.pid, pruningData=userPruningCuts)
+                self.jsonReader.write_file(userData=self.userData, pid=self.pid, treeName=treeName, treeNum=self.treeNum)
 
             if self.screenType == "question":
                 # print(self.userData)
@@ -5252,8 +5257,8 @@ class Window(QMainWindow):
                 # self.writeUserData("Reset Answer", self.questionAnswer)
                 # print(self.userData["Reset Answer"])
                 self.reset = False
-
-
+                self.jsonReader.write_file(userData=self.userData, pid=self.pid, treeName=treeName, treeNum=self.treeNum)
+            
 
             if self.screenType == "explain_prune":
                 # print("User Cut Data:", self.userData["Cut Data"])
@@ -5269,6 +5274,7 @@ class Window(QMainWindow):
                 # self.resetUserData()
                 self.userData = {}
                 self.explanationsSequence = [] # reset the sequence of explanations the user used
+            
 
 
             if self.layouts[self.pageIndex] == "end":
@@ -5316,6 +5322,9 @@ class Window(QMainWindow):
             self.screenType = self.layouts[self.pageIndex] # Set the next page index
             
             if self.screenType == "prune":
+                # Reset all the cuts on the data
+                self.userData = {}
+                self.explanationsSequence = []
                 self.glWidgetTree.resetCuts() # only reset the cuts when I am loading a new pruning screen
 
             self.index = 0 # set index to 0
