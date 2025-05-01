@@ -1,0 +1,92 @@
+{
+    "Vigor Manipulation": {
+        "Total Time": 556.4323182106018,
+        "Answers": [
+            "Vigorous",
+            "Strong",
+            "Strong",
+            "Strong"
+        ],
+        "Submit Times": [
+            28.645805597305298,
+            19.63492250442505,
+            8.374427318572998,
+            4.702048301696777
+        ]
+    },
+    "Vigor Bins": {
+        "Total Time": 608.1343460083008,
+        "Answers": [
+            [
+                "Don't Prune",
+                "Heading Cut",
+                "Thinning Cut"
+            ],
+            [
+                "Don't Prune",
+                "Heading Cut",
+                "Thinning Cut"
+            ]
+        ],
+        "Submit Times": [
+            31.831762552261353,
+            8.939692735671997
+        ]
+    },
+    "Canopy Spacing Manipulation": {
+        "Total Time": 932.0910122394562,
+        "Answers": [
+            "Too Close"
+        ],
+        "Submit Times": [
+            34.197373151779175
+        ]
+    },
+    "Canopy Rotation Manipulation": {
+        "Total Time": 1037.8523154258728,
+        "Answers": [
+            "Too Much Angle",
+            "Too Much Angle",
+            "Good Angle"
+        ],
+        "Submit Times": [
+            10.513283729553223,
+            3.8882551193237305,
+            22.03486394882202
+        ]
+    },
+    "Bud Spacing Bins": {
+        "Total Time": 1235.7617099285126,
+        "Answers": [
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ]
+        ],
+        "Submit Times": [
+            34.11223316192627,
+            36.69781851768494,
+            3.9041032791137695
+        ]
+    },
+    "Bud Spacing Manipulation": {
+        "Total Time": 1322.7442915439606,
+        "Answers": [
+            "Too Close"
+        ],
+        "Submit Times": [
+            12.315867900848389
+        ]
+    }
+}
