@@ -21,7 +21,7 @@
 
         {
             "Module": "Draw Tutorial", 
-            "Your Task": "Draw from points A to B to 'prune' the tree. Then\nselect from the three choices to label your cut.\nYou must label your cut before you continue.\n\nIf no cut appears, draw with the branch centered.\nClick 'Done' to submit or enable reseting ALL cuts.",
+            "Your Task": "Draw from points A to B to 'prune' the tree. To\ncomplete a cut, select 1 of the 3 rules.\n\nIf no cut appears, draw with the branch centered.\n\nClick 'Done' to contiue or enable 'Reset'.",
             "Layout": "draw_tutorial",
             "Tree File": "proxyTree",
             "File Directory": ""
@@ -354,7 +354,7 @@
 
         {
             "Module": "Draw Tutorial", 
-            "Your Task": "Draw from points A to B to 'prune' the tree. Then\nselect from the three choices to label your cut.\nYou must label your cut before you continue.\n\nIf no cut appears, draw with the branch centered.\nClick 'Done' to submit or enable reseting ALL cuts.",
+            "Your Task": "Draw from points A to B to 'prune' the tree. To\ncomplete a cut, select 1 of the 3 rules.\n\nIf no cut appears, draw with the branch centered.\n\nClick 'Done' to contiue or enable 'Reset'.",
             "Layout": "draw_tutorial",
             "Tree File": "proxyTree",
             "File Directory": ""
@@ -695,7 +695,7 @@
     
             {
                 "Module": "Draw Tutorial", 
-                "Your Task": "Draw from points A to B to 'prune' the tree. Then\nselect from the three choices to label your cut.\nYou must label your cut before you continue.\n\nIf no cut appears, draw with the branch centered.\nClick 'Done' to submit or enable reseting ALL cuts.",
+                "Your Task": "Draw from points A to B to 'prune' the tree. To\ncomplete a cut, select 1 of the 3 rules.\n\nIf no cut appears, draw with the branch centered.\n\nClick 'Done' to contiue or enable 'Reset'.",
                 "Layout": "draw_tutorial",
                 "Tree File": "proxyTree",
                 "File Directory": ""
@@ -1037,7 +1037,7 @@
     
             {
                 "Module": "Draw Tutorial", 
-                "Your Task": "Draw from points A to B to 'prune' the tree. Then\nselect from the three choices to label your cut.\nYou must label your cut before you continue.\n\nIf no cut appears, draw with the branch centered.\nClick 'Done' to submit or enable reseting ALL cuts.",
+                "Your Task": "Draw from points A to B to 'prune' the tree. To\ncomplete a cut, select 1 of the 3 rules.\n\nIf no cut appears, draw with the branch centered.\n\nClick 'Done' to contiue or enable 'Reset'.",
                 "Layout": "draw_tutorial",
                 "Tree File": "proxyTree",
                 "File Directory": ""
@@ -1353,6 +1353,14 @@
 
 
     "Test": [ 
+
+    {
+        "Module": "Draw Tutorial", 
+        "Your Task": "Draw from points A to B to 'prune' the tree. To\ncomplete a cut, select 1 of the 3 rules.\n\nIf no cut appears, draw with the branch centered.\n\nClick 'Done' to contiue or enable 'Reset'.",
+        "Layout": "draw_tutorial",
+        "Tree File": "proxyTree",
+        "File Directory": ""
+    },
 
         {
             "Module": "Canopy Spacing Examples", 

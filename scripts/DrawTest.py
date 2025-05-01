@@ -2324,8 +2324,8 @@ class Test(QOpenGLWidget):
 
         if self.screenType == "draw_tutorial":
             # ratio of where on the screen to the width we are
-            x1 = (0.25601539942252166 * self.width)
-            y1 = self.height - (0.6674907292954264 * self.height)
+            x1 = (0.2925890279114533 * self.width)
+            y1 = self.height - (0.6560509554140127 * self.height)
 
             x2 = (0.36092396535129934* self.width)
             y2 = self.height - (0.7404202719406675 * self.height)
