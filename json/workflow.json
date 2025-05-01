@@ -370,7 +370,6 @@
         },
         
         
-       
         {
             "Module": "Tree Terminology", 
             "Your Task": "Select the different 'Tree Terminology' Buttons to\nexplore the different parts of a tree.\nClick 'Next' when finished",
@@ -515,7 +514,7 @@
         
         {
             "Module": "Canopy Direction", 
-            "Your Task": "Move the Branch Manipulation Slider to see\nhow Branch Vector affects pruning decisions.\nYou may need to move the camera to see\nthe branch. Click 'Next' when finished.",
+            "Your Task": "Move the Branch Manipulation Slider to see\nhow Branch Angle affects pruning decisions.\nYou may need to move the camera to see\nthe branch. Click 'Next' when finished.",
             "Layout": "scale",
             "Tree File": "proxyTree",
             "File Directory": "canopy_rotation"
