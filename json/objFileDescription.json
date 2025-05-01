@@ -133,7 +133,7 @@
                     {
                         "Screen Ratio": [0.588065447545717, 0.8190854870775348],
                         "Decision": "Branch Vigor",
-                        "Explanation": "Branch is vigorous and removed for lighting"
+                        "Explanation": "Branch is vigorous and removed to prevent shading"
                     }
                 ]
             },
@@ -261,11 +261,6 @@
                         "Screen Ratio": [0.5678537054860443, 0.3121272365805169],
                         "Decision": "Bud Spacing",
                         "Explanation": "Bud cluster is too close together and removed."
-                    },
-                    {
-                        "Screen Ratio": [0.6573628488931665, 0.43538767395626243],
-                        "Decision": "Don't Prune",
-                        "Explanation": "There is enough space between buds and requires no pruning."
                     }
                 ]
             },
@@ -288,11 +283,6 @@
                 },
                 "Explanations":
                 [
-                    {
-                        "Screen Ratio": [0.14918190567853706, 0.2823061630218688],
-                        "Decision": "Don't Prune",
-                        "Explanation": "There is enough space between buds and requires no pruning."
-                    },
                     {
                         "Screen Ratio": [0.31665062560153995, 0.28429423459244535],
                         "Decision": "Bud Spacing",
@@ -379,21 +369,7 @@
                         "Decision": "Canopy Cut",
                         "Explanation": "Branch too long. Pruned back to ~6 inches"
                     },
-                    {
-                        "Screen Ratio": [0.7305101058710298, 0.1411530815109344],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds and branch within 6 inches of secondary branch"
-                    },
-                    {
-                        "Screen Ratio": [0.40904716073147257, 0.6739562624254473],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds. Branch within 6 inches of secondary branch"
-                    },
-                    {
-                        "Screen Ratio": [0.4716073147256978, 0.679920477137177],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds. Branch within 6 inches of secondary branch"
-                    },
+                    
                     {
                         "Screen Ratio": [0.5505293551491819, 0.6381709741550696],
                         "Decision": "Canopy Cut",
@@ -455,21 +431,6 @@
                         "Explanation": "Branch is vigorous and removed to prevent shading"
                     },
                     {
-                        "Screen Ratio": [0.4600577478344562, 0.5487077534791253],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Kept as is for bud count as only tertiary branch"
-                    },
-                    {
-                        "Screen Ratio": [0.5081809432146295, 0.8210735586481114],
-                        "Decision": "Don't Prune",
-                        "Explanation": "6 inch rule satisfied."
-                    },
-                    {
-                        "Screen Ratio": [0.5813282001924928, 0.8986083499005965],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Branches have enough space & within 6 inches of secondary branch"
-                    },
-                    {
                         "Screen Ratio": [0.6929740134744947, 0.731610337972167],
                         "Decision": "Canopy Cut",
                         "Explanation": "Branch too long. Pruned back to ~6 inches"
@@ -505,16 +466,7 @@
                         "Decision": "Canopy Cut",
                         "Explanation": "Branch too long. Pruned back to ~6 inches to keep buds"
                     },
-                    {
-                        "Screen Ratio": [0.43214629451395575, 0.3121272365805169],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds and branch within 6 inches of secondary branch"
-                    },
-                    {
-                        "Screen Ratio": [0.5255052935514918, 0.4254473161033797],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds. Compensating for missing secondary branch."
-                    },
+                    
                     {
                         "Screen Ratio": [0.575553416746872, 0.5009940357852882],
                         "Decision": "Branch Vigor",
@@ -525,11 +477,7 @@
                         "Decision": "Bud Spacing",
                         "Explanation": "Bud is too close together to another bud and pruned back."
                     },
-                    {
-                        "Screen Ratio": [0.343599615014437, 0.8011928429423459],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds and branch within 6 inches of secondary branch"
-                    },
+                    
                     {
                         "Screen Ratio": [0.40712223291626565, 0.5447316103379721],
                         "Decision": "Canopy Cut",
@@ -539,11 +487,6 @@
                         "Screen Ratio": [0.861405197305101, 0.6640159045725647],
                         "Decision": "Branch Vigor",
                         "Explanation": "The branch is vigorous but pruned back to keep buds and prevent shading"
-                    },
-                    {
-                        "Screen Ratio": [0.9403272377285852, 0.6938369781312127],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds. Branch within 6 inches of secondary branch"
                     }
                 ]
             },
@@ -571,35 +514,23 @@
                         "Decision": "Canopy Cut",
                         "Explanation": "Branch too long. Pruned back to ~6 inches to keep buds"
                     },
-                    {
-                        "Screen Ratio": [0.38209817131857554, 0.32803180914512925],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds. Branch within 6 inches of secondary branch"
-                    },
+                    
                     {
                         "Screen Ratio": [0.5948026948989413, 0.3817097415506958],
                         "Decision": "Bud Spacing",
                         "Explanation": "Bud cluster is too close together to other buds and pruned back to keep bud count."
                     },
-                    {
-                        "Screen Ratio": [0.7641963426371511, 0.3836978131212724],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds and branch within 6 inches of secondary branch"
-                    },
+                    
                     {
                         "Screen Ratio": [0.8662175168431184, 0.19681908548707752],
                         "Decision": "Branch Vigor",
                         "Explanation": "The branch is pruned back to keep buds."
                     },
-                    {
-                        "Screen Ratio": [0.059672762271414825, 0.6600397614314115],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keeping buds and branch within 6 inches of secondary branch"
-                    },
+                    
                     {
                         "Screen Ratio": [0.29355149181905676, 0.6998011928429424],
                         "Decision": "Branch Vigor",
-                        "Explanation": "Branch is vigorous and removed for lighting"
+                        "Explanation": "Branch is vigorous and removed to prevent shading"
                     },
                     {
                         "Screen Ratio": [0.40230991337824834, 0.8608349900596421],
@@ -646,11 +577,7 @@
                         "Decision": "Canopy Cut",
                         "Explanation": "Branch too long. Pruned back to ~6 inches"
                     },
-                    {
-                        "Screen Ratio": [0.2627526467757459, 0.32803180914512925],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Branch within 6 inches of secondary branch. Keeping Buds."
-                    },
+                    
                     {
                         "Screen Ratio": [0.4331087584215592, 0.20079522862823063],
                         "Decision": "Canopy Cut",
@@ -684,23 +611,9 @@
                     {
                         "Screen Ratio": [0.5890279114533205, 0.6202783300198808],
                         "Decision": "Branch Vigor",
-                        "Explanation": "Branch is vigorous and removed for lighting"
+                        "Explanation": "Branch is vigorous and removed to prevent shading"
                     },
-                    {
-                        "Screen Ratio": [0.6467757459095284, 0.614314115308151],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Buds have enough space"
-                    },
-                    {
-                        "Screen Ratio": [0.7170356111645814, 0.6918489065606361],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Branches have enough space & within 6 inches of secondary branch"
-                    },
-                    {
-                        "Screen Ratio": [0.861405197305101, 0.6918489065606361],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Branch within 6 inches of secondary branch"
-                    },
+                    
                     {
                         "Screen Ratio": [0.9576515880654476, 0.658051689860835],
                         "Decision": "Canopy Cut",
@@ -726,11 +639,7 @@
                 },
                 "Explanations":
                 [
-                    {
-                        "Screen Ratio": [0.2598652550529355, 0.3101391650099404],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Keep for bud counts"
-                    },
+                    
                     {
                         "Screen Ratio": [0.3041385948026949, 0.11332007952286283],
                         "Decision": "Canopy Cut",
@@ -751,16 +660,7 @@
                         "Decision": "Bud Spacing",
                         "Explanation": "Bud is too close together to another bud."
                     },
-                    {
-                        "Screen Ratio": [0.5505293551491819, 0.147117296222664],
-                        "Decision": "Don't Prune",
-                        "Explanation": "6 inch rule satisfied. Keeping buds"
-                    },
-                    {
-                        "Screen Ratio": [0.685274302213667, 0.1610337972166998],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Buds have enough space and satisfies the 6 inch rule"
-                    },
+                    
                     {
                         "Screen Ratio": [0.7160731472569779, 0.36381709741550694],
                         "Decision": "Bud Spacing",
@@ -790,11 +690,6 @@
                         "Screen Ratio": [0.65832531280077, 0.6302186878727635],
                         "Decision": "Canopy Cut",
                         "Explanation": "Branch too long. Pruned back to ~6 inches"
-                    },
-                    {
-                        "Screen Ratio": [0.7247353224254091, 0.7554671968190855],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Branch within 6 inches of secondary branch"
                     }
 
                 ]
@@ -836,11 +731,6 @@
                         "Screen Ratio": [0.6602502406159769, 0.8986083499005965],
                         "Decision": "Bud Spacing",
                         "Explanation": "Bud cluster is too close together and removed."
-                    },
-                    {
-                        "Screen Ratio": [0.8421559191530318, 0.7813121272365805],
-                        "Decision": "Don't Prune",
-                        "Explanation": "Buds have enough space."
                     }
 
                 ]
@@ -975,7 +865,7 @@
                         "Feature Description": "Too Close",
                         "Pruning Description": "Heading Cut",
                         "Scale": [1, 1, 1],
-                        "Translate": [-0.12, -0.1, 0.02],
+                        "Translate": [-0.2, -0.1, 0.025],
                         "Rotate": [5, 0, 0]
                     },
                     {
@@ -999,7 +889,7 @@
                         "Feature Description": "Enough Space",
                         "Pruning Description": "Heading Cut",
                         "Scale": [1, 1, 1],
-                        "Translate": [-0.2, -0.1, 0.02],
+                        "Translate": [-0.2, -0.1, 0.025],
                         "Rotate": [5, 0, 0]
                     },
                     {
@@ -1023,17 +913,17 @@
 
             "bud_spacing_bin":
             {
-                "Answer": ["Too Close", "Too Close", "Enough Space"],
-                "Correct": "Correct! Branches bud spacing binned correctly.",
+                "Answer": ["Heading Cut", "Heading Cut", "Don't Prune"],
+                "Correct": "Correct! Branches have the correct cuts.",
                 "Incorrect": "Try Again. At least one branch binned incorrectly.",
-                "Bin_Values": ["SELECT", "Too Close", "Enough Space"],
+                "Bin_Values": ["SELECT", "Don't Prune", "Heading Cut", "Thinning Cut"],
                 "Files":[
                     {
                         "File Name": "budSpacing3.obj",
                         "Feature Description": "Too Close",
                         "Pruning Description": "Heading Cut",
                         "Scale": [1, 1, 1],
-                        "Translate": [-0.2, -0.1, 0.02],
+                        "Translate": [-0.2, -0.1, 0.025],
                         "Rotate": [5, 0, 0]
                     },
                     {
@@ -1059,7 +949,7 @@
             "bud_spacing":
             {
                 "Answer": "Too Close",
-                "Correct": "Correct! Buds have enough space.",
+                "Correct": "Correct! Buds are too close together.",
                 "Incorrect": "Try Again. Wrong bud spacing.",
                 "Bin_Values": "",
                 "Files":[
@@ -1158,8 +1048,8 @@
 
             "vigor_bins":
             {
-                "Answer":["Don't Prune", "Heading Cut", "Heading Cut"],
-                "Correct": "Correct. All branches binned correctly",
+                "Answer":["Don't Prune", "Heading Cut", "Thinning Cut"],
+                "Correct": "Correct. Branches have the correct cuts.",
                 "Incorrect": "Try Again. At least one branch binned incorrectly",
                 "Bin_Values": ["SELECT", "Don't Prune", "Heading Cut", "Thinning Cut"],
                 "Files":[
@@ -1171,6 +1061,8 @@
                         "Translate": [-0.2, -0.1, 0.02],
                         "Rotate": [5, 0, 0]
                     },
+                    
+
                     {
                         "File Name": "branch4.obj",
                         "Feature Description": "Strong",
@@ -1179,10 +1071,11 @@
                         "Translate": [0.15, -0.1, 0.02],
                         "Rotate": [5, 0, 0]
                     },
+
                     {
-                        "File Name": "branch6.obj",
-                        "Feature Description": "Strong",
-                        "Pruning Description": "Heading Cut",
+                        "File Name": "branch7.obj",
+                        "Feature Description": "Vigorous",
+                        "Pruning Description": "Thinning Cut",
                         "Scale": [1, 1, 1],
                         "Translate": [0.4, -0.1, 0.02],
                         "Rotate": [5, 0, 0]
@@ -1236,7 +1129,7 @@
             
             "vigor_terms":
             {
-                "Answer": "Vigorous",
+                "Answer": "",
                 "Correct": "Correct! The branch has the right Vigor Level.",
                 "Incorrect": "Try Again. The branch does not have the correct Vigor.", 
                 "Bin_Values": "",
@@ -1247,7 +1140,7 @@
                         "Feature Description": "Weak",
                         "Pruning Description": "Don't Prune",
                         "Scale": [1, 1, 1],
-                        "Translate": [-0.2, -0.1, 0.02],
+                        "Translate": [-0.2, -0.1, 0.025],
                         "Rotate": [5, 0, 0]
                     },
                     {
@@ -1271,7 +1164,7 @@
                         "Feature Description": "Strong",
                         "Pruning Description": "Heading Cut",
                         "Scale": [1, 1, 1],
-                        "Translate": [-0.2, -0.1, 0.02],
+                        "Translate": [-0.2, -0.1, 0.025],
                         "Rotate": [5, 0, 0]
                     },
                     {
@@ -1295,7 +1188,7 @@
                         "Feature Description": "Vigorous",
                         "Pruning Description": "Thinning Cut",
                         "Scale": [1, 1, 1],
-                        "Translate": [-0.2, -0.1, 0.02],
+                        "Translate": [-0.2, -0.1, 0.025],
                         "Rotate": [5, 0, 0]
                     },
                     {
@@ -1321,7 +1214,7 @@
             "vigor":
             {
                 "Answer": "Strong",
-                "Correct": "Correct! The branch has the right Vigor Level.",
+                "Correct": "Correct! The branch is Strong in Branch Vigor.",
                 "Incorrect": "Try Again. The branch does not have the correct Vigor.", 
                 "Bin_Values": "", 
                 "Start_Index": 0,
@@ -1436,10 +1329,76 @@
                 ] 
             },
 
+            "spacing_features":
+            {
+                "Answer": "Too Close",
+                "Correct": "Correct! The branches are too close together.",
+                "Incorrect": "Try Again. Branches do not have the correct spacing.",
+                "Bin_Values": "",
+                "Start_Index": 0,  
+                "Files": [
+                    {
+                        "File Name": "textureBudBranch.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [1, 1, 1],
+                        "Translate": [-0.2, -0.1, 0.025], 
+                        "Rotate": [10, 0, 0]
+                    },
+
+                    {
+                        "File Name": "textureBudBranch.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.15, -0.1, 0.02], 
+                        "Rotate": [10, 0, 0]
+                    },
+                    
+                    {
+                        "File Name": "textureBudBranch.obj",
+                        "Feature Description": "Enough Space",
+                        "Pruning Description": "Heading Cut",
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.4, -0.1, 0.02], 
+                        "Rotate": [10, 0, 0]
+                    },
+
+                    {
+                        "File Name": "textureBudBranch.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Thinning Cut",
+                        "Scale": [1, 1, 1],
+                        "Translate": [-0.48, -0.13, 0.02], 
+                        "Rotate": [10, 0, 0]
+                    },
+
+                    {
+                        "File Name": "textureBudBranch.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Thinning Cut",
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.35, -0.1, 0.02], 
+                        "Rotate": [10, 0, 0]
+                    },
+                    
+                    {
+                        "File Name": "textureBudBranch.obj",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Thinning Cut",
+                        "Scale": [1, 1, 1],
+                        "Translate": [0.55, -0.1, 0.02], 
+                        "Rotate": [10, 0, 0]
+                    }
+                ]
+            },
+
+            
+
             "canopy_spacing":
             {
                 "Answer": "Too Close",
-                "Correct": "Correct! Branches have the correct spacing.",
+                "Correct": "Correct! The branches are too close together.",
                 "Incorrect": "Try Again. Branches do not have the correct spacing.",
                 "Bin_Values": "",
                 "Start_Index": 0,  
@@ -1470,8 +1429,8 @@
                     },
                     {
                         "File Name": "textureBudBranch.obj",
-                        "Feature Description": "Enough Space",
-                        "Pruning Description": "Heading Cut",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Thinning Cut",
                         "Scale": [1, 1, 1],
                         "Translate": [0.30, -0.1, 0.02], 
                         "Rotate": [10, 0, 0]
@@ -1494,8 +1453,8 @@
                     },
                     {
                         "File Name": "textureBudBranch.obj",
-                        "Feature Description": "Enough Space",
-                        "Pruning Description": "Heading Cut",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Thinning Cut",
                         "Scale": [1, 1, 1],
                         "Translate": [0.45, -0.1, 0.02], 
                         "Rotate": [10, 0, 0]
@@ -1518,8 +1477,8 @@
                     },
                     {
                         "File Name": "textureBudBranch.obj",
-                        "Feature Description": "Enough Space",
-                        "Pruning Description": "Heading Cut",
+                        "Feature Description": "Too Close",
+                        "Pruning Description": "Thinning Cut",
                         "Scale": [1, 1, 1],
                         "Translate": [0.6, -0.1, 0.02], 
                         "Rotate": [10, 0, 0]
@@ -1530,8 +1489,8 @@
             "canopy_rotation":
             {
                 "Answer": "Too Much Angle",
-                "Correct": "Correct! The branch has the right Branch Vector.",
-                "Incorrect": "Try Again. The branch does not have the correct Branch Vector.",
+                "Correct": "Correct! The branch has too much angle.",
+                "Incorrect": "Try Again. The branch does not have the correct angle.",
                 "Bin_Values": "",
                 "Start_Index": 5,  
                 "Files": [

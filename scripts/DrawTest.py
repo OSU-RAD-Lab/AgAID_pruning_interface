@@ -104,6 +104,7 @@ class Test(QOpenGLWidget):
         self.toBinFeatures = False
         self.termDraw = False
         self.toExplain = False
+        self.displayCuts = True
 
         self.userPruningCuts = []
 
@@ -129,6 +130,7 @@ class Test(QOpenGLWidget):
         self.lightColor = [1.0, 1.0, 1.0] # 1.0, 0.87, 0.13 # 1.0, 1.0, 0
         self.camera_pos = [0, 0, 0]
         self.tree_color_dark = [0.278, 0.219, 0.227] 
+        self.highlightColor = [255/255, 105/255, 180/255] 
         self.red_color = [1, 0, 0]
         self.tree_color_light =  [0.447, 0.360, 0.259] # [0.670, 0.549, 0.416]
 
@@ -302,6 +304,13 @@ class Test(QOpenGLWidget):
         self.drawLines = False # determine if to draw lines
         self.drawVertices = np.zeros(3600, dtype=np.float32) # give me a set of values to declare for vbo
         self.drawCount = 0
+
+
+        self.ghostCutDrawProgram = None
+        self.ghostDrawVAO = None
+        self.ghostDrawVBO = None
+        self.ghostCuts = np.zeros(3600, dtype=np.float32)
+
         
         # TEXT DISPLAYING
         self.characters = {}
@@ -404,6 +413,7 @@ class Test(QOpenGLWidget):
             self.manipulationIndex.emit(index)
             self.update()
 
+    
     def setScreenProperties(self, screenType, toManipulate=False, toBin=False, toBinFeatures=False, toPrune=False, toPruneBin=False, drawLines=False, termDraw=False, toExplain=False):
         self.toManipulate = toManipulate
         self.toBin = toBin
@@ -462,9 +472,9 @@ class Test(QOpenGLWidget):
             self.initializeTreeMesh()
             self.initializePruningCutMesh()
 
-            # reset all the cut sequence data so it is empty for the new tree
+            # # reset all the cut sequence data so it is empty for the new tree
             self.userPruningCuts = []
-            self.resetCutSequence() 
+            # self.resetCutSequence() 
         
         if meshDictionary["Branches"] is not None:
             # TO DO, Make the manipulation variable True
@@ -743,7 +753,7 @@ class Test(QOpenGLWidget):
         gl.glLoadIdentity()
         gl.glPushMatrix()
 
-        highlightColor = [255/255, 105/255, 180/255] 
+        
         if self.termDraw and len(self.meshes) > 0: # check I have values just in case
             # Bind the texture and link the program
             gl.glBindTexture(gl.GL_TEXTURE_2D, self.branchTexture)
@@ -761,7 +771,7 @@ class Test(QOpenGLWidget):
             gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
 
             treeColorLoc = gl.glGetUniformLocation(self.program, "color")
-            gl.glUniform3fv(treeColorLoc, 1, highlightColor)
+            gl.glUniform3fv(treeColorLoc, 1, self.highlightColor)
 
             hAngle = self.angle_to_radians(self.turntable)
             vAngle = self.angle_to_radians(self.vertical)
@@ -889,16 +899,16 @@ class Test(QOpenGLWidget):
                 gl.glBindVertexArray(0) # unbind the vao
             
             # ADD LABELS:
-            binLabelLocs = [(0.3801732435033686, 0.3558648111332008), (0.5495668912415784, 0.36182902584493043), (0.6891241578440809, 0.29025844930417494)] # 
+            binLabelLocs = [(0.3551491819056785, 0.42588726513569936), (0.53609239653513, 0.42588726513569936), (0.6746871992300288, 0.42588726513569936)] # 
             for i in range(len(self.meshes)):
-                branch_label = f"Branch {i+1}"
+                branch_label = f"{self.meshDescriptions[i]} Branch {i+1}"
                 x, y = binLabelLocs[i]
                 scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
                 # x, y = self.calculateLabelPlacement(position=self.meshTranslations[i],     # how much we needed to move the object by
                 #                                     translation=treeTranslation,           # where in the tree
                 #                                     rotation=cameraRotation,               # just where is the camera location
                 #                                     scale=scale)              # how much to scale the branch by
-                _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.4, color=[0, 1, 0])
+                _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.3, color=[0, 1, 0])
 
 
         gl.glPopMatrix()
@@ -1087,8 +1097,10 @@ class Test(QOpenGLWidget):
         
         minX = x
         minY = y
-        maxX = x
-        maxY = y
+        maxX = self.width
+        maxY = self.height
+
+        
         for char in text:
             # intChar = ord(char) # convert the character to a number
             character = self.characters[char]
@@ -1161,7 +1173,7 @@ class Test(QOpenGLWidget):
         
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
-
+    
 
 
     def getLabelPoints(self, screenPose):
@@ -1639,7 +1651,7 @@ class Test(QOpenGLWidget):
                 modelLoc = gl.glGetUniformLocation(self.program, "model")
                 gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, model) # self.rotation
 
-                print(f"wanted feature: {self.wantedFeature}")
+                # print(f"wanted feature: {self.wantedFeature}")
                 if self.wantedFeature == self.meshDescriptions[i]:
                     # print(f"Drawing Bin with feature: {self.meshDescriptions[i]}\n")
                     gl.glBindVertexArray(self.VAOs[i])
@@ -1655,12 +1667,15 @@ class Test(QOpenGLWidget):
                 gl.glBindVertexArray(0) # unbind the vao
             # END FOR
             if drawing:
-                binLabelLocs = [(0.3551491819056785, 0.3220675944333996), (0.53609239653513, 0.3220675944333996), (0.6746871992300288, 0.3220675944333996)] # (1100, 650), (1450, 600), (1800, 550)
+                if self.screenType == "spacing_features" and self.wantedFeature == "Too Close":
+                    binLabelLocs = [(0.23195380173243504, 0.3987473903966597), (0.6746871992300288, 0.42588726513569936), (0.7969201154956689, 0.40083507306889354)]
+                else:
+                    binLabelLocs = [(0.3551491819056785, 0.42588726513569936), (0.53609239653513, 0.36325678496868474), (0.6746871992300288, 0.42588726513569936)] # (1100, 650), (1450, 600), (1800, 550)
                 for i in range(3):
-                    branch_label = f"{self.wantedFeature}" #  Branch {i+1}
+                    branch_label = f"{self.wantedFeature} Branch {i+1}" #  Branch {i+1}
                     x, y = binLabelLocs[i]
                     scale = mt.create_from_scale(self.meshScales[i]) # get the scale at that index [0.1, 0.1, 0.1]
-                    _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.3)
+                    _ = self.renderText(branch_label, self.width * x, self.height - (self.height * y), 0.3, [0, 1, 0])
         # END IF
 
         gl.glPopMatrix()
@@ -1820,6 +1835,81 @@ class Test(QOpenGLWidget):
         gl.glPopMatrix()
         gl.glUseProgram(0)
 
+
+
+    def initializeGhostCutDrawing(self):
+        gl.glUseProgram(0)
+
+        vertexShader = Shader("vertex", "ghost_draw_shader.vert").shader # get out the shader value    
+        fragmentShader = Shader("fragment", "ghost_draw_shader.frag").shader
+
+        self.ghostCutDrawProgram = gl.glCreateProgram()
+        gl.glAttachShader(self.ghostCutDrawProgram, vertexShader)
+        gl.glAttachShader(self.ghostCutDrawProgram, fragmentShader)
+        gl.glLinkProgram(self.ghostCutDrawProgram)
+
+        gl.glUseProgram(self.ghostCutDrawProgram)
+
+        self.ghostDrawVAO = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(self.ghostDrawVAO)
+
+        self.ghostDrawVBO = gl.glGenBuffers(1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.ghostDrawVBO)
+
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.ghostCuts.nbytes, self.ghostCuts, gl.GL_DYNAMIC_DRAW) # GL_STATIC_DRAW
+
+        stride = self.drawVertices.itemsize * 6 # 3 for pos 3 for color
+
+        # enable the pointer for the shader
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(0))  
+
+        # Add a new vertex attribute that correlates with color
+        gl.glEnableVertexAttribArray(1)
+        gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, ctypes.c_void_p(12)) # Start at pos 3 with float size 4 --> 3*4
+
+
+
+
+
+    def drawGhostCuts(self):
+        gl.glUseProgram(0)
+        gl.glLoadIdentity()
+        gl.glPushMatrix()
+
+        gl.glUseProgram(self.ghostCutDrawProgram) 
+        
+        # SET THE LIGHT COLOR
+        # angle = self.angle_to_radians(self.turntable)
+        # # x_rotation = mt.create_from_x_rotation(-np.pi/2) # for certain files to get upright
+        # model = mt.create_from_y_rotation(angle) # for rotating the modelView
+        
+        modelLoc = gl.glGetUniformLocation(self.drawProgram, "model")
+        gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, self.model) # self.rotation
+
+        projLoc = gl.glGetUniformLocation(self.drawProgram, "projection")
+        gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
+
+        viewLoc = gl.glGetUniformLocation(self.drawProgram, "view")
+        gl.glUniformMatrix4fv(viewLoc, 1, gl.GL_TRUE, self.view) 
+        
+
+        # # self.draw(self.vertices)
+        # end = self.drawCount * 3
+        gl.glBindVertexArray(self.ghostDrawVAO)
+        # gl.glLineWidth(2.0)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.ghostDrawVBO)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.ghostCuts.nbytes, self.ghostCuts, gl.GL_DYNAMIC_DRAW)
+
+        # gl.glPointSize(3.0)
+        if self.displayCuts:
+            gl.glLineWidth(5.0)
+            gl.glDrawArrays(gl.GL_QUADS, 0, int(self.ghostCuts.size / 6)) # 6 given 3 vertices 3 color
+        # gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.drawCount) 
+
+        gl.glBindVertexArray(0) # unbind the vao
+        gl.glPopMatrix()
+        gl.glUseProgram(0)
 
 
 
@@ -2041,8 +2131,8 @@ class Test(QOpenGLWidget):
         if self.vigorCutsMesh is not None:
             gl.glBindVertexArray(self.vigorCutsVAO)
             gl.glPointSize(2.0)
-            colorLoc = gl.glGetUniformLocation(self.pruningCutProgram, "color")
-            gl.glUniform3fv(colorLoc, 1, self.vigorColor)
+            colorLoc = gl.glGetUniformLocation(self.pruningCutProgram, "color") # set to all the same color
+            gl.glUniform3fv(colorLoc, 1, self.highlightColor) # self.vigorColor
             gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.vigorCutsVertices.size / 3)) 
 
             gl.glBindVertexArray(0) # unbind the vao
@@ -2052,7 +2142,7 @@ class Test(QOpenGLWidget):
             gl.glBindVertexArray(self.canopyCutsVAO)
             gl.glPointSize(2.0)
             colorLoc = gl.glGetUniformLocation(self.pruningCutProgram, "color")
-            gl.glUniform3fv(colorLoc, 1, self.canopyColor)
+            gl.glUniform3fv(colorLoc, 1, self.highlightColor) # self.canopyColor
             gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.canopyCutsVertices.size / 3)) 
 
             gl.glBindVertexArray(0) # unbind the vao
@@ -2061,7 +2151,7 @@ class Test(QOpenGLWidget):
             gl.glBindVertexArray(self.budSpacingCutsVAO)
             gl.glPointSize(2.0)
             colorLoc = gl.glGetUniformLocation(self.pruningCutProgram, "color")
-            gl.glUniform3fv(colorLoc, 1, self.spacingColor)
+            gl.glUniform3fv(colorLoc, 1, self.highlightColor) # self.spacingColor
             gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(self.budSpacingCutsVertices.size / 3)) 
 
             gl.glBindVertexArray(0) # unbind the vao
@@ -2277,6 +2367,8 @@ class Test(QOpenGLWidget):
 
         self.initializeDrawing() # initialize the places for the drawing of values
 
+        self.initializeGhostCutDrawing() # initialize the ghost drawings array
+
         self.initializeText()
         # self.initializeLabelBoxes()
         if self.wholeView:
@@ -2338,6 +2430,9 @@ class Test(QOpenGLWidget):
 
         if self.toExplain:
             self.drawPruningCutMesh()
+            # Need to draw the user's prunes
+            self.drawGhostCuts()
+
 
         if self.wholeView:
             self.drawBoundingBox()
@@ -2382,10 +2477,11 @@ class Test(QOpenGLWidget):
         self.startPose = QPoint(event.pos()) # returns the last position of the mouse when clicked
         self.pressTime = time.time()
 
+        # print(f"{self.width}, {self.height}")
+        print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
+
         self.origins = []
         self.directions = []
-        # print(f"{self.width}, {self.height}")
-        # print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
 
         # # u, v = self.convertXYtoUV(self.press.x(), self.press.y())
         # origin = self.convertXYToWorld(self.press.x(), self.press.y())
@@ -2410,8 +2506,8 @@ class Test(QOpenGLWidget):
         origin = self.convertXYToWorld(self.press.x(), self.press.y())[:3]
         direction = self.rayDirection(self.press.x(), self.press.y())[:3]
 
-        self.origins.append(origin)
-        self.directions.append(direction)
+        # self.origins.append(origin)
+        # self.directions.append(direction)
         # return super().mouseMoveEvent(event)
 
 
@@ -2422,7 +2518,7 @@ class Test(QOpenGLWidget):
         self.lastPose = QPoint(event.pos()) # event.pos()
         self.releaseTime = time.time()
 
-        print("Mouse Released")
+        # print("Mouse Released")
         # boundedPts = self.getVerticesInBounds(self.press, self.release)
         # # print("Bounded Pts", boundedPts[:10]) 
         # minDepth = np.min(boundedPts[:, 2])
@@ -3014,70 +3110,71 @@ class Test(QOpenGLWidget):
             # intersectFaces = None
             if intersectFaces is not None:
                 
-                dirPt = [(self.startPose.x() + self.lastPose.x())/2, (self.startPose.y() + self.lastPose.y())/2]
-                dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
+                # loop through bins of the branch to determine when stuff intersects
+                for i in range(20): # divide the branch into 10 buckets
+                    dirPt = [( (i+1) * (self.startPose.x() + self.lastPose.x()) ) / 20, ( (i+1) * (self.startPose.y() + self.lastPose.y()) ) / 20]
+                    dir = self.rayDirection(x=dirPt[0], y=dirPt[1])[:3]
 
-                # origin = self.convertXYZtoWorld(self.camera_pos)[:3]
-                # print(origin)
-                depth, intercept = self.interception(origin=self.camera_pos, rayDirection=dir, faces=intersectFaces)
-                # depth, intercept = self.interception(origin=origin, rayDirection=dir, faces=intersectFaces)
-                # Need to pass in the vertices to the code
-                if len(intercept) == 0:
-                    print("No intercept detected")
-                    self.crossYMenu = False
-                    # self.cutSequenceDict["Vertices"].append(vertices)
-                    # self.cutSequenceDict["Rule"].append("Undecided")
-                    
-
-                else:
-                    # Now I need to find the min and max z but max their value slightly larger for the rectangle
-                    # Depth given in world space
-
-                    # Determine faces in a given region
-                    self.cutReleaseTime = self.releaseTime
-                    cutTime = self.cutReleaseTime - self.pressTime
-                    self.cutSequenceDict["Cut Time"].append(cutTime)
-                    sequence = len(self.cutSequenceDict["Cut Time"])
-                    print(f"\nCut #{sequence} Time: {cutTime}")
-
-
-                    betweenCutTime = self.pressTime - self.endCutTime
-                    print(f"Time Between Cuts {sequence-1} and {sequence}: {betweenCutTime}")
-                    self.cutSequenceDict["Between Time"].append(betweenCutTime)
-
-                    # TURN THE DRAWLINES TO TRUE SO IT DRAWS ON SCREEN
-                    if self.screenType == "draw_tutorial" or self.screenType == "prune":
-                        self.drawLines = True
-                    
-                    minZ = np.min(depth) 
-                    maxZ = np.max(depth) + 0.05 # need to offset to get in the right spot
-                    # print(f"Local Zs: {minZ} & {maxZ}")
-
-
-                    # Check if the distance is too great between values as it shouldn't be larger than 0.15 at most
-                    # print(maxZ - minZ)
-                    if maxZ - minZ > 0.1:
-                        center = (maxZ + minZ) / 2
-                        # print(f"Center {center}")
-                        minZ = center - ((maxZ + minZ) / 5)
-                        # print(f"MinZ {minZ} and MaxZ {maxZ}")
-                        maxZ = center + ((maxZ + minZ) / 5)
+                    # origin = self.convertXYZtoWorld(self.camera_pos)[:3]
+                    # print(origin)
+                    depth, intercept = self.interception(origin=self.camera_pos, rayDirection=dir, faces=intersectFaces)
+                    # depth, intercept = self.interception(origin=origin, rayDirection=dir, faces=intersectFaces)
+                    # Need to pass in the vertices to the code
+                    if len(intercept) == 0:
+                        # print("No intercept detected")
+                        self.crossYMenu = False
+                        # self.cutSequenceDict["Vertices"].append(vertices)
+                        # self.cutSequenceDict["Rule"].append("Undecided")
                         
 
-                    # See the distance:
-                    cubeVertices, vertices = self.determine_draw_plane(self.startPose, self.lastPose, u1, v1, minZ, u2, v2, maxZ)
-                    """
-                    TODO: See if I need to translate the points back to world frame for  storing before writing to a mesh file
-                    """
-                    # print(f"Vertices: {vertices}")
-                    self.cutSequenceDict["Vertices"].append(vertices)
-                    # self.cutSequenceDict["Rule"].append("Undecided")
-                    
+                    else:
+                        # Now I need to find the min and max z but max their value slightly larger for the rectangle
+                        # Depth given in world space
 
-                    self.addDrawVertices(cubeVertices)
-                    self.crossYMenu = True
-                    # UPDATE VBO TO INCORPORATE THE NEW VERTICES
-                    gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
+                        # Determine faces in a given region
+                        self.cutReleaseTime = self.releaseTime
+                        cutTime = self.cutReleaseTime - self.pressTime
+                        self.cutSequenceDict["Cut Time"].append(cutTime)
+                        sequence = len(self.cutSequenceDict["Cut Time"])
+                        print(f"\nCut #{sequence} Time: {cutTime}")
+
+
+                        betweenCutTime = self.pressTime - self.endCutTime
+                        print(f"Time Between Cuts {sequence-1} and {sequence}: {betweenCutTime}")
+                        self.cutSequenceDict["Between Time"].append(betweenCutTime)
+
+                        # TURN THE DRAWLINES TO TRUE SO IT DRAWS ON SCREEN
+                        if self.screenType == "draw_tutorial" or self.screenType == "prune":
+                            self.drawLines = True
+                        
+                        minZ = np.min(depth) 
+                        maxZ = np.max(depth) + 0.05 # need to offset to get in the right spot
+                        # print(f"Local Zs: {minZ} & {maxZ}")
+
+
+                        # Check if the distance is too great between values as it shouldn't be larger than 0.15 at most
+                        # print(maxZ - minZ)
+                        if maxZ - minZ > 0.1:
+                            center = (maxZ + minZ) / 2
+                            # print(f"Center {center}")
+                            minZ = center - ((maxZ + minZ) / 5)
+                            # print(f"MinZ {minZ} and MaxZ {maxZ}")
+                            maxZ = center + ((maxZ + minZ) / 5)
+                            
+
+                        # See the distance:
+                        cubeVertices, vertices = self.determine_draw_plane(self.startPose, self.lastPose, u1, v1, minZ, u2, v2, maxZ)
+                        
+                        # print(f"Vertices: {vertices}")
+                        self.cutSequenceDict["Vertices"].append(vertices)
+                        # self.cutSequenceDict["Rule"].append("Undecided")
+                        
+
+                        self.addDrawVertices(cubeVertices)
+                        self.crossYMenu = True
+                        # UPDATE VBO TO INCORPORATE THE NEW VERTICES
+                        gl.glNamedBufferSubData(self.drawVBO, 0, self.drawVertices.nbytes, self.drawVertices)
+                        break
 
             # print(f"Total time for draw: {time.time() - start}\n")
             
@@ -3233,6 +3330,11 @@ class Test(QOpenGLWidget):
         self.update()
 
 
+    def toDrawGhostCuts(self, checked=True):
+        self.displayCuts = checked
+        self.update()
+
+
     def setManipulationIndex(self, index=0):
         self.index = index
         self.update()
@@ -3272,14 +3374,25 @@ class Test(QOpenGLWidget):
         # self.update()
 
 
-    #############################################
-    # DESCRIPTION: write the participant's cuts to a mesh file 
-    #   - save mesh file of cuts as PID_#_treeName.obj in a folder under PID_#
-    #############################################
-    def saveCutDecisions(self):
-        # Loop through dictionary containing: Cut decision (in order) and their vertices
-        # Write the values to the same mesh file
-        return 
+
+    def getDrawVertices(self):
+        vertices = np.zeros(len(self.drawVertices), dtype=np.float32)
+        for i in range(len(self.drawVertices)):
+            vertices[i] = self.drawVertices[i]
+
+        return vertices
+
+
+    def setGhostCuts(self, vertices):
+        for i in range(len(vertices)):
+            self.ghostCuts[i] = vertices[i]
+        
+        self.initializeGhostCutDrawing() # initialize the ghost drawings array
+        gl.glNamedBufferSubData(self.ghostDrawVBO, 0, self.ghostCuts.nbytes, self.ghostCuts)
+        self.update() # update the GL Call
+
+
+            
 
 
 # QWidget 
@@ -3382,6 +3495,7 @@ class Window(QMainWindow):
 
         self.drawTerms = [False] * 4
 
+        self.ghostCuts = np.zeros(3600, dtype=np.float32)
         
         self.explanationsSequence = []
         
@@ -3464,60 +3578,30 @@ class Window(QMainWindow):
         
 
         if tree is not None:
-            if tree == "proxyTree":
             # check if the pruning data is the file
-                file = treeData[tree] # Data from objFileDescription.json
-                path = directory + "tree_files/" + tree + "/"
-                fname = path + file["File"]
-                # print(fname)
-                self.treeMesh = Mesh(fname)
-                sectionTranslate = file["Section Translate"]
-                wholeTranslate = file["Whole Translate"]
+            file = treeData[tree] # Data from objFileDescription.json
+            path = directory + "tree_files/" + tree + "/"
+            fname = path + file["File"]
+            # print(fname)
+            self.treeMesh = Mesh(fname)
+            sectionTranslate = file["Section Translate"]
+            wholeTranslate = file["Whole Translate"]
 
 
-                if len(file["Vigor Cuts"]) > 0:
-                    vigorCutMesh = Mesh(path+file["Vigor Cuts"])
-                if len(file["Canopy Cuts"]) > 0:
-                    canopyCutMesh = Mesh(path+file["Canopy Cuts"])
-                if len(file["Bud Spacing Cuts"]) > 0:
-                    budSpacingCutMesh = Mesh(path+file["Bud Spacing Cuts"])
+            if len(file["Vigor Cuts"]) > 0:
+                vigorCutMesh = Mesh(path+file["Vigor Cuts"])
+            if len(file["Canopy Cuts"]) > 0:
+                canopyCutMesh = Mesh(path+file["Canopy Cuts"])
+            if len(file["Bud Spacing Cuts"]) > 0:
+                budSpacingCutMesh = Mesh(path+file["Bud Spacing Cuts"])
 
-                # get the poses of each of the branch labels for the explanation slide (if applicable)
-                for explanation in treeData[tree]["Explanations"]:
-                    textPose.append(explanation["Screen Ratio"])
-                    branchExplanations.append(explanation["Explanation"])
-                    branchCutDecisions.append(explanation["Decision"])
-            
-            else:
-                # Pick a random level ONLY IF the current layout is "prune"
-                if self.screenType == "prune":
-                    self.curLevel = random.choice(self.treeLevels[tree]) # get the dictionary value
-                    self.treeLevels[tree].remove(self.curLevel)
-                    print(f"SELECTING {self.curLevel}")
-                
-                treeName = self.curLevel + tree # give back EasyVigor or EasyBudSpacing
-                self.curTree = treeName
-                file = treeData[treeName]
-                path = directory + "tree_files/" + tree + "/" + self.curLevel + "/"
+            # get the poses of each of the branch labels for the explanation slide (if applicable)
+            for explanation in treeData[tree]["Explanations"]:
+                textPose.append(explanation["Screen Ratio"])
+                branchExplanations.append(explanation["Explanation"])
+                branchCutDecisions.append(explanation["Decision"])
 
-                fname = path + file["File"]
-                self.treeMesh = Mesh(fname)
-                sectionTranslate = file["Section Translate"]
-                wholeTranslate = file["Whole Translate"]
-
-
-                if len(file["Vigor Cuts"]) > 0:
-                    vigorCutMesh = Mesh(path+file["Vigor Cuts"])
-                if len(file["Canopy Cuts"]) > 0:
-                    canopyCutMesh = Mesh(path+file["Canopy Cuts"])
-                if len(file["Bud Spacing Cuts"]) > 0:
-                    budSpacingCutMesh = Mesh(path+file["Bud Spacing Cuts"])
-
-                # get the poses of each of the branch labels for the explanation slide (if applicable)
-                for explanation in treeData[treeName]["Explanations"]:
-                    textPose.append(explanation["Screen Ratio"])
-                    branchExplanations.append(explanation["Explanation"])
-                    branchCutDecisions.append(explanation["Decision"])
+           
         
         
         if branchFiles is not None and manipDirectory is not None:
@@ -3585,6 +3669,9 @@ class Window(QMainWindow):
         
         elif self.screenType == "bud_features":
             self.budFeaturesScreen()
+
+        elif self.screenType == "spacing_features":
+            self.branchFeaturesScreen()
 
         elif self.screenType == "scale":
             self.scaleScreen()
@@ -3870,7 +3957,7 @@ class Window(QMainWindow):
             self.toBin = True
             self.toPrune = False
 
-        elif self.screenType == "bin_features" or self.screenType == "bud_features":
+        elif self.screenType == "bin_features" or self.screenType == "bud_features" or self.screenType == "spacing_features":
             self.screen_width = 2
             self.glWidgetTree.setScreenProperties(screenType=self.screenType, toBinFeatures=True) # MIGHT TRY AND CHANGE
             self.toBinFeatures = True
@@ -3961,6 +4048,15 @@ class Window(QMainWindow):
             self.submitText = QLabel("")
             self.hLayout.addWidget(self.submitText)
             self.treeLoaded = time.time()
+        
+        if self.screenType == "explain_prune":
+            self.cutsButton = QPushButton("My Cuts Off")
+            self.cutsButton.setStyleSheet("font-size: 25px;" "font:bold")
+            self.cutsButton.setFixedSize(150, 50) # 300, 100
+            self.cutsButton.setCheckable(True)
+            # self.doneButton.clicked.connect(self.glWidgetTree.resetCuts)
+            self.cutsButton.clicked.connect(self.myCutsClicked)
+            self.hLayout.addWidget(self.cutsButton)
 
             
 
@@ -3993,7 +4089,7 @@ class Window(QMainWindow):
             self.nextButton.setEnabled(True)
             self.resetButton.setEnabled(True)
 
-            self.submitText.setText("Click 'Next' for Solution or 'Reset' to undo all prunes")
+            self.submitText.setText("Click 'Next' to Continue or 'Reset' to undo all prunes")
             if self.screenType == "draw_tutorial" or self.screenType == "prune":
                 self.isCorrect = True
         else:
@@ -4018,11 +4114,32 @@ class Window(QMainWindow):
             self.nextButton.setEnabled(True)
 
 
-    def radioButtonClicked(self, option):
-        if option:
-            self.glWidgetTree.setPenColor(option)
+
+    # Do you turn the cuts on or off
+    def myCutsClicked(self):
+        checked = True
+        self.interacted = True
+
+        # self.nextButton.setEnabled(True)
+        
+        if self.screenType == "normal":
+            self.isCorrect = True
+
+        if self.cutsButton.isChecked():
+            self.cutsButton.setText("My Cuts On")
+            checked = True 
+
+        else:
+            self.cutsButton.setText("My Cuts Off")
+            checked = False
+        
+        display = not checked
+        # Want the opposite behavior of checked
+        self.glWidgetTree.toDrawGhostCuts(display)
 
 
+
+    
 
     
     def manipulationScreen(self):
@@ -4265,6 +4382,9 @@ class Window(QMainWindow):
 
         self.explanation = QLabel("")
         self.explainLayout.addWidget(self.explanation, 2, 1, 1, 3, Qt.AlignBottom | Qt.AlignLeft)
+
+        # Set the vertices to use on the screen for cutting
+        self.glWidgetTree.setGhostCuts(self.ghostCuts)
 
 
 
@@ -4738,7 +4858,7 @@ class Window(QMainWindow):
 
 
     def weakButtonClicked(self):
-        self.descriptionLabel.setText("Weak branches are shorter, thinner, and have few buds")
+        self.descriptionLabel.setText("Weak branches are short, thin, with few buds and often not pruned")
         self.descriptionLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setWantedFeature("Weak")
         self.interacted = True
@@ -4746,20 +4866,91 @@ class Window(QMainWindow):
         self.nextButton.setEnabled(True)
 
     def strongButtonClicked(self):
-        self.descriptionLabel.setText("Strong branches are thicker, longer, with several buds")
+        #                              Vigorous branches are very long, with few buds & removed to prevent shading 
+        #                              Strong branches are thick and long, with many buds & cut back to stop shading
+        #                              Vigorous branches are incredibly long, thick, with few buds and large bud spacing
+        self.descriptionLabel.setText("Strong branches are thick and long, with many buds & cut back to stop shading")
         self.descriptionLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setWantedFeature("Strong")
         self.interacted = True
         self.isCorrect = True
         self.nextButton.setEnabled(True)
 
+
     def vigorousButtonClicked(self):
-        self.descriptionLabel.setText("Vigorous branches are incredibly long, thick, with few buds and large bud spacing")
+        #                              Vigorous branches are incredibly long, thick, with few buds and large bud spacing
+        self.descriptionLabel.setText("Vigorous branches are very long, with few buds & removed to prevent shading")
         self.descriptionLabel.setStyleSheet("font-size: 20px;")
         self.glWidgetTree.setWantedFeature("Vigorous")
         self.interacted = True
         self.isCorrect = True
         self.nextButton.setEnabled(True)
+
+
+
+    """BRANCH FEATURES SCREEN"""
+    def branchFeaturesScreen(self):
+        self.loadTreeSectionScreen()
+
+        self.binFeatureFrame = QFrame(self.central_widget)
+        self.binFeatureFrame.setFrameShape(QFrame.Shape.Box)
+        self.binFeatureFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.binFeatureFrame.setFixedHeight(300) # 500
+        self.layout.addWidget(self.binFeatureFrame, self.screen_width+1, 1, 1, 1)
+        self.binFeatureLayout = QGridLayout(self.binFeatureFrame)
+
+        # Label explaining the type of cuts
+        self.spacingLabel = QLabel("Branches need space for apple growth and prevent shading other branches:")
+        self.spacingLabel.setStyleSheet("font-size: 20px;" "font:bold")
+        self.binFeatureLayout.addWidget(self.spacingLabel, 0, 0, 1, 3, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.featureLabel = QLabel("Branch Spacing:")
+        self.featureLabel.setStyleSheet("font-size: 20px;" "font:bold")
+        self.binFeatureLayout.addWidget(self.featureLabel, 2, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.descriptionLabel = QLabel("")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
+        self.binFeatureLayout.addWidget(self.descriptionLabel, 2, 1, 1, 2, Qt.AlignBottom | Qt.AlignCenter)
+
+      
+        self.spaceButton = QPushButton("Enough Space") 
+        self.spaceButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+                                         "QPushButton::pressed {background-color: #4F9153;}")
+        self.spaceButton.setFixedSize(150, 50)
+        self.spaceButton.clicked.connect(self.branchSpaceButtonClicked)
+        self.binFeatureLayout.addWidget(self.spaceButton, 1, 0, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+        self.closeButton = QPushButton("Too Close") 
+        self.closeButton.setStyleSheet("QPushButton {font-size: 15px;" "font:bold}\n"
+                                         "QPushButton::pressed {background-color: #4F9153;}")
+        self.closeButton.setFixedSize(150, 50)
+        self.closeButton.clicked.connect(self.closeSpaceButtonClicked)
+        self.binFeatureLayout.addWidget(self.closeButton, 1, 1, 1, 1, Qt.AlignBottom | Qt.AlignCenter)
+
+
+
+
+    def closeSpaceButtonClicked(self):
+        self.descriptionLabel.setText("Branches hinder growth of other branch by shading, so one removed")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
+        self.glWidgetTree.setWantedFeature("Too Close")
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+    
+    def branchSpaceButtonClicked(self):
+        self.descriptionLabel.setText("Branches have enough space due to physical distance or angle between branches")
+        self.descriptionLabel.setStyleSheet("font-size: 20px;")
+        self.glWidgetTree.setWantedFeature("Enough Space")
+        self.interacted = True
+        self.isCorrect = True
+        self.nextButton.setEnabled(True)
+
+
+
 
 
     """BUD FEATURES SCREEN"""
@@ -4774,7 +4965,7 @@ class Window(QMainWindow):
         self.binFeatureLayout = QGridLayout(self.binFeatureFrame)
 
         # Label explaining the type of cuts
-        self.spacingLabel = QLabel("Buds need enough space (~2-3 inches) to produce apples:")
+        self.spacingLabel = QLabel("Buds need enough space (~2-3 inches in the real world) to produce apples:")
         self.spacingLabel.setStyleSheet("font-size: 20px;" "font:bold")
         self.binFeatureLayout.addWidget(self.spacingLabel, 0, 0, 1, 3, Qt.AlignBottom | Qt.AlignCenter)
 
@@ -5032,6 +5223,8 @@ class Window(QMainWindow):
             if self.screenType == "prune":
                 self.treeNum += 1
                 
+                self.ghostCuts = self.glWidgetTree.getDrawVertices()
+
                 # print(f"\nUser's data: {treeName}")
                 self.userData["Pruning Time"] = time.time() - self.treeLoaded
                 userPruningCuts = self.glWidgetTree.userPruningCuts
@@ -5096,8 +5289,6 @@ class Window(QMainWindow):
             if self.reset:
                 self.reset = False
 
-            self.binIndex = 0
-            self.binIndices = [0, 0, 0]
             
             self.nextButton.setEnabled(False)
 
@@ -5123,7 +5314,14 @@ class Window(QMainWindow):
             
             self.glWidgetTree.loadNewMeshFiles(self.meshDictionary) # Load the new mesh directory values
             self.screenType = self.layouts[self.pageIndex] # Set the next page index
+            
+            if self.screenType == "prune":
+                self.glWidgetTree.resetCuts() # only reset the cuts when I am loading a new pruning screen
+
             self.index = 0 # set index to 0
+            self.binIndex = 0
+            self.binIndices = [0, 0, 0]
+
             self.loadScreen()
         
         else:

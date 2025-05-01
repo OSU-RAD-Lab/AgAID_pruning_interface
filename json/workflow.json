@@ -1,12 +1,5 @@
 {
     "Spatial At End": [
-        {
-            "Module": "Conductor demo", 
-            "Your Task": "Click 'Next' to start participant study.",
-            "Layout": "draw_tutorial",
-            "Tree File": "proxyTree",
-            "File Directory": ""
-        },
 
         {
             "Module": "Camera Tutorial", 
@@ -43,7 +36,6 @@
             "File Directory": ""
         },
         
-        
        
         {
             "Module": "Tree Terminology", 
@@ -53,7 +45,6 @@
             "File Directory": "tree_terms"
         },
 
-        
         {
             "Module": "Type of Cuts Terminology", 
             "Your Task": "Select each button to explore the different cut\ntypes. Click 'Next' when finished.",
@@ -62,7 +53,6 @@
             "File Directory": "type_of_cuts"
         },
        
-
         {
             "Module": "Branch Vigor Terminology", 
             "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three levels of Branch Vigor.\nClick 'Next' when finished",
@@ -98,7 +88,7 @@
 
         {
             "Module": "Vigor Bins", 
-            "Your Task": "Identify the correct cut using the\ndrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+            "Your Task": "Match the cut type to the Vigor level using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
             "Layout": "bin",
             "Tree File": "proxyTree",
             "File Directory": "vigor_bins"
@@ -116,7 +106,6 @@
 
 
 
-
         {
             "Module": "6 inch rule", 
             "Your Task": "Select each button to explore how to apply\nthe '6 inch rule' to the labeled branches.\nYou may need to move the camera to see.\nClick 'Next' when finished.",
@@ -126,7 +115,15 @@
         },
 
         {
-            "Module": "Canopy Spacing", 
+            "Module": "Canopy Spacing Examples", 
+            "Your Task": "Select the different 'Branch Spacing' Buttons to\nsee examples of different 'Branch Spacing'.\nClick 'Next' when finished",
+            "Layout": "spacing_features",
+            "Tree File": "proxyTree",
+            "File Directory": "spacing_features"
+        },
+
+        {
+            "Module": "Canopy Spacing Scale", 
             "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
             "Layout": "scale",
             "Tree File": "proxyTree",
@@ -167,7 +164,7 @@
 
         {
             "Module": "Bud Spacing", 
-            "Your Task": "Select the different 'Bud Spacing' Buttons to\nlearn different 'Bud Spacing' examples.\nClick 'Next' when finished",
+            "Your Task": "Select the different 'Bud Spacing' Buttons to\nsee examples of different 'Bud Spacing'.\nClick 'Next' when finished",
             "Layout": "bud_features",
             "Tree File": "proxyTree",
             "File Directory": "bud_features"
@@ -175,7 +172,7 @@
 
         {
             "Module": "Bud Spacing Bins", 
-            "Your Task": "Identify the correct bud spcaing using the\nrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+            "Your Task": "Match the cut type to the Bud Spacing using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
             "Layout": "bin",
             "Tree File": "proxyTree",
             "File Directory": "bud_spacing_bin"
@@ -245,14 +242,6 @@
             "Tree File": "HardVigor",
             "File Directory": ""
         },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardVigor",
-            "File Directory": ""
-        },
-
 
         {
             "Module": "Tree Pruning", 
@@ -261,6 +250,7 @@
             "Tree File": "EasyVigorCanopy",
             "File Directory": ""
         },
+
         {
             "Module": "Reset Question", 
             "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
@@ -289,151 +279,44 @@
             "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
             "Layout": "question",
             "Tree File": "HardVigorCanopy",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "explain_prune",
-            "Tree File": "HardVigorCanopy",
-            "File Directory": ""
-        },
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
-
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "EasyBudSpacing",
-            "File Directory": ""
-        },
-
-
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "EasyBudSpacing",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "EasyBudSpacing",
-            "File Directory": ""
-        },
-
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "HardBudSpacing",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "HardBudSpacing",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardBudSpacing",
             "File Directory": ""
         },
         
-
         {
             "Module": "Tree Pruning", 
             "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
             "Layout": "prune",
-            "Tree File": "EasyBudSpacingVigor",
+            "Tree File": "EasyAllCuts",
             "File Directory": ""
         },
         {
             "Module": "Reset Question", 
             "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
             "Layout": "question",
-            "Tree File": "EasyBudSpacingVigor",
+            "Tree File": "EasyAllCuts",
             "File Directory": ""
         },
         {
             "Module": "Explanation Tutorial", 
             "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
             "Layout": "explain_prune",
-            "Tree File": "EasyBudSpacingVigor",
+            "Tree File": "EasyAllCuts",
             "File Directory": ""
         },
+
 
         {
             "Module": "Tree Pruning", 
             "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
             "Layout": "prune",
-            "Tree File": "HardBudSpacingVigor",
+            "Tree File": "HardAllCuts",
             "File Directory": ""
         },
         {
             "Module": "Reset Question", 
             "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
             "Layout": "question",
-            "Tree File": "HardBudSpacingVigor",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardBudSpacingVigor",
+            "Tree File": "HardAllCuts",
             "File Directory": ""
         },
 
@@ -451,14 +334,6 @@
 
 
     "Spatial Build Off": [
-        {
-            "Module": "Conductor demo", 
-            "Your Task": "Click 'Next' to start participant study.",
-            "Layout": "draw_tutorial",
-            "Tree File": "proxyTree",
-            "File Directory": ""
-        },
-
         {
             "Module": "Camera Tutorial", 
             "Your Task": "Manipulate the (blue) Camera Sliders on the left\nside of the screen to move the camera view. You\ncan move the camera at any time.\nClick 'Next' when finished",
@@ -549,7 +424,7 @@
 
         {
             "Module": "Vigor Bins", 
-            "Your Task": "Identify the correct cut using the\ndrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+            "Your Task": "Match the cut type to the Vigor level using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
             "Layout": "bin",
             "Tree File": "proxyTree",
             "File Directory": "vigor_bins"
@@ -603,13 +478,6 @@
             "Tree File": "HardVigor",
             "File Directory": ""
         },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardVigor",
-            "File Directory": ""
-        },
 
 
         {
@@ -621,7 +489,15 @@
         },
 
         {
-            "Module": "Canopy Spacing", 
+            "Module": "Canopy Spacing Examples", 
+            "Your Task": "Select the different 'Branch Spacing' Buttons to\nsee examples of different 'Branch Spacing'.\nClick 'Next' when finished",
+            "Layout": "spacing_features",
+            "Tree File": "proxyTree",
+            "File Directory": "spacing_features"
+        },
+
+        {
+            "Module": "Canopy Spacing Scale", 
             "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
             "Layout": "scale",
             "Tree File": "proxyTree",
@@ -666,7 +542,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
             "Layout": "prune",
             "Tree File": "EasyVigorCanopy",
             "File Directory": ""
@@ -689,7 +565,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
             "Layout": "prune",
             "Tree File": "HardVigorCanopy",
             "File Directory": ""
@@ -701,14 +577,6 @@
             "Tree File": "HardVigorCanopy",
             "File Directory": ""
         },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "explain_prune",
-            "Tree File": "HardVigorCanopy",
-            "File Directory": ""
-        },
-
 
         {
             "Module": "Bud Spacing", 
@@ -720,7 +588,7 @@
 
         {
             "Module": "Bud Spacing Bins", 
-            "Your Task": "Identify the correct bud spcaing using the\nrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+            "Your Task": "Match the cut type to the Bud Spacing using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
             "Layout": "bin",
             "Tree File": "proxyTree",
             "File Directory": "bud_spacing_bin"
@@ -757,7 +625,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
             "Layout": "prune",
             "Tree File": "EasyAllCuts",
             "File Directory": ""
@@ -779,7 +647,7 @@
 
         {
             "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
             "Layout": "prune",
             "Tree File": "HardAllCuts",
             "File Directory": ""
@@ -791,106 +659,7 @@
             "Tree File": "HardAllCuts",
             "File Directory": ""
         },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
-
-
-        
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "EasyBudSpacing",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "EasyBudSpacing",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "EasyBudSpacing",
-            "File Directory": ""
-        },
-
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "HardBudSpacing",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "HardBudSpacing",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardBudSpacing",
-            "File Directory": ""
-        },
-        
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "EasyBudSpacingVigor",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "EasyBudSpacingVigor",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "EasyBudSpacingVigor",
-            "File Directory": ""
-        },
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "HardBudSpacingVigor",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "HardBudSpacingVigor",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardBudSpacingVigor",
-            "File Directory": ""
-        },
-
+       
 
         {
             "Module": "End of Pilot Study", 
@@ -905,13 +674,6 @@
     ],
 
     "Rule At End": [
-            {
-                "Module": "Conductor demo", 
-                "Your Task": "Click 'Next' to start participant study.",
-                "Layout": "draw_tutorial",
-                "Tree File": "proxyTree",
-                "File Directory": ""
-            },
 
             {
                 "Module": "Camera Tutorial", 
@@ -995,7 +757,7 @@
     
             {
                 "Module": "Bud Spacing Bins", 
-                "Your Task": "Identify the correct bud spcaing using the\nrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+                "Your Task": "Match the cut type to the Bud Spacing using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
                 "Layout": "bin",
                 "Tree File": "proxyTree",
                 "File Directory": "bud_spacing_bin"
@@ -1050,7 +812,7 @@
     
             {
                 "Module": "Vigor Bins", 
-                "Your Task": "Identify the correct cut using the\ndrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+                "Your Task": "Match the cut type to the Vigor level using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
                 "Layout": "bin",
                 "Tree File": "proxyTree",
                 "File Directory": "vigor_bins"
@@ -1076,9 +838,17 @@
                 "Tree File": "proxyTree",
                 "File Directory": "inch_rule"
             },
+
+            {
+                "Module": "Canopy Spacing Examples", 
+                "Your Task": "Select the different 'Branch Spacing' Buttons to\nsee examples of different 'Branch Spacing'.\nClick 'Next' when finished",
+                "Layout": "spacing_features",
+                "Tree File": "proxyTree",
+                "File Directory": "spacing_features"
+            },
     
             {
-                "Module": "Canopy Spacing", 
+                "Module": "Canopy Spacing Scale", 
                 "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
                 "Layout": "scale",
                 "Tree File": "proxyTree",
@@ -1121,7 +891,7 @@
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyBudSpacing",
                 "File Directory": ""
@@ -1144,7 +914,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "HardBudSpacing",
                 "File Directory": ""
@@ -1153,13 +923,6 @@
                 "Module": "Reset Question", 
                 "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
                 "Layout": "question",
-                "Tree File": "HardBudSpacing",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
                 "Tree File": "HardBudSpacing",
                 "File Directory": ""
             },
@@ -1167,7 +930,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyBudSpacingVigor",
                 "File Directory": ""
@@ -1189,7 +952,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "HardBudSpacingVigor",
                 "File Directory": ""
@@ -1201,18 +964,11 @@
                 "Tree File": "HardBudSpacingVigor",
                 "File Directory": ""
             },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "HardBudSpacingVigor",
-                "File Directory": ""
-            },
-
+           
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyAllCuts",
                 "File Directory": ""
@@ -1234,7 +990,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "HardAllCuts",
                 "File Directory": ""
@@ -1246,105 +1002,7 @@
                 "Tree File": "HardAllCuts",
                 "File Directory": ""
             },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "HardAllCuts",
-                "File Directory": ""
-            },
-
-    
-            
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "prune",
-                "Tree File": "EasyVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "EasyVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "EasyVigor",
-                "File Directory": ""
-            },
-    
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "prune",
-                "Tree File": "HardVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "HardVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "HardVigor",
-                "File Directory": ""
-            },
-    
-    
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "prune",
-                "Tree File": "EasyVigorCanopy",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "EasyVigorCanopy",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "EasyVigorCanopy",
-                "File Directory": ""
-            },
-    
-    
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "prune",
-                "Tree File": "HardVigorCanopy",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "HardVigorCanopy",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "explain_prune",
-                "Tree File": "HardVigorCanopy",
-                "File Directory": ""
-            },    
+           
     
             {
                 "Module": "End of Pilot Study", 
@@ -1358,13 +1016,6 @@
 
 
     "Rule Build Off": [
-            {
-                "Module": "Conductor demo", 
-                "Your Task": "Click 'Next' to start participant study.",
-                "Layout": "draw_tutorial",
-                "Tree File": "proxyTree",
-                "File Directory": ""
-            },
         
             {
                 "Module": "Camera Tutorial", 
@@ -1448,7 +1099,7 @@
     
             {
                 "Module": "Bud Spacing Bins", 
-                "Your Task": "Identify the correct bud spcaing using the\nrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+                "Your Task": "Match the cut type to the Bud Spacing using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
                 "Layout": "bin",
                 "Tree File": "proxyTree",
                 "File Directory": "bud_spacing_bin"
@@ -1484,7 +1135,7 @@
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyBudSpacing",
                 "File Directory": ""
@@ -1507,7 +1158,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "HardBudSpacing",
                 "File Directory": ""
@@ -1519,15 +1170,7 @@
                 "Tree File": "HardBudSpacing",
                 "File Directory": ""
             },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "HardBudSpacing",
-                "File Directory": ""
-            },
-
-
+           
 
     
             {
@@ -1548,7 +1191,7 @@
     
             {
                 "Module": "Vigor Bins", 
-                "Your Task": "Identify the correct cut using the\ndrop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+                "Your Task": "Match the cut type to the Vigor level using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
                 "Layout": "bin",
                 "Tree File": "proxyTree",
                 "File Directory": "vigor_bins"
@@ -1566,7 +1209,7 @@
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyBudSpacingVigor",
                 "File Directory": ""
@@ -1588,7 +1231,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "HardBudSpacingVigor",
                 "File Directory": ""
@@ -1600,15 +1243,6 @@
                 "Tree File": "HardBudSpacingVigor",
                 "File Directory": ""
             },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "HardBudSpacingVigor",
-                "File Directory": ""
-            },
-    
-    
     
     
             {
@@ -1618,9 +1252,17 @@
                 "Tree File": "proxyTree",
                 "File Directory": "inch_rule"
             },
+
+            {
+                "Module": "Canopy Spacing Examples", 
+                "Your Task": "Select the different 'Branch Spacing' Buttons to\nsee examples of different 'Branch Spacing'.\nClick 'Next' when finished",
+                "Layout": "spacing_features",
+                "Tree File": "proxyTree",
+                "File Directory": "spacing_features"
+            },
     
             {
-                "Module": "Canopy Spacing", 
+                "Module": "Canopy Spacing Scale", 
                 "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
                 "Layout": "scale",
                 "Tree File": "proxyTree",
@@ -1658,13 +1300,11 @@
                 "Tree File": "proxyTree",
                 "File Directory": ""
             },
-    
-
 
 
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "EasyAllCuts",
                 "File Directory": ""
@@ -1686,7 +1326,7 @@
     
             {
                 "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+                "Your Task": "Prune both secondary branches. When finished, click 'Done'\n to continue.",
                 "Layout": "prune",
                 "Tree File": "HardAllCuts",
                 "File Directory": ""
@@ -1697,106 +1337,7 @@
                 "Layout": "question",
                 "Tree File": "HardAllCuts",
                 "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "HardAllCuts",
-                "File Directory": ""
-            },
-
-    
-            
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "prune",
-                "Tree File": "EasyVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "EasyVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "EasyVigor",
-                "File Directory": ""
-            },
-    
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "prune",
-                "Tree File": "HardVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "HardVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "HardVigor",
-                "File Directory": ""
-            },
-    
-    
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "prune",
-                "Tree File": "EasyVigorCanopy",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "EasyVigorCanopy",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "EasyVigorCanopy",
-                "File Directory": ""
-            },
-    
-    
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "prune",
-                "Tree File": "HardVigorCanopy",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "HardVigorCanopy",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-                "Layout": "explain_prune",
-                "Tree File": "HardVigorCanopy",
-                "File Directory": ""
-            },    
+            },  
     
             {
                 "Module": "End of Pilot Study", 
@@ -1811,62 +1352,238 @@
 
 
 
-    "Test": [  
-
-        
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "AllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "AllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "AllCuts",
-            "File Directory": ""
-        },
+    "Test": [ 
 
         {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "AllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "AllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "AllCuts",
-            "File Directory": ""
-        },
-
-        
-        {
-            "Module": "End of Pilot Study", 
-            "Your Task": "This concludes the interface interaction\nin the study. See the conductor\nfor next steps.",
-            "Layout": "end",
+            "Module": "Canopy Spacing Examples", 
+            "Your Task": "Select the different 'Branch Spacing' Buttons to\nsee examples of different 'Branch Spacing'.\nClick 'Next' when finished",
+            "Layout": "spacing_features",
             "Tree File": "proxyTree",
+            "File Directory": "spacing_features"
+        },
+
+        {
+            "Module": "Branch Vigor Terminology", 
+            "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three levels of Branch Vigor.\nClick 'Next' when finished",
+            "Layout": "bin_features",
+            "Tree File": "proxyTree",
+            "File Directory": "vigor_terms"
+        },
+
+        {
+            "Module": "Vigor Bins", 
+            "Your Task": "Match the cut type to the Vigor level using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+            "Layout": "bin",
+            "Tree File": "proxyTree",
+            "File Directory": "vigor_bins"
+        },
+
+        {
+            "Module": "Bud Spacing Bins", 
+            "Your Task": "Match the cut type to the Bud Spacing using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+            "Layout": "bin",
+            "Tree File": "proxyTree",
+            "File Directory": "bud_spacing_bin"
+        },
+
+        
+        {
+            "Module": "Canopy Spacing", 
+            "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
+            "Layout": "scale",
+            "Tree File": "proxyTree",
+            "File Directory": "canopy_spacing"
+        },
+
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+            
+        
+
+
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "EasyAllCuts",
             "File Directory": ""
         },
 
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "MediumAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "MediumAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "MediumAllCuts",
+            "File Directory": ""
+        },
+        
+
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "HardAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "HardAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "HardAllCuts",
+            "File Directory": ""
+        },
+
+
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "EasyVigor",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "EasyVigor",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "EasyVigor",
+            "File Directory": ""
+        },
+
+
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "MediumVigor",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "MediumVigor",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "MediumVigor",
+            "File Directory": ""
+        },
+
+
+
+
+
+        
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
+            "Layout": "prune",
+            "Tree File": "HardAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Reset Question", 
+            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+            "Layout": "question",
+            "Tree File": "HardAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "HardAllCuts",
+            "File Directory": ""
+        },
+
+        
+        
 
 
 
@@ -1940,53 +1657,6 @@
         },
 
         
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "EasyVigor",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "EasyVigor",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "EasyVigor",
-            "File Directory": ""
-        },
-
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "MediumVigor",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "MediumVigor",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "MediumVigor",
-            "File Directory": ""
-        },
-
-
-
         {
             "Module": "Tree Pruning", 
             "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
@@ -2147,73 +1817,7 @@
         },
 
 
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "MediumAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "MediumAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "MediumAllCuts",
-            "File Directory": ""
-        },
         
-
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune the tree section. When finished, click 'Done'\n to submit or to enable reseting all cuts.",
-            "Layout": "prune",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "HardAllCuts",
-            "File Directory": ""
-        },
-
 
         {
             "Module": "End of Pilot Study", 
