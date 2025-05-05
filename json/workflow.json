@@ -1353,30 +1353,7 @@
 
     "Test": [ 
 
-        {
-            "Module": "Canopy Spacing Examples", 
-            "Your Task": "Select the different 'Branch Spacing' Buttons to\nsee examples of different 'Branch Spacing'.\nClick 'Next' when finished",
-            "Layout": "spacing_features",
-            "Tree File": "proxyTree",
-            "File Directory": "spacing_features"
-        },
-
-        {
-            "Module": "Canopy Spacing", 
-            "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Spacing affects pruning\ncut decisions. Click 'Next' when finished.",
-            "Layout": "scale",
-            "Tree File": "proxyTree",
-            "File Directory": "canopy_spacing"
-        },
-
-        {
-            "Module": "Labels Tutorial", 
-            "Your Task": "Select the 'Labels On' button to turn on tree\nterminology. To turn off the labels, select the\n'Labels Off' button. You can choose to turn on\nthe labels at any time.\nClick 'Next' when finished",
-            "Layout": "normal",
-            "Tree File": "proxyTree",
-            "File Directory": ""
-        },
-
+       
         {
             "Module": "Tree Pruning", 
             "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",

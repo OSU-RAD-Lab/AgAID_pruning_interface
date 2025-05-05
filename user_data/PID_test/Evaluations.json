@@ -1,0 +1,30 @@
+{
+    "Bud Spacing Bins": {
+        "Total Time": 21.285635948181152,
+        "Answers": [
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ]
+        ],
+        "Submit Times": [
+            16.109533071517944,
+            5.176106214523315
+        ]
+    },
+    "Bud Spacing Manipulation": {
+        "Total Time": 5.026736259460449,
+        "Answers": [
+            "Too Close"
+        ],
+        "Submit Times": [
+            5.026743412017822
+        ]
+    }
+}
