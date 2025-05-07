@@ -1353,6 +1353,21 @@
 
     "Test": [ 
 
+        {
+            "Module": "Branch Vigor Terminology", 
+            "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three levels of Branch Vigor.\nClick 'Next' when finished",
+            "Layout": "bin_features",
+            "Tree File": "proxyTree",
+            "File Directory": "vigor_terms"
+        },
+
+        {
+            "Module": "Vigor Scale", 
+            "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Vigor affects pruning\ncut decisions. Click 'Next' when finished.",
+            "Layout": "scale",
+            "Tree File": "proxyTree",
+            "File Directory": "vigor"
+        },
        
         {
             "Module": "Tree Pruning", 

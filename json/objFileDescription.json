@@ -1572,8 +1572,8 @@
             "canopy_rotation_2":
             {
                 "Answer": "Good Angle",
-                "Correct": "Correct! The branch has the right Branch Vector.",
-                "Incorrect": "Try Again. Incorrect Branch Vector.",
+                "Correct": "Correct! The branch has the right Branch Angle.",
+                "Incorrect": "Try Again. Incorrect Branch Angle.",
                 "Bin_Values": "",
                 "Start_Index": 5,  
                 "Files": [

@@ -133,6 +133,7 @@ class Test(QOpenGLWidget):
         self.highlightColor = [255/255, 105/255, 180/255] 
         self.red_color = [1, 0, 0]
         self.tree_color_light =  [0.447, 0.360, 0.259] # [0.670, 0.549, 0.416]
+        self.tree_color_lighter = [188/255, 158/255, 130/255]
 
 
         # Set for temp tree
@@ -650,7 +651,7 @@ class Test(QOpenGLWidget):
             lightColorLoc = gl.glGetUniformLocation(self.program, "lightColor")
             gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
             treeColorLoc = gl.glGetUniformLocation(self.program, "color")
-            gl.glUniform3fv(treeColorLoc, 1, self.tree_color_dark) # self.tree_color_dark
+            gl.glUniform3fv(treeColorLoc, 1, self.tree_color_lighter)# self.tree_color_dark
 
             projLoc = gl.glGetUniformLocation(self.program, "projection")
             gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
@@ -843,7 +844,7 @@ class Test(QOpenGLWidget):
             lightColorLoc = gl.glGetUniformLocation(self.program, "lightColor")
             gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
             treeColorLoc = gl.glGetUniformLocation(self.program, "color")
-            gl.glUniform3fv(treeColorLoc, 1, self.tree_color_dark)
+            gl.glUniform3fv(treeColorLoc, 1, self.tree_color_lighter)
 
             projLoc = gl.glGetUniformLocation(self.program, "projection")
             gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
@@ -1608,7 +1609,7 @@ class Test(QOpenGLWidget):
             lightColorLoc = gl.glGetUniformLocation(self.program, "lightColor")
             gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
             treeColorLoc = gl.glGetUniformLocation(self.program, "color")
-            gl.glUniform3fv(treeColorLoc, 1, self.tree_color_dark)
+            gl.glUniform3fv(treeColorLoc, 1, self.tree_color_lighter)
 
             projLoc = gl.glGetUniformLocation(self.program, "projection")
             gl.glUniformMatrix4fv(projLoc, 1, gl.GL_TRUE, self.projection)
@@ -2303,7 +2304,7 @@ class Test(QOpenGLWidget):
         gl.glUniform3fv(lightColorLoc, 1, self.lightColor)
 
         treeColorLoc = gl.glGetUniformLocation(self.program, "color")
-        gl.glUniform3fv(treeColorLoc, 1, self.tree_color_light)
+        gl.glUniform3fv(treeColorLoc, 1, self.tree_color_light) 
 
         modelLoc = gl.glGetUniformLocation(self.program, "model")
         gl.glUniformMatrix4fv(modelLoc, 1, gl.GL_TRUE, self.model) # self.rotation
@@ -3836,7 +3837,7 @@ class Window(QMainWindow):
         # slider.setRange(0, 360) # 0 - 360*16
         if camera:
             if horizontal:
-                slider.setRange(-30, 30)
+                slider.setRange(-45, 45) # -30, 30
             else:
                 slider.setRange(-15, 15)
             slider.setSingleStep(1) # 
@@ -4034,13 +4035,13 @@ class Window(QMainWindow):
         # self.layout.addWidget(self.glWidget)
         self.layout.addWidget(self.glWidgetTree, 0, 1, self.screen_width, 1) # r=0, c=1, rs = 3, cs = 1
         
-        # LABEL BUTTON
-        self.labelButton = QPushButton("Labels On") # Make a blank button
-        self.labelButton.setStyleSheet("font-size: 20px;" "font:bold")
-        self.labelButton.setCheckable(True)
-        self.labelButton.setFixedSize(100, 50) # 4K: 300, 100; 3k: 150, 50; 2k 100, 50
-        self.labelButton.clicked.connect(self.labelButtonClicked)
-        self.hLayout.addWidget(self.labelButton)
+        # # LABEL BUTTON
+        # self.labelButton = QPushButton("Labels On") # Make a blank button
+        # self.labelButton.setStyleSheet("font-size: 20px;" "font:bold")
+        # self.labelButton.setCheckable(True)
+        # self.labelButton.setFixedSize(100, 50) # 4K: 300, 100; 3k: 150, 50; 2k 100, 50
+        # self.labelButton.clicked.connect(self.labelButtonClicked)
+        # self.hLayout.addWidget(self.labelButton)
 
         # SUBMIT BUTTON
         # if self.screenType == "normal": # should only show when both are false
@@ -4074,7 +4075,7 @@ class Window(QMainWindow):
         
         if self.screenType == "explain_prune":
             self.cutsButton = QPushButton("My Cuts Off")
-            self.cutsButton.setStyleSheet("font-size: 20px;" "font:bold")
+            self.cutsButton.setStyleSheet("font-size: 15px;" "font:bold")
             self.cutsButton.setFixedSize(100, 50) # 4K: 300, 100; 3k: 150, 50; 2k 100, 50
             self.cutsButton.setCheckable(True)
             # self.doneButton.clicked.connect(self.glWidgetTree.resetCuts)
