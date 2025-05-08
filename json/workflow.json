@@ -10,14 +10,7 @@
         },
 
         
-        {
-            "Module": "Labels Tutorial", 
-            "Your Task": "Select the 'Labels On' button to turn on tree\nterminology. To turn off the labels, select the\n'Labels Off' button. You can choose to turn on\nthe labels at any time.\nClick 'Next' when finished",
-            "Layout": "normal",
-            "Tree File": "proxyTree",
-            "File Directory": ""
-        },
-
+        
 
         {
             "Module": "Draw Tutorial", 
@@ -337,15 +330,6 @@
         {
             "Module": "Camera Tutorial", 
             "Your Task": "Manipulate the (blue) Camera Sliders on the left\nside of the screen to move the camera view. You\ncan move the camera at any time.\nClick 'Next' when finished",
-            "Layout": "normal",
-            "Tree File": "proxyTree",
-            "File Directory": ""
-        },
-
-        
-        {
-            "Module": "Labels Tutorial", 
-            "Your Task": "Select the 'Labels On' button to turn on tree\nterminology. To turn off the labels, select the\n'Labels Off' button. You can choose to turn on\nthe labels at any time.\nClick 'Next' when finished",
             "Layout": "normal",
             "Tree File": "proxyTree",
             "File Directory": ""
@@ -683,13 +667,7 @@
             },
     
             
-            {
-                "Module": "Labels Tutorial", 
-                "Your Task": "Select the 'Labels On' button to turn on tree\nterminology. To turn off the labels, select the\n'Labels Off' button. You can choose to turn on\nthe labels at any time.\nClick 'Next' when finished",
-                "Layout": "normal",
-                "Tree File": "proxyTree",
-                "File Directory": ""
-            },
+           
     
     
             {
@@ -1023,16 +1001,7 @@
                 "Tree File": "proxyTree",
                 "File Directory": ""
             },
-    
-            
-            {
-                "Module": "Labels Tutorial", 
-                "Your Task": "Select the 'Labels On' button to turn on tree\nterminology. To turn off the labels, select the\n'Labels Off' button. You can choose to turn on\nthe labels at any time.\nClick 'Next' when finished",
-                "Layout": "normal",
-                "Tree File": "proxyTree",
-                "File Directory": ""
-            },
-    
+        
     
             {
                 "Module": "Draw Tutorial", 
