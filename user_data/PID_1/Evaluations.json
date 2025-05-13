@@ -1,0 +1,92 @@
+{
+    "Vigor Manipulation": {
+        "Total Time": 36.28033113479614,
+        "Answers": [
+            "Strong"
+        ],
+        "Submit Times": [
+            36.280341148376465
+        ]
+    },
+    "Vigor Bins": {
+        "Total Time": 37.94541907310486,
+        "Answers": [
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Don't Prune",
+                "Heading Cut",
+                "Thinning Cut"
+            ]
+        ],
+        "Submit Times": [
+            32.52535557746887,
+            5.420061826705933
+        ]
+    },
+    "Canopy Spacing Manipulation": {
+        "Total Time": 38.026084899902344,
+        "Answers": [
+            "Too Close",
+            "Too Close",
+            "Too Close"
+        ],
+        "Submit Times": [
+            22.36066961288452,
+            11.695575714111328,
+            3.969838857650757
+        ]
+    },
+    "Canopy Rotation Manipulation": {
+        "Total Time": 44.710551738739014,
+        "Answers": [
+            "Good Angle"
+        ],
+        "Submit Times": [
+            44.71055817604065
+        ]
+    },
+    "Bud Spacing Bins": {
+        "Total Time": 117.8451898097992,
+        "Answers": [
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ]
+        ],
+        "Submit Times": [
+            64.91542768478394,
+            40.61016297340393,
+            4.902333498001099,
+            7.417267560958862
+        ]
+    },
+    "Bud Spacing Manipulation": {
+        "Total Time": 12.589668035507202,
+        "Answers": [
+            "Too Close"
+        ],
+        "Submit Times": [
+            12.58967113494873
+        ]
+    }
+}
