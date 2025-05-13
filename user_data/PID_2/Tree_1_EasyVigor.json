@@ -1,0 +1,161 @@
+{
+    "Pruning Time": 218.25947046279907,
+    "Cut Data": [
+        {
+            "Rule": [
+                "Vigor",
+                "Vigor"
+            ],
+            "Sequence": [
+                1,
+                2
+            ],
+            "Vertices": [
+                [
+                    [
+                        0.8024928835630245,
+                        2.3324557911098935,
+                        0.20932929396468544
+                    ],
+                    [
+                        0.7818422737193713,
+                        2.3382425980035553,
+                        0.25625105678715343
+                    ],
+                    [
+                        0.8113316486142962,
+                        2.3229182125512606,
+                        0.26198321059550694
+                    ],
+                    [
+                        0.8330372291475469,
+                        2.3165831818466205,
+                        0.2152665133018142
+                    ],
+                    [
+                        0.8024928835630245,
+                        2.3294576315823865,
+                        0.20932929396468544
+                    ],
+                    [
+                        0.7818422737193713,
+                        2.3353479918625664,
+                        0.25625105678715343
+                    ],
+                    [
+                        0.8330372291475469,
+                        2.313585022319113,
+                        0.2152665133018142
+                    ],
+                    [
+                        0.8113316486142962,
+                        2.3200236064102713,
+                        0.26198321059550694
+                    ]
+                ],
+                [
+                    [
+                        0.4359610812966,
+                        2.7058215523095193,
+                        0.03385268835895507
+                    ],
+                    [
+                        0.4284976050729181,
+                        2.699181952821002,
+                        0.0833377702911157
+                    ],
+                    [
+                        0.5194860716435931,
+                        2.7229375985702955,
+                        0.10102413655109047
+                    ],
+                    [
+                        0.5299825885998684,
+                        2.730369076896893,
+                        0.05212861801415867
+                    ],
+                    [
+                        0.4359610812966,
+                        2.7026114914019397,
+                        0.03385268835895507
+                    ],
+                    [
+                        0.4284976050729181,
+                        2.6960754452999405,
+                        0.0833377702911157
+                    ],
+                    [
+                        0.5299825885998684,
+                        2.7271590159893133,
+                        0.05212861801415867
+                    ],
+                    [
+                        0.5194860716435931,
+                        2.719831091049234,
+                        0.10102413655109047
+                    ]
+                ]
+            ],
+            "Cut Time": [
+                2.912853956222534,
+                0.8333914279937744
+            ],
+            "Rule Time": [
+                22.76502776145935,
+                8.472507238388062
+            ],
+            "Between Time": [
+                3.0819942951202393,
+                23.815827131271362
+            ]
+        }
+    ],
+    "Explanations": [
+        {
+            "Branch Num": 1,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed due to placement and shading."
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is strong vigor and removed to prevent shading."
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed due to placement and shading."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading"
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is strong vigor and removed to prevent shading."
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is strong vigor and removed to prevent shading."
+        },
+        {
+            "Branch Num": 1,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed due to placement and shading."
+        },
+        {
+            "Branch Num": 3,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is vigorous and removed to prevent shading"
+        },
+        {
+            "Branch Num": 2,
+            "Decision": "Branch Vigor",
+            "Explanation": "Branch is strong vigor and removed to prevent shading."
+        }
+    ],
+    "Reset Answer": ""
+}
