@@ -3309,8 +3309,13 @@ class Test(QOpenGLWidget):
         # Remove all the existing values in the 
         self.userDrawn = False # no drawings anymore
         self.crossYMenu = False # set to False to stop displaying the menu (if up)\
-        
-        self.userPruningCuts.append(self.cutSequenceDict) # Append the data for the current cut sequence
+
+        copyDict = {}
+        for key in self.cutSequenceDict:
+            copyDict[key] = self.cutSequenceDict[key]
+
+        self.userPruningCuts.append(copyDict) # Append the data for the current cut sequence
+
         self.resetCutSequence()
         
         self.drawVertices[:self.drawCount] = np.zeros(self.drawCount)
