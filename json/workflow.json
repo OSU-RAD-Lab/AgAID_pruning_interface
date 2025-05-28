@@ -1323,6 +1323,14 @@
     "Test": [ 
 
         {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
+            "Layout": "prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+
+        {
             "Module": "Branch Vigor Terminology", 
             "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three levels of Branch Vigor.\nClick 'Next' when finished",
             "Layout": "bin_features",
@@ -1338,13 +1346,7 @@
             "File Directory": "vigor"
         },
        
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
-            "Layout": "prune",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
+        
         {
             "Module": "Reset Question", 
             "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",

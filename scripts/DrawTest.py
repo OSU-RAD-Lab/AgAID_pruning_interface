@@ -3312,7 +3312,9 @@ class Test(QOpenGLWidget):
 
         copyDict = {}
         for key in self.cutSequenceDict:
-            copyDict[key] = self.cutSequenceDict[key]
+            copyDict[key] = []
+            for v in self.cutSequenceDict[key]:
+                copyDict[key].append(v)
 
         self.userPruningCuts.append(copyDict) # Append the data for the current cut sequence
 
