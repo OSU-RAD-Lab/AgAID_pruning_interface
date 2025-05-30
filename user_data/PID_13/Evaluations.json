@@ -1,0 +1,82 @@
+{
+    "Vigor Manipulation": {
+        "Total Time": 21.206822156906128,
+        "Answers": [
+            "Strong"
+        ],
+        "Submit Times": [
+            21.20682692527771
+        ]
+    },
+    "Vigor Bins": {
+        "Total Time": 18.383946657180786,
+        "Answers": [
+            [
+                "Don't Prune",
+                "Heading Cut",
+                "Thinning Cut"
+            ]
+        ],
+        "Submit Times": [
+            18.383953332901
+        ]
+    },
+    "Canopy Spacing Manipulation": {
+        "Total Time": 16.670985221862793,
+        "Answers": [
+            "Too Close"
+        ],
+        "Submit Times": [
+            16.670989990234375
+        ]
+    },
+    "Canopy Rotation Manipulation": {
+        "Total Time": 36.12491965293884,
+        "Answers": [
+            "Good Angle"
+        ],
+        "Submit Times": [
+            36.12492227554321
+        ]
+    },
+    "Bud Spacing Bins": {
+        "Total Time": 62.176527976989746,
+        "Answers": [
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ]
+        ],
+        "Submit Times": [
+            31.00547456741333,
+            18.511868476867676,
+            6.772697687149048,
+            5.886486053466797
+        ]
+    },
+    "Bud Spacing Manipulation": {
+        "Total Time": 17.33606791496277,
+        "Answers": [
+            "Too Close"
+        ],
+        "Submit Times": [
+            17.336071014404297
+        ]
+    }
+}
