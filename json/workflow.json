@@ -666,8 +666,6 @@
                 "File Directory": ""
             },
     
-            
-           
     
     
             {
@@ -765,46 +763,7 @@
                 "Layout": "end_section",
                 "Tree File": "proxyTree",
                 "File Directory": ""
-            },
-
-
-
-
-    
-            {
-                "Module": "Vigor Scale", 
-                "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Vigor affects pruning\ncut decisions. Click 'Next' when finished.",
-                "Layout": "scale",
-                "Tree File": "proxyTree",
-                "File Directory": "vigor"
-            },
-    
-            {
-                "Module": "Vigor Manipulation", 
-                "Your Task": "Move the Branch Manipulation Slider until the\nbranch is Strong in vigor. Click 'Submit'\nto check your answer.",
-                "Layout": "manipulation",
-                "Tree File": "proxyTree",
-                "File Directory": "vigor"
-            },    
-    
-            {
-                "Module": "Vigor Bins", 
-                "Your Task": "Match the cut type to the Vigor level using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
-                "Layout": "bin",
-                "Tree File": "proxyTree",
-                "File Directory": "vigor_bins"
-            },
-    
-    
-            {
-                "Module": "End of Vigor Tutorials", 
-                "Your Task": "This concludes the vigor tutorials.\nClick 'Next' to proceed to the next activity.",
-                "Layout": "end_section",
-                "Tree File": "proxyTree",
-                "File Directory": ""
-            },
-    
-    
+            },  
     
     
     
@@ -865,6 +824,39 @@
             },
     
 
+            {
+                "Module": "Vigor Scale", 
+                "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Vigor affects pruning\ncut decisions. Click 'Next' when finished.",
+                "Layout": "scale",
+                "Tree File": "proxyTree",
+                "File Directory": "vigor"
+            },
+    
+            {
+                "Module": "Vigor Manipulation", 
+                "Your Task": "Move the Branch Manipulation Slider until the\nbranch is Strong in vigor. Click 'Submit'\nto check your answer.",
+                "Layout": "manipulation",
+                "Tree File": "proxyTree",
+                "File Directory": "vigor"
+            },    
+    
+            {
+                "Module": "Vigor Bins", 
+                "Your Task": "Match the cut type to the Vigor level using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+                "Layout": "bin",
+                "Tree File": "proxyTree",
+                "File Directory": "vigor_bins"
+            },
+    
+    
+            {
+                "Module": "End of Vigor Tutorials", 
+                "Your Task": "This concludes the vigor tutorials.\nClick 'Next' to proceed to the next activity.",
+                "Layout": "end_section",
+                "Tree File": "proxyTree",
+                "File Directory": ""
+            },
+
 
             {
                 "Module": "Tree Pruning", 
@@ -909,21 +901,21 @@
                 "Module": "Tree Pruning", 
                 "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
-                "Tree File": "EasyBudSpacingVigor",
+                "Tree File": "EasyBudSpacingCanopy",
                 "File Directory": ""
             },
             {
                 "Module": "Reset Question", 
                 "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
                 "Layout": "question",
-                "Tree File": "EasyBudSpacingVigor",
+                "Tree File": "EasyBudSpacingCanopy",
                 "File Directory": ""
             },
             {
                 "Module": "Explanation Tutorial", 
                 "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
                 "Layout": "explain_prune",
-                "Tree File": "EasyBudSpacingVigor",
+                "Tree File": "EasyBudSpacingCanopy",
                 "File Directory": ""
             },
     
@@ -931,14 +923,14 @@
                 "Module": "Tree Pruning", 
                 "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
                 "Layout": "prune",
-                "Tree File": "HardBudSpacingVigor",
+                "Tree File": "HardBudSpacingCanopy",
                 "File Directory": ""
             },
             {
                 "Module": "Reset Question", 
                 "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
                 "Layout": "question",
-                "Tree File": "HardBudSpacingVigor",
+                "Tree File": "HardBudSpacingCanopy",
                 "File Directory": ""
             },
            
@@ -1142,78 +1134,6 @@
 
     
             {
-                "Module": "Vigor Scale", 
-                "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Vigor affects pruning\ncut decisions. Click 'Next' when finished.",
-                "Layout": "scale",
-                "Tree File": "proxyTree",
-                "File Directory": "vigor"
-            },
-    
-            {
-                "Module": "Vigor Manipulation", 
-                "Your Task": "Move the Branch Manipulation Slider until the\nbranch is Strong in vigor. Click 'Submit'\nto check your answer.",
-                "Layout": "manipulation",
-                "Tree File": "proxyTree",
-                "File Directory": "vigor"
-            },    
-    
-            {
-                "Module": "Vigor Bins", 
-                "Your Task": "Match the cut type to the Vigor level using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
-                "Layout": "bin",
-                "Tree File": "proxyTree",
-                "File Directory": "vigor_bins"
-            },
-    
-    
-            {
-                "Module": "End of Vigor Tutorials", 
-                "Your Task": "This concludes the vigor tutorials.\nClick 'Next' to proceed to the next activity.",
-                "Layout": "end_section",
-                "Tree File": "proxyTree",
-                "File Directory": ""
-            },
-    
-
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
-                "Layout": "prune",
-                "Tree File": "EasyBudSpacingVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "EasyBudSpacingVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Explanation Tutorial", 
-                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-                "Layout": "explain_prune",
-                "Tree File": "EasyBudSpacingVigor",
-                "File Directory": ""
-            },
-    
-            {
-                "Module": "Tree Pruning", 
-                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
-                "Layout": "prune",
-                "Tree File": "HardBudSpacingVigor",
-                "File Directory": ""
-            },
-            {
-                "Module": "Reset Question", 
-                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-                "Layout": "question",
-                "Tree File": "HardBudSpacingVigor",
-                "File Directory": ""
-            },
-    
-    
-            {
                 "Module": "6 inch rule", 
                 "Your Task": "Select each button to explore how to apply\nthe '6 inch rule' to the labeled branches.\nYou may need to move the camera to see.\nClick 'Next' when finished.",
                 "Layout": "rule",
@@ -1269,6 +1189,78 @@
                 "File Directory": ""
             },
 
+            {
+                "Module": "Tree Pruning", 
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
+                "Layout": "prune",
+                "Tree File": "EasyBudSpacingCanopy",
+                "File Directory": ""
+            },
+            {
+                "Module": "Reset Question", 
+                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+                "Layout": "question",
+                "Tree File": "EasyBudSpacingCanopy",
+                "File Directory": ""
+            },
+            {
+                "Module": "Explanation Tutorial", 
+                "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+                "Layout": "explain_prune",
+                "Tree File": "EasyBudSpacingCanopy",
+                "File Directory": ""
+            },
+    
+            {
+                "Module": "Tree Pruning", 
+                "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
+                "Layout": "prune",
+                "Tree File": "HardBudSpacingCanopy",
+                "File Directory": ""
+            },
+            {
+                "Module": "Reset Question", 
+                "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
+                "Layout": "question",
+                "Tree File": "HardBudSpacingCanopy",
+                "File Directory": ""
+            },
+
+
+            {
+                "Module": "Vigor Scale", 
+                "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Vigor affects pruning\ncut decisions. Click 'Next' when finished.",
+                "Layout": "scale",
+                "Tree File": "proxyTree",
+                "File Directory": "vigor"
+            },
+    
+            {
+                "Module": "Vigor Manipulation", 
+                "Your Task": "Move the Branch Manipulation Slider until the\nbranch is Strong in vigor. Click 'Submit'\nto check your answer.",
+                "Layout": "manipulation",
+                "Tree File": "proxyTree",
+                "File Directory": "vigor"
+            },    
+    
+            {
+                "Module": "Vigor Bins", 
+                "Your Task": "Match the cut type to the Vigor level using\nthe drop-down menus for the labeled branches.\nClick 'Submit' to check your answer.",
+                "Layout": "bin",
+                "Tree File": "proxyTree",
+                "File Directory": "vigor_bins"
+            },
+    
+    
+            {
+                "Module": "End of Vigor Tutorials", 
+                "Your Task": "This concludes the vigor tutorials.\nClick 'Next' to proceed to the next activity.",
+                "Layout": "end_section",
+                "Tree File": "proxyTree",
+                "File Directory": ""
+            },
+    
+
 
             {
                 "Module": "Tree Pruning", 
@@ -1320,49 +1312,8 @@
 
 
 
-    "Test": [ 
+    "Test": [      
 
-        {
-            "Module": "Tree Pruning", 
-            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
-            "Layout": "prune",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-
-        {
-            "Module": "Branch Vigor Terminology", 
-            "Your Task": "Select the different 'Branch Vigor' Buttons to\nlearn the three levels of Branch Vigor.\nClick 'Next' when finished",
-            "Layout": "bin_features",
-            "Tree File": "proxyTree",
-            "File Directory": "vigor_terms"
-        },
-
-        {
-            "Module": "Vigor Scale", 
-            "Your Task": "Move the Branch Manipulation Slider\nto see how Branch Vigor affects pruning\ncut decisions. Click 'Next' when finished.",
-            "Layout": "scale",
-            "Tree File": "proxyTree",
-            "File Directory": "vigor"
-        },
-       
-        
-        {
-            "Module": "Reset Question", 
-            "Your Task": "Answer the question and select 'Submit'\nbefore clicking 'Next'",
-            "Layout": "question",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-        {
-            "Module": "Explanation Tutorial", 
-            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
-            "Layout": "explain_prune",
-            "Tree File": "EasyAllCuts",
-            "File Directory": ""
-        },
-        
-        
         {
             "Module": "Tree Pruning", 
             "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
@@ -1405,11 +1356,6 @@
             "File Directory": "bud_spacing_bin"
         },
 
-        
-        
-
-        
-        
 
 
         {

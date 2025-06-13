@@ -347,6 +347,123 @@
             },
 
 
+
+            "EasyBudSpacingCanopy":
+            {
+                "File": "EasyBudSpacingCanopy.obj",
+                "Vigor Cuts": "",
+                "Canopy Cuts": "CanopyCuts.obj",
+                "Bud Spacing Cuts": "BudSpacingCuts.obj",
+                "Section Translate": [0, -1.8, -1.7],
+                "Whole Translate": [0, -1.8, -5],
+                "Features": 
+                {
+                    "Trunk": [0.0, 0.0, 2.146], 
+                    "Secondary Branch": [-0.5038, 0.004, 1.963],
+                    "Tertiary Branch": [0.4273, 0.07807, 1.922],
+                    "Bud": [0.1512, 0.02245, 1.994]
+                },
+                "Explanations":
+                [
+                    {
+                        "Screen Ratio": [0.32432432432432434, 0.12228260869565218],
+                        "Decision": "Canopy Cut",
+                        "Explanation": "Branch too long. Pruned back to ~6 inches"
+                    },
+                    {
+                        "Screen Ratio": [0.32972972972972975, 0.3451086956521739],
+                        "Decision": "Bud Spacing",
+                        "Explanation": "Buds are too close together and pruned back."
+                    },
+                    {
+                        "Screen Ratio": [0.12324324324324325, 0.782608695652174],
+                        "Decision": "Canopy Cut",
+                        "Explanation": "Branches too close together. Removed branch with fewer buds."
+                    },
+                    {
+                        "Screen Ratio": [0.27675675675675676, 0.7527173913043478],
+                        "Decision": "Canopy Cut",
+                        "Explanation": "Branch too long and pruned completely"
+                    },
+                    {
+                        "Screen Ratio": [0.5156756756756756, 0.8532608695652174],
+                        "Decision": "Bud Spacing",
+                        "Explanation": "Buds are too close together. Pruned to keep the most buds"
+                    },
+                    {
+                        "Screen Ratio": [0.7037837837837838, 0.6141304347826086],
+                        "Decision": "Bud Spacing",
+                        "Explanation": "Buds are too close together. Pruned to keep the most buds"
+                    },
+                    {
+                        "Screen Ratio": [0.825945945945946, 0.7880434782608695],
+                        "Decision": "Bud Spacing",
+                        "Explanation": "Buds are too close together. Pruned to keep the most buds"
+                    }
+                ]
+            },
+
+
+            "HardBudSpacingCanopy":
+            {
+                "File": "HardBudSpacingCanopy.obj",
+                "Vigor Cuts": "",
+                "Canopy Cuts": "CanopyCuts.obj",
+                "Bud Spacing Cuts": "BudSpacingCuts.obj",
+                "Section Translate": [-0.05, -1.7, -1.7],
+                "Whole Translate": [-0.05, -1.7, -5],
+                "Features": 
+                {
+                    "Trunk": [0.0, 0.0, 2.146], 
+                    "Secondary Branch": [-0.5038, 0.004, 1.963],
+                    "Tertiary Branch": [0.4273, 0.07807, 1.922],
+                    "Bud": [0.1512, 0.02245, 1.994]
+                },
+                "Explanations":
+                [
+                    {
+                        "Screen Ratio": [0.19567567567567568, 0.24728260869565216],
+                        "Decision": "Canopy Cut",
+                        "Explanation": "Branch too long. Pruned back to ~6 inches to keep buds"
+                    },
+                    {
+                        "Screen Ratio": [0.3232432432432432, 0.16576086956521738],
+                        "Decision": "Bud Spacing",
+                        "Explanation": "Buds are too close together. Pruned to keep the most buds"
+                    },
+                    {
+                        "Screen Ratio": [0.5016216216216216, 0.22554347826086957],
+                        "Decision": "Canopy Cut",
+                        "Explanation": "Branches too close together. Removed branch with fewer buds."
+                    },
+                    {
+                        "Screen Ratio": [0.8378378378378378, 0.33967391304347827],
+                        "Decision": "Bud Spacing",
+                        "Explanation": "Buds are too close together and pruned back."
+                    },
+                    {
+                        "Screen Ratio": [0.3643243243243243, 0.8288043478260869],
+                        "Decision": "Bud Spacing",
+                        "Explanation": "Buds are too close together and pruned back."
+                    },
+                    {
+                        "Screen Ratio": [0.6108108108108108, 0.6684782608695652],
+                        "Decision": "Bud Spacing",
+                        "Explanation": "Buds are too close together and pruned back."
+                    },
+                    {
+                        "Screen Ratio": [0.9589189189189189, 0.8043478260869565],
+                        "Decision": "Bud Spacing",
+                        "Explanation": "Buds are too close together and pruned back."
+                    }
+                ]
+            },
+
+
+
+
+
+
             "EasyVigorCanopy":
             {
                 "File": "EasyVigorCanopy.obj",

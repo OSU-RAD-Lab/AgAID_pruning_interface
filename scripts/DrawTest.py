@@ -2481,7 +2481,7 @@ class Test(QOpenGLWidget):
         self.pressTime = time.time()
 
         # print(f"{self.width}, {self.height}")
-        # print(f"Ratio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
+        print(f"\nRatio: {self.press.x() / self.width}, {self.press.y() / self.height}\n")
 
         self.origins = []
         self.directions = []
