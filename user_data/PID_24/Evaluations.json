@@ -1,0 +1,88 @@
+{
+    "Bud Spacing Bins": {
+        "Total Time": 205.40425443649292,
+        "Answers": [
+            [
+                "Don't Prune",
+                "Heading Cut",
+                "Thinning Cut"
+            ],
+            [
+                "Don't Prune",
+                "Heading Cut",
+                "Thinning Cut"
+            ],
+            [
+                "Don't Prune",
+                "Heading Cut",
+                "Thinning Cut"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ],
+            [
+                "Heading Cut",
+                "Heading Cut",
+                "Don't Prune"
+            ]
+        ],
+        "Submit Times": [
+            71.94987416267395,
+            34.87492871284485,
+            20.249324321746826,
+            58.43055820465088,
+            19.899569034576416
+        ]
+    },
+    "Bud Spacing Manipulation": {
+        "Total Time": 13.324880123138428,
+        "Answers": [
+            "Too Close"
+        ],
+        "Submit Times": [
+            13.324880123138428
+        ]
+    },
+    "Canopy Spacing Manipulation": {
+        "Total Time": 21.904000997543335,
+        "Answers": [
+            "Too Close"
+        ],
+        "Submit Times": [
+            21.904000997543335
+        ]
+    },
+    "Canopy Rotation Manipulation": {
+        "Total Time": 24.75040102005005,
+        "Answers": [
+            "Good Angle"
+        ],
+        "Submit Times": [
+            24.75040102005005
+        ]
+    },
+    "Vigor Manipulation": {
+        "Total Time": 18.242448806762695,
+        "Answers": [
+            "Strong"
+        ],
+        "Submit Times": [
+            18.242448806762695
+        ]
+    },
+    "Vigor Bins": {
+        "Total Time": 40.47117233276367,
+        "Answers": [
+            [
+                "Don't Prune",
+                "Heading Cut",
+                "Thinning Cut"
+            ]
+        ],
+        "Submit Times": [
+            40.47117233276367
+        ]
+    }
+}
