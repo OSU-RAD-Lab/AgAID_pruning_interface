@@ -1312,7 +1312,22 @@
 
 
 
-    "Test": [      
+    "Test": [  
+        {
+            "Module": "Tree Pruning", 
+            "Your Task": "Prune branches on the secondary branches shown.\nWhen finished, click 'Done' to continue.",
+            "Layout": "prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        {
+            "Module": "Explanation Tutorial", 
+            "Your Task": "Select the dropdown menu to see pruning\nexplanations for the corresponding branch.",
+            "Layout": "explain_prune",
+            "Tree File": "EasyAllCuts",
+            "File Directory": ""
+        },
+        
 
         {
             "Module": "Tree Pruning", 
